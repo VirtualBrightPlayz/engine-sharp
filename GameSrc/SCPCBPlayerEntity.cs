@@ -74,6 +74,7 @@ namespace GameSrc
             Renderer.Current.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             Renderer.Current.WorldInfoResource.UploadData(new Vector4(viewPos, 1f));
             footstepSource.Position = viewPos;
+            // ForwardConsts.LightPosition = viewPos - Vector3.UnitY;
         }
 
         public override void Draw(double dt)
@@ -88,6 +89,13 @@ namespace GameSrc
                 ImGui.InputFloat("ViewBobSpeed", ref viewBobSpeed);
                 ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
                 ImGui.InputFloat("FootstepInterval", ref footstepInterval);
+                ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
+                ImGui.ColorEdit4("LightColor", ref ForwardConsts.LightColor, ImGuiColorEditFlags.Float);
+                // ImGui.SliderFloat4("AmbientColor", ref ForwardConsts.AmbientLight, 0f, 1f);
+                if (ImGui.Button("Bring light"))
+                {
+                    ForwardConsts.LightPosition = Position;
+                }
                 ImGui.End();
             }
         }

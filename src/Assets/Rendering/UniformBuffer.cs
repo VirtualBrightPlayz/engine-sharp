@@ -20,7 +20,7 @@ namespace Engine.Assets.Rendering
     {
         public override bool IsValid => InternalBuffer != null && !InternalBuffer.IsDisposed;
         public DeviceBuffer InternalBuffer { get; private set; }
-        private uint _size;
+        public uint Size { get; private set; }
         public BindableResource[] Bindables => new BindableResource[]
         {
             InternalBuffer
@@ -29,7 +29,7 @@ namespace Engine.Assets.Rendering
         public UniformBuffer(string name, uint size)
         {
             Name = name;
-            _size = size;
+            Size = size;
             ReCreate();
         }
 
@@ -40,7 +40,7 @@ namespace Engine.Assets.Rendering
             // base.ReCreate();
             if (InternalBuffer != null && !InternalBuffer.IsDisposed)
                 InternalBuffer.Dispose();
-            InternalBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription(_size, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
+            InternalBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription(Size, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
             InternalBuffer.Name = Name;
         }
 
@@ -49,12 +49,17 @@ namespace Engine.Assets.Rendering
             throw new NotImplementedException();
         }
 
-        public void UploadData<T>(params T[] data) where T : struct
+        public void UploadData<T>(T[] data) where T : struct
         {
             Program.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
         }
 
-        public void UploadData<T>(uint offsetInBytes, params T[] data) where T : struct
+        public void UploadData<T>(T data) where T : struct
+        {
+            Program.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
+        }
+
+        public void UploadData<T>(uint offsetInBytes, T[] data) where T : struct
         {
             Program.GameGraphics.UpdateBuffer(InternalBuffer, offsetInBytes, data);
         }

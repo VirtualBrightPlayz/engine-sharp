@@ -70,7 +70,7 @@ namespace Engine.Assets.Rendering
             return res;
         }
 
-        private void CreateShaders(string shaderCode)
+        private void ProccessShaderCode(string file, string shaderCode, ref Dictionary<string, string> defines, ref int fragInputs, out string[] vertexCode, out string[] fragmentCode)
         {
             const string pragmaVert = "#pragma vertex ";
             const string pragmaFrag = "#pragma fragment ";
@@ -79,26 +79,57 @@ namespace Engine.Assets.Rendering
             const string pragmaIfVert = "#if vertex";
             const string pragmaIfFrag = "#if fragment";
             const string pragmaEndIf = "#endif";
-            const string version = "#version 450";
-            string filename = $"\"{Name}\"";
+            const string pragmaInclude = "#include ";
+            const string pragmaDefine = "#define ";
+            // const string version = "#version 450";
+            string filename = $"\"{file}\"";
             string[] lines = shaderCode.ReplaceLineEndings().Split(Environment.NewLine);
             List<string> vertexShaderOutput = new List<string>();
             List<string> fragmentShaderOutput = new List<string>();
-            vertexShaderOutput.Add(version);
-            fragmentShaderOutput.Add(version);
-            fragmentShaderOutput.Add("layout(location = 0) out vec4 fragColor;");
+            // vertexShaderOutput.Add(version);
+            // fragmentShaderOutput.Add(version);
+            // fragmentShaderOutput.Add("layout(location = 0) out vec4 fragColor;");
             string vertexMain = string.Empty;
             string fragmentMain = string.Empty;
             int curLine = 0;
             int vertInputs = 0;
-            int fragInputs = 0;
+            // int fragInputs = 0;
             int ifState = 0;
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i].Trim();
-                if (line.ToLower().StartsWith("#include "))
+                if (line.ToLower().StartsWith(pragmaInclude))
                 {
-                    // TODO
+                    string inc = line.Substring(pragmaInclude.Length - 1).Trim();
+                    int st = inc.IndexOf("\"");
+                    int en = inc.LastIndexOf("\"");
+                    if (st != -1 && en != -1)
+                    {
+                        string incFileName = inc.Substring(st + 1, (en + 1) - (st + 2));
+                        string dir = Path.GetDirectoryName(file);
+                        if (FileManager.Exists(Path.Combine(dir, incFileName)))
+                        {
+                            string incCode = FileManager.LoadStringASCII(Path.Combine(dir, incFileName));
+                            ProccessShaderCode(Path.Combine(dir, incFileName), incCode, ref defines, ref fragInputs, out string[] incVertCode, out string[] incFragCode);
+                            vertexShaderOutput.AddRange(incVertCode);
+                            fragmentShaderOutput.AddRange(incFragCode);
+                        }
+                        else
+                            throw new FileNotFoundException($"[{file}:{curLine}] {Path.Combine(dir, incFileName)} does not exist");
+                    }
+                    else
+                        throw new InvalidOperationException($"[{file}:{curLine}] #include missing '\"' at start and/or end");
+                }
+                else if (line.ToLower().StartsWith(pragmaDefine))
+                {
+                    string defineLine = line.Substring(pragmaDefine.Length - 1).Trim();
+                    int spc = defineLine.IndexOf(' ');
+                    if (spc != -1)
+                    {
+                        string defName = defineLine.Substring(0, spc);
+                        string defValue = defineLine.Substring(spc + 1);
+                        defines.Add(defName, defValue);
+                    }
                 }
                 else if (line.ToLower().StartsWith(pragmaVert))
                 {
@@ -138,6 +169,11 @@ namespace Engine.Assets.Rendering
                 }
                 else if (!line.StartsWith("#"))
                 {
+                    line = lines[i];
+                    foreach (var define in defines)
+                    {
+                        line = line.Replace($"${define.Key}$", define.Value);
+                    }
                     switch (ifState)
                     {
                         case 0:
@@ -158,9 +194,28 @@ namespace Engine.Assets.Rendering
                 }
                 curLine++;
             }
-            /*File.WriteAllLines("vert.dbg", vertexShaderOutput);
-            File.WriteAllLines("frag.dbg", fragmentShaderOutput);*/
-            CreateShaders(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), vertexMain, fragmentMain);
+            vertexCode = vertexShaderOutput.ToArray();
+            fragmentCode = fragmentShaderOutput.ToArray();
+        }
+
+        private void CreateShaders(string shaderCode)
+        {
+            const string version = "#version 450";
+            List<string> vertexShaderOutput = new List<string>();
+            List<string> fragmentShaderOutput = new List<string>();
+            vertexShaderOutput.Add(version);
+            fragmentShaderOutput.Add(version);
+            fragmentShaderOutput.Add("layout(location = 0) out vec4 FragColor;");
+            Dictionary<string, string> defines = new Dictionary<string, string>();
+            int fragInputs = 0;
+            ProccessShaderCode(_path, shaderCode, ref defines, ref fragInputs, out string[] vert, out string[] frag);
+            vertexShaderOutput.AddRange(vert);
+            fragmentShaderOutput.AddRange(frag);
+            /*
+            File.WriteAllLines("vert.dbg", vertexShaderOutput);
+            File.WriteAllLines("frag.dbg", fragmentShaderOutput);
+            */
+            CreateShaders(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), string.Empty, string.Empty);
         }
 
         private void CreateShaders(string vertCode, string fragCode, string vertexMain, string fragmentMain)

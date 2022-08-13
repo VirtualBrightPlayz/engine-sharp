@@ -92,6 +92,7 @@ namespace GameSrc
         public override void Draw(double dt)
         {
             base.Draw(dt);
+            Room.SetWorldMatrix(WorldMatrix);
             Room.Draw(dt);
         }
 

@@ -16,6 +16,8 @@ namespace GameSrc
     public class RMeshModel : Resource
     {
         public const string ShaderPath = "Shaders/RMesh";
+        public const uint ShaderWorldInfoSetId = 3;
+        public const uint ShaderForwardSetId = 4;
         public static string[] RoomAmbiencePaths => new string[]
         {
             "SFX/Ambient/Room ambience/rumble.ogg",
@@ -39,6 +41,8 @@ namespace GameSrc
         public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 1f / 102.4f;
         private List<RMeshAudioSource> soundEmitters = new List<RMeshAudioSource>();
         public IReadOnlyList<RMeshAudioSource> Sounds => soundEmitters;
+        public UniformBuffer LightUniform { get; private set; }
+        public CompoundBuffer LightBuffer { get; private set; }
         public struct RMeshAudioSource
         {
             public Vector3 position;
@@ -86,6 +90,8 @@ namespace GameSrc
             int vertexCount = 0;
             List<uint> colTris = new List<uint>();
             List<Vector3> colPos = new List<Vector3>();
+            LightUniform = ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
+            LightUniform.UploadData(ForwardConsts.GetLightInfo());
 
             for (int i = 0; i < count; i++)
             {
@@ -227,6 +233,8 @@ namespace GameSrc
                 colPos.AddRange(vertices);
                 colTris.AddRange(meshes[i].Indices.Select(x => (uint)(x + vertexCount)).ToArray());
                 vertexCount += vertices.Length;
+
+                LightBuffer = ResourceManager.CreateCompoundBuffer($"RMeshBuffer_{ForwardConsts.LightBufferName}", shader, ShaderForwardSetId, LightUniform);
             }
 
             // collision mesh
@@ -410,6 +418,7 @@ namespace GameSrc
             if (HasBeenInitialized)
                 return;
             base.ReCreate();
+            LightUniform.ReCreate();
             foreach (var mesh in meshes)
             {
                 mesh.ReCreate();
@@ -426,11 +435,13 @@ namespace GameSrc
 
         public void SetWorldMatrix(Matrix4x4 WorldMatrix)
         {
+            LightUniform.UploadData(ForwardConsts.GetLightInfo());
             for (int i = 0; i < meshes.Length; i++)
             {
                 meshes[i].SetWorldMatrix(WorldMatrix);
                 meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
-                Renderer.Current.SetupStandardWorldInfoUniforms(meshes[i].InternalMaterial, 3);
+                meshes[i].InternalMaterial.SetUniforms(ShaderForwardSetId, LightBuffer);
+                Renderer.Current.SetupStandardWorldInfoUniforms(meshes[i].InternalMaterial, ShaderWorldInfoSetId);
                 meshes[i].PreDraw(Renderer.Current);
             }
         }
@@ -445,6 +456,7 @@ namespace GameSrc
 
         public override void Dispose()
         {
+            LightUniform.Dispose();
             for (int i = 0; i < meshes.Length; i++)
             {
                 meshes[i].Dispose();

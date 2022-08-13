@@ -1,5 +1,15 @@
-#pragma vertex vert
-#pragma fragment frag
+#define LIGHT_SET 4
+#define NORMAL fsin_Normal
+#define TAN_NORMAL bumpNormal
+#define POSITION fsin_Pos
+#define TAN_POSITION fsin_TanFragPos
+#define SPECULAR_EXP 32
+#define VIEW_POSITION fsin_ViewPos
+#define OBJ_TO_TAN TBN
+#define TAN_VIEW_POSITION fsin_TanViewPos
+
+#pragma vertex main
+#pragma fragment main
 
 #pragma in vertex vec3 Position
 #pragma in vertex vec3 Normal
@@ -15,7 +25,22 @@
 #pragma in fragment vec3 fsin_Pos
 #pragma in fragment vec3 fsin_TanViewPos
 #pragma in fragment vec3 fsin_TanFragPos
+#pragma in fragment vec3 fsin_Normal
+#pragma in fragment vec3 fsin_ViewPos
 
+// global vars
+
+#if vertex
+mat3 TBN;
+#endif
+
+#if fragment
+vec3 bumpNormal;
+#endif
+
+// includes
+
+#include "ForwardLights.glsl"
 
 layout(set = 0, binding = 0) uniform ViewMatrix
 {
@@ -50,12 +75,15 @@ void main()
     fsin_UV0 = UV0;
     fsin_Color = Color;
     fsin_UV1 = UV1;
-    fsin_Pos = Position;
+    fsin_Pos = vec3(World * vec4(Position, 1));
+    fsin_Normal = mat3(transpose(inverse(World))) * Normal;
+    fsin_ViewPos = ViewPosition.xyz;
 
     vec3 T = normalize(mat3(World) * Tangent);
     vec3 B = normalize(mat3(World) * BiTangent);
     vec3 N = normalize(mat3(World) * Normal);
-    mat3 TBN = transpose(mat3(T, B, N));
+    TBN = transpose(mat3(T, B, N));
+    TransferLightInfo();
     fsin_TanViewPos = TBN * ViewPosition.xyz;
     fsin_TanFragPos = TBN * vec3(World * vec4(Position, 1));
 }
@@ -101,12 +129,15 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir, float multi)
 
 void main()
 {
+    bumpNormal = texture(sampler2D(BumpTexture, BumpTextureSampler), fsin_UV0).xyz;
+    bumpNormal = normalize(bumpNormal * 2.0 - 1.0);
+
     vec3 viewDir = normalize(fsin_TanViewPos - fsin_TanFragPos);
     vec2 uvOffset0 = ParallaxMapping(fsin_UV0, viewDir, 0.05);
-    vec4 diffuseColor = texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), uvOffset0);
+    vec4 diffuseColor = texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), fsin_UV0);
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
-    fragColor = diffuseColor * lightmapColor * fsin_Color;
-    float height = GetHeightFromBump(fsin_UV0);
-    // fragColor = vec4(height);
+    vec3 lighting = ApplyAmbientLighting() + ApplyDiffuseLighting() + ApplySpecularLighting();
+    lighting /= 3;
+    FragColor = diffuseColor * lightmapColor * fsin_Color * vec4(lighting, 1);
 }
 #endif

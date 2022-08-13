@@ -151,6 +151,16 @@ namespace Engine.Assets
             return buf;
         }
 
+        public static UniformBuffer CreateUniformBuffer(string name, uint size)
+        {
+            UniformBuffer buf = CheckAndReturn<UniformBuffer>(name);
+            if (buf != null && buf.Size == size)
+                return buf;
+            buf = new UniformBuffer(name, size);
+            Add(buf);
+            return buf;
+        }
+
         public static CompoundBuffer CreateCompoundBuffer(string name, GraphicsShader shader, uint index, params IMaterialBindable[] bindables)
         {
             CompoundBuffer buf = CheckAndReturn<CompoundBuffer>(name);
