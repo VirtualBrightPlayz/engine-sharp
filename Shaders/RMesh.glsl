@@ -1,12 +1,35 @@
-#version 450
+#pragma vertex vert
+#pragma fragment frag
 
-layout(location = 0) in vec2 fsin_UV0;
-layout(location = 1) in vec4 fsin_Color;
-layout(location = 2) in vec2 fsin_UV1;
-layout(location = 3) in vec3 fsin_Pos;
-layout(location = 4) in vec3 fsin_TanViewPos;
-layout(location = 5) in vec3 fsin_TanFragPos;
-layout(location = 0) out vec4 fsout_Color;
+#pragma in vertex vec3 Position
+#pragma in vertex vec3 Normal
+#pragma in vertex vec2 UV0
+#pragma in vertex vec2 UV1
+#pragma in vertex vec4 Color
+#pragma in vertex vec3 Tangent
+#pragma in vertex vec3 BiTangent
+
+#pragma in fragment vec2 fsin_UV0
+#pragma in fragment vec4 fsin_Color
+#pragma in fragment vec2 fsin_UV1
+#pragma in fragment vec3 fsin_Pos
+#pragma in fragment vec3 fsin_TanViewPos
+#pragma in fragment vec3 fsin_TanFragPos
+
+
+layout(set = 0, binding = 0) uniform ViewMatrix
+{
+    mat4 View;
+};
+layout(set = 0, binding = 1) uniform ProjectionMatrix
+{
+    mat4 Projection;
+};
+
+layout(set = 1, binding = 0) uniform WorldMatrix
+{
+    mat4 World;
+};
 
 layout(set = 2, binding = 0) uniform texture2D DiffuseTexture;
 layout(set = 2, binding = 1) uniform sampler DiffuseTextureSampler;
@@ -15,6 +38,30 @@ layout(set = 2, binding = 3) uniform sampler LightmapTextureSampler;
 layout(set = 2, binding = 4) uniform texture2D BumpTexture;
 layout(set = 2, binding = 5) uniform sampler BumpTextureSampler;
 
+layout(set = 3, binding = 0) uniform WorldInfo0
+{
+    vec4 ViewPosition;
+};
+
+#if vertex
+void main()
+{
+    gl_Position = Projection * View * World * vec4(Position, 1);
+    fsin_UV0 = UV0;
+    fsin_Color = Color;
+    fsin_UV1 = UV1;
+    fsin_Pos = Position;
+
+    vec3 T = normalize(mat3(World) * Tangent);
+    vec3 B = normalize(mat3(World) * BiTangent);
+    vec3 N = normalize(mat3(World) * Normal);
+    mat3 TBN = transpose(mat3(T, B, N));
+    fsin_TanViewPos = TBN * ViewPosition.xyz;
+    fsin_TanFragPos = TBN * vec3(World * vec4(Position, 1));
+}
+#endif
+
+#if fragment
 float GetHeightFromBump(vec2 texCoords)
 {
     vec3 bump = texture(sampler2D(BumpTexture, BumpTextureSampler), texCoords).xyz;
@@ -58,7 +105,8 @@ void main()
     vec2 uvOffset0 = ParallaxMapping(fsin_UV0, viewDir, 0.05);
     vec4 diffuseColor = texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), uvOffset0);
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
-    fsout_Color = diffuseColor * lightmapColor * fsin_Color;
+    fragColor = diffuseColor * lightmapColor * fsin_Color;
     float height = GetHeightFromBump(fsin_UV0);
-    // fsout_Color = vec4(height);
+    // fragColor = vec4(height);
 }
+#endif

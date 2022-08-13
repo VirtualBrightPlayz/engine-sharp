@@ -34,5 +34,11 @@ namespace Engine.Assets
         {
             return Encoding.ASCII.GetString(LoadBytes(path));
         }
+
+        public static bool Exists(string path)
+        {
+            using var stream = LoadStream(path);
+            return stream != null;
+        }
     }
 }
