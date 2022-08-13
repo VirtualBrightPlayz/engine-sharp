@@ -1,3 +1,9 @@
+#pass FwdBase
+#pass FwdAdd
+#blend FwdBase true One Zero Add One Zero Add
+// #blend FwdAdd true SourceAlpha One Add SourceAlpha One Add
+#blend FwdAdd true One One Add One One Add
+
 struct LightInfoStruct
 {
     vec4 AmbientColor;
@@ -22,6 +28,14 @@ void TransferLightInfo()
 #endif
 
 #if fragment
+
+float GetLightAttenuation()
+{
+    float d = length(LightInfo.LightPosition.xyz - $POSITION$.xyz);
+    // float d = length(fsinLight_TanLightPos.xyz - $TAN_POSITION$.xyz);
+    float attenuation = LightInfo.LightPosition.w / d;
+    return clamp(attenuation, 0, 1);
+}
 
 vec3 ApplyAmbientLighting()
 {
@@ -53,6 +67,25 @@ vec3 ApplySpecularLighting()
         outDiff += (specular);
     }
     return outDiff;
+}
+
+float ApplyAlphaLighting()
+{
+    vec3 norm = -normalize($TAN_NORMAL$.xyz);
+    vec3 lightDir = normalize(fsinLight_TanLightPos.xyz - $TAN_POSITION$.xyz);
+    vec3 viewDir = normalize($TAN_VIEW_POSITION$.xyz - $TAN_POSITION$.xyz);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(norm, halfwayDir), 0), $SPECULAR_EXP$);
+    float diff = max(dot(norm, lightDir), 0);
+    return (1 - $FwdAdd$) * (diff + spec);
+}
+
+vec4 ApplyLighting()
+{
+    float a = GetLightAttenuation();
+    vec3 lighting = ApplyAmbientLighting() + ApplyDiffuseLighting() * a + ApplySpecularLighting() * a;
+    // lighting /= 3;
+    return vec4(lighting, ApplyAlphaLighting() * a);
 }
 
 #endif

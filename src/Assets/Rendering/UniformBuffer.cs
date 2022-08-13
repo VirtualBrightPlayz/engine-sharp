@@ -59,6 +59,16 @@ namespace Engine.Assets.Rendering
             Program.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
         }
 
+        public void UploadData<T>(Renderer renderer, T[] data) where T : struct
+        {
+            renderer.CommandList.UpdateBuffer(InternalBuffer, 0, data);
+        }
+
+        public void UploadData<T>(Renderer renderer, T data) where T : struct
+        {
+            renderer.CommandList.UpdateBuffer(InternalBuffer, 0, data);
+        }
+
         public void UploadData<T>(uint offsetInBytes, T[] data) where T : struct
         {
             Program.GameGraphics.UpdateBuffer(InternalBuffer, offsetInBytes, data);

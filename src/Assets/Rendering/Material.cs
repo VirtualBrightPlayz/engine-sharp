@@ -27,7 +27,7 @@ namespace Engine.Assets.Rendering
     {
         public override bool IsValid => Shader != null && Shader.IsValid;
         public GraphicsShader Shader { get; private set; }
-        private Pipeline _pipeline;
+        private Dictionary<string, Pipeline> _pipelines = new Dictionary<string, Pipeline>();
         private Dictionary<uint, List<Resource>> _uniformResources = new Dictionary<uint, List<Resource>>();
         private Dictionary<uint, UniformLayout[]> _uniformLayouts = new Dictionary<uint, UniformLayout[]>();
         private Dictionary<uint, ResourceSet> _resourceSets = new Dictionary<uint, ResourceSet>();
@@ -37,6 +37,7 @@ namespace Engine.Assets.Rendering
         {
             Name = name;
             Shader = shader;
+            ReCreate();
         }
 
         public override void ReCreate()
@@ -44,8 +45,12 @@ namespace Engine.Assets.Rendering
             if (HasBeenInitialized)
                 return;
             base.ReCreate();
-            if (_pipeline != null && !_pipeline.IsDisposed)
-                _pipeline.Dispose();
+            foreach (var pipeline in _pipelines)
+            {
+                if (pipeline.Value != null && !pipeline.Value.IsDisposed)
+                    pipeline.Value.Dispose();
+            }
+            _pipelines.Clear();
             foreach (var res in _uniformResources)
             {
                 foreach (var item in res.Value)
@@ -77,7 +82,8 @@ namespace Engine.Assets.Rendering
             {
                 SetUniforms(uniform.Key, true, uniform.Value);
             }
-            CreatePipeline(Program.GameGraphics.SwapchainFramebuffer.OutputDescription);
+            foreach (var pass in Shader.Passes)
+                CreatePipeline(Program.GameGraphics.SwapchainFramebuffer.OutputDescription, pass);
         }
 
         public override Resource Clone(string cloneName)
@@ -213,12 +219,17 @@ namespace Engine.Assets.Rendering
                 throw new Exception($"Material.SetUniforms: {setId} was not found in the shader's resourceLayouts");
         }
 
-        public void CreatePipeline(OutputDescription output, bool dispose = true)
+        public void CreatePipeline(OutputDescription output, GraphicsShader.ShaderPass pass, bool dispose = true)
         {
-            if (_pipeline != null && !_pipeline.IsDisposed && dispose)
-                _pipeline.Dispose();
+            /*if (_pipeline != null && !_pipeline.IsDisposed && dispose)
+                _pipeline.Dispose();*/
+            if (_pipelines.TryGetValue(pass.PassName, out Pipeline pipeline) && pipeline != null && !pipeline.IsDisposed)
+            {
+                pipeline.Dispose();
+                _pipelines.Remove(pass.PassName);
+            }
             GraphicsPipelineDescription pipelineDescription = new GraphicsPipelineDescription();
-            pipelineDescription.BlendState = BlendStateDescription.SingleOverrideBlend;
+            pipelineDescription.BlendState = pass.GetStateDescription();//BlendStateDescription.SingleOverrideBlend;
             pipelineDescription.DepthStencilState = new DepthStencilStateDescription(
                 depthTestEnabled: true,
                 depthWriteEnabled: true,
@@ -244,21 +255,34 @@ namespace Engine.Assets.Rendering
                 new VertexElementDescription("BoneIndices", VertexElementSemantic.TextureCoordinate, VertexElementFormat.UInt4));*/
             pipelineDescription.ShaderSet = new ShaderSetDescription(
                 vertexLayouts: new VertexLayoutDescription[] { vertexLayout },
-                shaders: Shader._shaders);
+                shaders: Shader._shaders[pass.PassName]);
             pipelineDescription.Outputs = output;
-            _pipeline = ResourceManager.GraphicsFactory.CreateGraphicsPipeline(pipelineDescription);
-            _pipeline.Name = Name;
+            Pipeline newPipeline = ResourceManager.GraphicsFactory.CreateGraphicsPipeline(pipelineDescription);
+            newPipeline.Name = $"{Name}_{pass.PassName}";
+            _pipelines.Add(pass.PassName, newPipeline);
         }
 
         public void PreDraw()
         {
-            if (_pipeline == null || _pipeline.IsDisposed)
-                CreatePipeline(Program.GameGraphics.SwapchainFramebuffer.OutputDescription);
+            if (_pipelines.Count == 0)
+            {
+                foreach (var pass in Shader.Passes)
+                    CreatePipeline(Program.GameGraphics.SwapchainFramebuffer.OutputDescription, pass);
+            }
+            // if (_pipeline == null || _pipeline.IsDisposed)
+                // CreatePipeline(Program.GameGraphics.SwapchainFramebuffer.OutputDescription);
         }
 
-        public void Bind(Renderer renderer)
+        public void Bind(Renderer renderer, string passName = "")
         {
-            renderer.CommandList.SetPipeline(_pipeline);
+            Pipeline pipeline = _pipelines.FirstOrDefault().Value;
+            if (!string.IsNullOrEmpty(passName))
+            {
+                if (!_pipelines.ContainsKey(passName))
+                    CreatePipeline(Program.GameGraphics.SwapchainFramebuffer.OutputDescription, Shader.Passes.First(x => x.PassName == passName));
+                pipeline = _pipelines[passName];
+            }
+            renderer.CommandList.SetPipeline(pipeline);
             /*foreach (var resSet in _resourceSets)
             {
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value);
@@ -277,7 +301,12 @@ namespace Engine.Assets.Rendering
             }
             _resourceSets.Clear();
             _compoundBuffers.Clear();
-            _pipeline?.Dispose();
+            foreach (var pipeline in _pipelines)
+            {
+                if (pipeline.Value != null && !pipeline.Value.IsDisposed)
+                    pipeline.Value.Dispose();
+            }
+            _pipelines.Clear();
         }
     }
 }

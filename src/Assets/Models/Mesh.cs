@@ -338,9 +338,9 @@ namespace Engine.Assets.Models
             InternalMaterial.PreDraw();
         }
 
-        public void Draw(Renderer renderer)
+        public void Draw(Renderer renderer, string pass = "")
         {
-            InternalMaterial.Bind(renderer);
+            InternalMaterial.Bind(renderer, pass);
             renderer.CommandList.SetVertexBuffer(0, _vertexBuffer);
             renderer.CommandList.SetIndexBuffer(_indexBuffer, IsBigMesh ? IndexFormat.UInt32 : IndexFormat.UInt16);
             renderer.CommandList.DrawIndexed(_indexCount, 1, 0, 0, 0);

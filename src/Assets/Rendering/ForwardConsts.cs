@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -14,19 +15,26 @@ namespace Engine.Assets.Rendering
             public const uint Size = (4 + 4 + 4) * sizeof(float);
         }
 
-        public const int MaxLightsPerPass = 1;
-        public const string LightBufferName = "LightInfo0";
-        public static Vector4 AmbientColor = Vector4.One;
-        public static Vector3 LightPosition = Vector3.Zero;
-        public static Vector4 LightColor = Vector4.One;
+        public class ForwardLight
+        {
+            public Vector3 Position;
+            public Vector4 Color;
+            public float Range;
+        }
 
-        public static float[] GetLightInfo()
+        public const string LightBufferName = "LightInfo0";
+        public const string ForwardBasePassName = "FwdBase";
+        public const string ForwardAddPassName = "FwdAdd";
+        public static List<ForwardLight> Lights = new List<ForwardLight>();
+        public static Vector4 AmbientColor = Vector4.One;
+
+        public static float[] GetLightInfo(ForwardLight light, bool basePass)
         {
             LightInfo info = new LightInfo()
             {
-                AmbientLight = AmbientColor,
-                LightPosition = new Vector4(LightPosition, 0f),
-                LightColor = LightColor,
+                AmbientLight = basePass ? AmbientColor : Vector4.Zero,
+                LightPosition = new Vector4(light.Position, light.Range),
+                LightColor = light.Color,
             };
             float[] blit = new float[LightInfo.Size / sizeof(float)];
             int offset = 0;

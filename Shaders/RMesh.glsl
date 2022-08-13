@@ -10,6 +10,8 @@
 
 #pragma vertex main
 #pragma fragment main
+#pass main
+#blend main true One Zero Add One Zero Add
 
 #pragma in vertex vec3 Position
 #pragma in vertex vec3 Normal
@@ -136,8 +138,9 @@ void main()
     vec2 uvOffset0 = ParallaxMapping(fsin_UV0, viewDir, 0.05);
     vec4 diffuseColor = texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), fsin_UV0);
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
-    vec3 lighting = ApplyAmbientLighting() + ApplyDiffuseLighting() + ApplySpecularLighting();
-    lighting /= 3;
-    FragColor = diffuseColor * lightmapColor * fsin_Color * vec4(lighting, 1);
+    vec4 lighting = ApplyLighting();
+    FragColor = diffuseColor * fsin_Color * vec4(lighting.rgb, 1) * lightmapColor;
+    // FragColor = diffuseColor * vec4(lighting.rgb, 1);
+    FragColor.a = lighting.a;
 }
 #endif

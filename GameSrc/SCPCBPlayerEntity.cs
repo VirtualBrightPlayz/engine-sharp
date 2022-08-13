@@ -53,6 +53,7 @@ namespace GameSrc
             ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step7.ogg")),
             ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step8.ogg")),
         };
+        private Vector4 nextLightColor = Vector4.One;
 
         public SCPCBPlayerEntity() : base("Player")
         {
@@ -90,12 +91,23 @@ namespace GameSrc
                 ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
                 ImGui.InputFloat("FootstepInterval", ref footstepInterval);
                 ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
-                ImGui.ColorEdit4("LightColor", ref ForwardConsts.LightColor, ImGuiColorEditFlags.Float);
+                ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
                 // ImGui.SliderFloat4("AmbientColor", ref ForwardConsts.AmbientLight, 0f, 1f);
-                if (ImGui.Button("Bring light"))
+                /*
+                if (ImGui.Button("New light"))
                 {
-                    ForwardConsts.LightPosition = Position;
+                    ForwardConsts.Lights.Add(new ForwardConsts.ForwardLight()
+                    {
+                        Position = Position,
+                        Color = nextLightColor,
+                        Range = 5f,
+                    });
                 }
+                if (ImGui.Button("Clear lights"))
+                {
+                    ForwardConsts.Lights.Clear();
+                }
+                */
                 ImGui.End();
             }
         }

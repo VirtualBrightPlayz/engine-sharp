@@ -20,6 +20,7 @@ namespace GameSrc
         public RMeshModel Room { get; private set; }
         public AudioSource[] Sources { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
+        public ForwardConsts.ForwardLight[] Lights { get; private set; }
 
         public RMeshEntity(string name, string path) : base(name)
         {
@@ -51,6 +52,15 @@ namespace GameSrc
                 Sources[i].ReferenceDistance = Room.Sounds[i].range * 0.75f;
                 Sources[i].Looping = true;
             }
+            Lights = new ForwardConsts.ForwardLight[Room.Lights.Count];
+            for (int i = 0; i < Lights.Length; i++)
+            {
+                Lights[i] = new ForwardConsts.ForwardLight();
+                Lights[i].Position = Vector3.Transform(Room.Lights[i].Position, WorldMatrix);
+                Lights[i].Color = Room.Lights[i].Color;
+                Lights[i].Range = Room.Lights[i].Range;
+            }
+            ForwardConsts.Lights.AddRange(Lights);
             StopAudio();
         }
 
@@ -79,6 +89,12 @@ namespace GameSrc
                 {
                     Sources[i].Position = Vector3.Transform(Room.Sounds[i].position, WorldMatrix);
                     Sources[i].Play();
+                }
+                for (int i = 0; i < Lights.Length; i++)
+                {
+                    Lights[i].Position = Vector3.Transform(Room.Lights[i].Position, WorldMatrix);
+                    // Lights[i].Color = Room.Lights[i].Color;
+                    // Lights[i].Range = Room.Lights[i].Range;
                 }
             }
         }

@@ -41,6 +41,8 @@ namespace GameSrc
         public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 1f / 102.4f;
         private List<RMeshAudioSource> soundEmitters = new List<RMeshAudioSource>();
         public IReadOnlyList<RMeshAudioSource> Sounds => soundEmitters;
+        private List<ForwardConsts.ForwardLight> _lights = new List<ForwardConsts.ForwardLight>();
+        public IReadOnlyList<ForwardConsts.ForwardLight> Lights => _lights;
         public UniformBuffer LightUniform { get; private set; }
         public CompoundBuffer LightBuffer { get; private set; }
         public struct RMeshAudioSource
@@ -91,7 +93,7 @@ namespace GameSrc
             List<uint> colTris = new List<uint>();
             List<Vector3> colPos = new List<Vector3>();
             LightUniform = ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
-            LightUniform.UploadData(ForwardConsts.GetLightInfo());
+            // LightUniform.UploadData(ForwardConsts.GetLightInfo());
 
             for (int i = 0; i < count; i++)
             {
@@ -343,6 +345,12 @@ namespace GameSrc
                         float range = stream.ReadFloat() / 2000f;
                         string strColor = stream.ReadString();
                         float intensity = MathF.Min(stream.ReadFloat() * 0.8f, 1.0f);
+                        _lights.Add(new ForwardConsts.ForwardLight()
+                        {
+                            Position = position,
+                            Color = new Vector4(Vector3.One, intensity),
+                            Range = range,
+                        });
                     }
                     break;
                     case "spotlight":
@@ -435,7 +443,7 @@ namespace GameSrc
 
         public void SetWorldMatrix(Matrix4x4 WorldMatrix)
         {
-            LightUniform.UploadData(ForwardConsts.GetLightInfo());
+            // LightUniform.UploadData(ForwardConsts.GetLightInfo());
             for (int i = 0; i < meshes.Length; i++)
             {
                 meshes[i].SetWorldMatrix(WorldMatrix);
@@ -450,7 +458,13 @@ namespace GameSrc
         {
             for (int i = 0; i < meshes.Length; i++)
             {
-                meshes[i].Draw(Renderer.Current);
+                LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(new ForwardConsts.ForwardLight(), true));
+                meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardBasePassName);
+                foreach (var light in ForwardConsts.Lights)
+                {
+                    LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(light, false));
+                    meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardAddPassName);
+                }
             }
         }
 
