@@ -1,8 +1,9 @@
 #pass FwdBase
 #pass FwdAdd
 #blend FwdBase true One Zero Add One Zero Add
-// #blend FwdAdd true SourceAlpha One Add SourceAlpha One Add
 #blend FwdAdd true One One Add One One Add
+#depth FwdBase true true LessEqual
+#depth FwdAdd true false Equal
 
 struct LightInfoStruct
 {

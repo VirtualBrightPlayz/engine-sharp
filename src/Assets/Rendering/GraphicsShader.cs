@@ -37,20 +37,40 @@ namespace Engine.Assets.Rendering
             InverseBlendFactor = 11
         }
 
+        public enum ShaderComparisonKind
+        {
+            Never = 0,
+            Less = 1,
+            Equal = 2,
+            LessEqual = 3,
+            Greater = 4,
+            NotEqual = 5,
+            GreaterEqual = 6,
+            Always = 7
+        }
+
         public class ShaderPass
         {
             public string PassName;
-            public bool BlendEnabled;
-            public ShaderBlendFactor SrcColor;
-            public ShaderBlendFactor DestColor;
-            public ShaderBlendFunction ColorFunc;
-            public ShaderBlendFactor SrcAlpha;
-            public ShaderBlendFactor DestAlpha;
-            public ShaderBlendFunction AlphaFunc;
+            public bool DepthTest = true;
+            public bool DepthWrite = true;
+            public ShaderComparisonKind DepthCompare = ShaderComparisonKind.LessEqual;
+            public bool BlendEnabled = true;
+            public ShaderBlendFactor SrcColor = ShaderBlendFactor.One;
+            public ShaderBlendFactor DestColor = ShaderBlendFactor.Zero;
+            public ShaderBlendFunction ColorFunc = ShaderBlendFunction.Add;
+            public ShaderBlendFactor SrcAlpha = ShaderBlendFactor.One;
+            public ShaderBlendFactor DestAlpha = ShaderBlendFactor.Zero;
+            public ShaderBlendFunction AlphaFunc = ShaderBlendFunction.Add;
 
-            public BlendStateDescription GetStateDescription()
+            public BlendStateDescription GetBlendStateDescription()
             {
                 return new BlendStateDescription(RgbaFloat.White, new BlendAttachmentDescription(BlendEnabled, (BlendFactor)SrcColor, (BlendFactor)DestColor, (BlendFunction)ColorFunc, (BlendFactor)SrcAlpha, (BlendFactor)DestAlpha, (BlendFunction)AlphaFunc));
+            }
+
+            public DepthStencilStateDescription GetDepthStencilStateDescription()
+            {
+                return new DepthStencilStateDescription(DepthTest, DepthWrite, (ComparisonKind)DepthCompare);
             }
         }
 
@@ -131,6 +151,7 @@ namespace Engine.Assets.Rendering
             const string pragmaEndIf = "#endif";
             const string pragmaInclude = "#include ";
             const string pragmaDefine = "#define ";
+            const string pragmaDepth = "#depth ";
             const string pragmaBlend = "#blend ";
             const string pragmaPass = "#pass ";
             // const string version = "#version 450";
@@ -188,6 +209,34 @@ namespace Engine.Assets.Rendering
                         defines.Add(defName, defValue);
                     }
                 }
+                else if (line.ToLower().StartsWith(pragmaDepth))
+                {
+                    string depth = line.Substring(pragmaDepth.Length - 1).Trim();
+                    string[] settings = depth.Split(' ');
+                    const string depthErrorString = "#depth PassName TestEnabled WriteEnabled CompareKind";
+                    if (settings.Length != 4)
+                        throw new InvalidOperationException(depthErrorString);
+                    string passName = settings[0];
+                    if (!bool.TryParse(settings[1], out bool testEnabled))
+                        throw new InvalidOperationException(depthErrorString);
+                    if (!bool.TryParse(settings[2], out bool writeEnabled))
+                        throw new InvalidOperationException(depthErrorString);
+                    if (!Enum.TryParse<ShaderComparisonKind>(settings[3], true, out var compare))
+                        throw new InvalidOperationException(depthErrorString);
+                    ShaderPass pass = new ShaderPass();
+                    pass.DepthTest = testEnabled;
+                    pass.DepthWrite = writeEnabled;
+                    pass.DepthCompare = compare;
+                    int passIndex = Passes.FindIndex(x => x.PassName == passName);
+                    if (passIndex != -1)
+                    {
+                        Passes[passIndex].DepthTest = testEnabled;
+                        Passes[passIndex].DepthWrite = writeEnabled;
+                        Passes[passIndex].DepthCompare = compare;
+                    }
+                    else
+                        Passes.Add(pass);
+                }
                 else if (line.ToLower().StartsWith(pragmaBlend))
                 {
                     string blend = line.Substring(pragmaBlend.Length - 1).Trim();
@@ -210,7 +259,7 @@ namespace Engine.Assets.Rendering
                         throw new InvalidOperationException(blendErrorString);
                     if (!Enum.TryParse<ShaderBlendFunction>(settings[7], true, out var alphaFunc))
                         throw new InvalidOperationException(blendErrorString);
-                    
+
                     ShaderPass pass = new ShaderPass();
                     pass.PassName = passName;
                     pass.BlendEnabled = blendEnabled;

@@ -345,10 +345,14 @@ namespace GameSrc
                         float range = stream.ReadFloat() / 2000f;
                         string strColor = stream.ReadString();
                         float intensity = MathF.Min(stream.ReadFloat() * 0.8f, 1.0f);
+                        string[] splColor = strColor.Split(' ');
+                        float.TryParse(splColor[0], out float r);
+                        float.TryParse(splColor[1], out float g);
+                        float.TryParse(splColor[2], out float b);
                         _lights.Add(new ForwardConsts.ForwardLight()
                         {
                             Position = position,
-                            Color = new Vector4(Vector3.One, intensity),
+                            Color = new Vector4(r / 255f, g / 255f, b / 255f, intensity),
                             Range = range,
                         });
                     }

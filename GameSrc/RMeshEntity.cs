@@ -93,8 +93,6 @@ namespace GameSrc
                 for (int i = 0; i < Lights.Length; i++)
                 {
                     Lights[i].Position = Vector3.Transform(Room.Lights[i].Position, WorldMatrix);
-                    // Lights[i].Color = Room.Lights[i].Color;
-                    // Lights[i].Range = Room.Lights[i].Range;
                 }
             }
         }

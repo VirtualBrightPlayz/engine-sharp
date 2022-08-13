@@ -115,6 +115,7 @@ namespace GameSrc
         public override unsafe void Tick(double dt)
         {
             base.Tick(dt);
+            UpdateLook();
             UpdateMovement(dt);
             Program.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
             float[] orientation = new float[6];

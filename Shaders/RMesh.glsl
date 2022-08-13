@@ -141,6 +141,6 @@ void main()
     vec4 lighting = ApplyLighting();
     FragColor = diffuseColor * fsin_Color * vec4(lighting.rgb, 1) * lightmapColor;
     // FragColor = diffuseColor * vec4(lighting.rgb, 1);
-    FragColor.a = lighting.a;
+    FragColor.a *= lighting.a;
 }
 #endif

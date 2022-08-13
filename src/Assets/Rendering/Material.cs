@@ -229,11 +229,15 @@ namespace Engine.Assets.Rendering
                 _pipelines.Remove(pass.PassName);
             }
             GraphicsPipelineDescription pipelineDescription = new GraphicsPipelineDescription();
-            pipelineDescription.BlendState = pass.GetStateDescription();//BlendStateDescription.SingleOverrideBlend;
-            pipelineDescription.DepthStencilState = new DepthStencilStateDescription(
+            pipelineDescription.BlendState = pass.GetBlendStateDescription();
+            // BlendStateDescription.SingleOverrideBlend;
+            pipelineDescription.DepthStencilState = pass.GetDepthStencilStateDescription();
+            /*
+            new DepthStencilStateDescription(
                 depthTestEnabled: true,
                 depthWriteEnabled: true,
                 comparisonKind: ComparisonKind.LessEqual);
+            */
             pipelineDescription.RasterizerState = new RasterizerStateDescription(
                 cullMode: FaceCullMode.Back,
                 fillMode: PolygonFillMode.Solid,
