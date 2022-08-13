@@ -34,7 +34,7 @@ namespace GameSrc
         {
             base.Setup();
             // /*
-            Entities.Add(new RMeshEntity("h", "Game/GFX/map/173bright_opt.rmesh"));
+            Entities.Add(new RMeshEntity("h", "Game/GFX/map/173_opt.rmesh"));
             SpawnPlayer();
             return;
             // */

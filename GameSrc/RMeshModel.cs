@@ -342,7 +342,7 @@ namespace GameSrc
                         float y = stream.ReadFloat();
                         float z = stream.ReadFloat();
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
-                        float range = stream.ReadFloat() / 2000f;
+                        float range = stream.ReadFloat() * (1f / 102.4f);// / 2000f;
                         string strColor = stream.ReadString();
                         float intensity = MathF.Min(stream.ReadFloat() * 0.8f, 1.0f);
                         string[] splColor = strColor.Split(' ');
@@ -464,7 +464,7 @@ namespace GameSrc
             {
                 LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(new ForwardConsts.ForwardLight(), true));
                 meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardBasePassName);
-                foreach (var light in ForwardConsts.Lights)
+                foreach (var light in ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights))
                 {
                     LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(light, false));
                     meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardAddPassName);

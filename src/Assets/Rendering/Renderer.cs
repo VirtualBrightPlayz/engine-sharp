@@ -16,6 +16,7 @@ namespace Engine.Assets.Rendering
         public CommandList CommandList => _commandList;
         public Matrix4x4 ViewMatrix { get; set; }
         public Matrix4x4 ProjectionMatrix { get; set; }
+        public Vector3 ViewPosition { get; set; }
         public UniformBuffer ViewMatrixResource { get; private set; }
         public UniformBuffer ProjMatrixResource { get; private set; }
         public UniformBuffer WorldInfoResource { get; private set; }
@@ -33,7 +34,7 @@ namespace Engine.Assets.Rendering
             ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
             ProjMatrixResource.UploadData(ProjectionMatrix);
             WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
-            WorldInfoResource.UploadData(ViewMatrix.Translation);
+            WorldInfoResource.UploadData(ViewPosition);
         }
 
         public override void ReCreate()
@@ -66,7 +67,7 @@ namespace Engine.Assets.Rendering
         {
             ViewMatrixResource.UploadData(ViewMatrix);
             ProjMatrixResource.UploadData(ProjectionMatrix);
-            // WorldInfoResource.UploadData(ViewMatrix.Translation);
+            WorldInfoResource.UploadData(ViewPosition);
             _commandList.Begin();
             // _commandList.SetFramebuffer(InternalRenderTexture.InternalFramebuffer ?? InternalRenderTexture.InternalSwapchain.Framebuffer);
             _commandList.SetFramebuffer(Program.GameGraphics.SwapchainFramebuffer);

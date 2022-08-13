@@ -75,6 +75,7 @@ namespace GameSrc
             Renderer.Current.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             Renderer.Current.WorldInfoResource.UploadData(new Vector4(viewPos, 1f));
             footstepSource.Position = viewPos;
+            Renderer.Current.ViewPosition = viewPos;
             // ForwardConsts.LightPosition = viewPos - Vector3.UnitY;
         }
 
@@ -92,6 +93,7 @@ namespace GameSrc
                 ImGui.InputFloat("FootstepInterval", ref footstepInterval);
                 ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
                 ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
+                ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
                 // ImGui.SliderFloat4("AmbientColor", ref ForwardConsts.AmbientLight, 0f, 1f);
                 /*
                 if (ImGui.Button("New light"))
@@ -198,14 +200,14 @@ namespace GameSrc
                 }
                 else
                 {
-                    velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, 0f, 0f), maxVelChange);
+                    velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, velocity.Y, 0f), maxVelChange);
                 }
             }
             else
             {
-                velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, 0f, 0f), maxVelChange);
+                velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, velocity.Y, 0f), maxVelChange);
             }
-            float velLen = velocity.Length();
+            float velLen = targetVelocity.Length();
             if (prevFootstepTime + footstepInterval < footstepTime)
             {
                 footstepSource.SetBuffer(footstepClips[Random.Shared.Next(footstepClips.Length)]);
