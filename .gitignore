@@ -1,5 +1,5 @@
 .vscode/
-Game/
+/Game/
 imgui.ini
 
 ## Ignore Visual Studio temporary files, build results, and
