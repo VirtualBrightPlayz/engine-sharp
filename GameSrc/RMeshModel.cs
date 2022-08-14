@@ -462,12 +462,13 @@ namespace GameSrc
         {
             for (int i = 0; i < meshes.Length; i++)
             {
-                ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).ToArray();
-                for (int j = 0; j < (float)Lights.Count / ForwardConsts.MaxLightsPerPass; j++)
+                ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
+                // ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.ToArray();
+                for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
                 {
-                    if (!ForwardConsts.IsPassValid(j))
-                        break;
-                    LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(j, true, sortedLights));
+                    // if (!ForwardConsts.IsPassValid(j))
+                        // break;
+                    LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
                     meshes[i].Draw(Renderer.Current, j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
                 }
                 /*

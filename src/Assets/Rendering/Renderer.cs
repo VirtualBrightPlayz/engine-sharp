@@ -30,11 +30,11 @@ namespace Engine.Assets.Rendering
             ReCreate();
             ViewMatrix = Matrix4x4.Identity;
             ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
-            ViewMatrixResource.UploadData(ViewMatrix);
+            // ViewMatrixResource.UploadData(ViewMatrix);
             ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
-            ProjMatrixResource.UploadData(ProjectionMatrix);
+            // ProjMatrixResource.UploadData(ProjectionMatrix);
             WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
-            WorldInfoResource.UploadData(ViewPosition);
+            // WorldInfoResource.UploadData(ViewPosition);
         }
 
         public override void ReCreate()
@@ -65,12 +65,12 @@ namespace Engine.Assets.Rendering
 
         public void Begin()
         {
-            ViewMatrixResource.UploadData(ViewMatrix);
-            ProjMatrixResource.UploadData(ProjectionMatrix);
-            WorldInfoResource.UploadData(ViewPosition);
             _commandList.Begin();
             // _commandList.SetFramebuffer(InternalRenderTexture.InternalFramebuffer ?? InternalRenderTexture.InternalSwapchain.Framebuffer);
             _commandList.SetFramebuffer(Program.GameGraphics.SwapchainFramebuffer);
+            ViewMatrixResource.UploadData(this, ViewMatrix);
+            ProjMatrixResource.UploadData(this, ProjectionMatrix);
+            WorldInfoResource.UploadData(this, ViewPosition);
         }
 
         public void SetupStandardMatrixUniforms(Material material)

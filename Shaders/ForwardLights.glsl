@@ -88,23 +88,34 @@ vec3 ApplySpecularLighting(int i)
     return outDiff;
 }
 
-float ApplyAlphaLighting(int i, vec3 lighting)
+float ApplyAlphaLighting(int i, vec3 lighting, float a)
 {
     // return (1 - $FwdAdd$);
-    return (lighting.x + lighting.y + lighting.z) / 3.0 * $FwdAdd$;
+    // return a;
+
+    vec3 norm = -normalize($TAN_NORMAL$.xyz);
+    vec4 lightPos = vec4(fsinLight_TanLightPos[i].xyz, LightInfo.LightPosition[i].w);
+    vec3 lightDir = normalize(lightPos.xyz - $TAN_POSITION$.xyz);
+    vec3 viewDir = normalize($TAN_VIEW_POSITION$.xyz - $TAN_POSITION$.xyz);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float diff = max(dot(norm, lightDir), 0);
+    float spec = pow(max(dot(norm, halfwayDir), 0), $SPECULAR_EXP$);
+
+    return (diff * a + spec * a);
 }
 
 vec4 ApplyLighting()
 {
     vec4 col = vec4(ApplyAmbientLighting(), 0);
-    for (int i = 0; i < $LIGHTS_MAX$; i++)
+    for (int i = 0; i < LightInfo.AmbientColor.w; i++)
     {
         float a = GetLightAttenuation(i);
         vec3 lighting = ApplyDiffuseLighting(i) * a + ApplySpecularLighting(i) * a;
-        vec4 fLight = vec4(lighting, ApplyAlphaLighting(i, lighting));
+        vec4 fLight = vec4(lighting, ApplyAlphaLighting(i, lighting, a));
         col.rgb += fLight.rgb;
         col.a += fLight.a;
     }
+    col.a *= $FwdAdd$;
     return col;
 }
 

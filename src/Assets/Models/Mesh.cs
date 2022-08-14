@@ -328,7 +328,7 @@ namespace Engine.Assets.Models
 
         public void SetWorldMatrix(Matrix4x4 worldBuffer)
         {
-            InternalWorldUniform.UploadData(worldBuffer);
+            InternalWorldUniform.UploadData(Renderer.Current, worldBuffer);
             InternalMaterial.SetUniforms(UniformConsts.WorldMatrixBufferSet, InternalWorldBuffer);
         }
 

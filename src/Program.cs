@@ -161,6 +161,7 @@ namespace Engine
             {
                 // Debug = true,
                 HasMainSwapchain = true,
+                SwapchainSrgbFormat = false,
                 ResourceBindingModel = ResourceBindingModel.Improved,
                 PreferStandardClipSpaceYDirection = true,
                 PreferDepthRangeZeroToOne = true,

@@ -28,7 +28,7 @@ namespace Engine.Assets.Rendering
         public const string ForwardBasePassName = "FwdBase";
         public const string ForwardAddPassName = "FwdAdd";
         public static List<ForwardLight> Lights = new List<ForwardLight>();
-        public static Vector4 AmbientColor = Vector4.One;
+        public static Vector4 AmbientColor = Vector4.One * 0.1f;
         public static int MaxRealtimeLights = 4;
 
         public static bool IsPassValid(int pass)

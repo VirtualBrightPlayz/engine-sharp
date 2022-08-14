@@ -73,7 +73,7 @@ namespace GameSrc
             Vector3 viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * (MathF.PI / 180f)), out Vector3 up);
             Renderer.Current.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
-            Renderer.Current.WorldInfoResource.UploadData(new Vector4(viewPos, 1f));
+            // Renderer.Current.WorldInfoResource.UploadData(Renderer.Current, new Vector4(viewPos, 1f));
             footstepSource.Position = viewPos;
             Renderer.Current.ViewPosition = viewPos;
             // ForwardConsts.LightPosition = viewPos - Vector3.UnitY;
