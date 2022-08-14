@@ -106,6 +106,10 @@ namespace GameSrc
         public override void Draw(double dt)
         {
             base.Draw(dt);
+            if ((Position - Renderer.Current.ViewPosition).LengthSquared() > 25f * 25f)
+            {
+                return;
+            }
             Room.SetWorldMatrix(WorldMatrix);
             Room.Draw(dt);
         }

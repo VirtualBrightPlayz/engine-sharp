@@ -33,11 +33,11 @@ namespace GameSrc
         public override void Setup()
         {
             base.Setup();
-            // /*
+            /*
             Entities.Add(new RMeshEntity("h", "Game/GFX/map/173_opt.rmesh"));
             SpawnPlayer();
             return;
-            // */
+            */
             Menu = new MenuEntity();
             Entities.Add(Menu);
         }

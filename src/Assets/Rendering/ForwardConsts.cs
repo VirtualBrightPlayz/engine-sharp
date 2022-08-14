@@ -41,7 +41,7 @@ namespace Engine.Assets.Rendering
             // return Math.Min(MaxRealtimeLights, Math.Min(Lights.Count, pass * MaxLightsPerPass)) > 0;
         }
 
-        public static float[] GetLightInfo(int pass, bool basePass)
+        public static float[] GetLightInfo(int pass, bool basePass, ForwardLight[] sortedLights)
         {
             LightInfo info = new LightInfo()
             {
@@ -56,13 +56,13 @@ namespace Engine.Assets.Rendering
                 info.LightPosition[i] = Vector4.Zero;
                 info.LightColor[i] = Vector4.Zero;
             }
-            int remainingLights = Lights.Count - pass * MaxLightsPerPass;
+            int remainingLights = sortedLights.Length - pass * MaxLightsPerPass;
             remainingLights = Math.Min(remainingLights, MaxRealtimeLights - pass * MaxLightsPerPass);
             info.AmbientLight.W = Math.Min(remainingLights, MaxLightsPerPass);
             for (int i = pass * MaxLightsPerPass; i < pass * MaxLightsPerPass + Math.Min(remainingLights, MaxLightsPerPass); i++)
             {
-                info.LightPosition[i%MaxLightsPerPass] = new Vector4(Lights[i].Position, Lights[i].Range);
-                info.LightColor[i%MaxLightsPerPass] = Lights[i].Color;
+                info.LightPosition[i%MaxLightsPerPass] = new Vector4(sortedLights[i].Position, sortedLights[i].Range);
+                info.LightColor[i%MaxLightsPerPass] = sortedLights[i].Color;
             }
             float[] blit = new float[LightInfo.Size / sizeof(float)];
             int offset = 0;
