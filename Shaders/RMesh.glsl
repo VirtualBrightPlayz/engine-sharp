@@ -139,8 +139,9 @@ void main()
     vec4 diffuseColor = texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), fsin_UV0);
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
     vec4 lighting = ApplyLighting();
-    FragColor = diffuseColor * fsin_Color * vec4(lighting.rgb, 1) * lightmapColor;
-    // FragColor = diffuseColor * vec4(lighting.rgb, 1);
-    FragColor.a *= lighting.a;
+    lighting += lightmapColor + fsin_Color;
+    FragColor = diffuseColor * vec4(lighting.rgb, 1) * lightmapColor * fsin_Color;
+    // FragColor = vec4(lighting.rgb, lighting.a);
+    FragColor.a = lighting.a;
 }
 #endif

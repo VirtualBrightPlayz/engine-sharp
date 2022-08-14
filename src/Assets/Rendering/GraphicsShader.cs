@@ -171,6 +171,10 @@ namespace Engine.Assets.Rendering
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i].Trim();
+                foreach (var define in defines)
+                {
+                    line = line.Replace($"${define.Key}$", define.Value);
+                }
                 if (line.ToLower().StartsWith(pragmaPass))
                 {
                     string passName = line.Substring(pragmaPass.Length - 1).Trim();
@@ -366,6 +370,10 @@ namespace Engine.Assets.Rendering
                 vertexShaderOutput.AddRange(vert);
                 fragmentShaderOutput.AddRange(frag);
                 // CreateShaders(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), "main");
+                /*
+                File.WriteAllLines("vert.dbg", vertexShaderOutput);
+                File.WriteAllLines("frag.dbg", fragmentShaderOutput);
+                */
             }
             foreach (var pass in passes)
             {
@@ -386,10 +394,6 @@ namespace Engine.Assets.Rendering
                 fragmentShaderOutput.AddRange(frag);
                 CreateShaders(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), pass);
             }
-            /*
-            File.WriteAllLines("vert.dbg", vertexShaderOutput);
-            File.WriteAllLines("frag.dbg", fragmentShaderOutput);
-            */
         }
 
         private void CreateShaders(string vertCode, string fragCode, string pass)

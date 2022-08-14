@@ -3,13 +3,15 @@
 #blend FwdBase true One Zero Add One Zero Add
 #blend FwdAdd true One One Add One One Add
 #depth FwdBase true true LessEqual
-#depth FwdAdd true false Equal
+#depth FwdAdd true false LessEqual
+
+#define LIGHTS_MAX 4
 
 struct LightInfoStruct
 {
     vec4 AmbientColor;
-    vec4 LightPosition;
-    vec4 LightColor;
+    vec4 LightPosition[$LIGHTS_MAX$];
+    vec4 LightColor[$LIGHTS_MAX$];
 };
 
 layout(set = $LIGHT_SET$, binding = 0) uniform LightInfo0
@@ -17,76 +19,93 @@ layout(set = $LIGHT_SET$, binding = 0) uniform LightInfo0
     LightInfoStruct LightInfo;
 };
 
-#pragma in fragment vec3 fsinLight_TanLightPos
+#pragma in fragment vec3 fsinLight_TanLightPos[$LIGHTS_MAX$]
 
 #if vertex
 
 void TransferLightInfo()
 {
-    fsinLight_TanLightPos = $OBJ_TO_TAN$ * LightInfo.LightPosition.xyz;
+    for (int i = 0; i < $LIGHTS_MAX$; i++)
+    {
+        fsinLight_TanLightPos[i] = $OBJ_TO_TAN$ * LightInfo.LightPosition[i].xyz;
+    }
 }
 
 #endif
 
 #if fragment
 
-float GetLightAttenuation()
+float GetLightAttenuation(int i)
 {
-    float d = length(LightInfo.LightPosition.xyz - $POSITION$.xyz);
-    // float d = length(fsinLight_TanLightPos.xyz - $TAN_POSITION$.xyz);
-    float attenuation = LightInfo.LightPosition.w / d;
-    return clamp(attenuation, 0, 1);
+    // return 1;
+    float attenuation = 0;
+    // for (int i = 0; i < $LIGHTS_MAX$; i++)
+    {
+        float d = length(fsinLight_TanLightPos[i].xyz - $TAN_POSITION$.xyz);
+        float a = LightInfo.LightPosition[i].w / (d * d);
+        attenuation += clamp(a, 0, 1);
+    }
+    return attenuation;
 }
 
 vec3 ApplyAmbientLighting()
 {
-    return LightInfo.AmbientColor.rgb * LightInfo.AmbientColor.a;
+    return LightInfo.AmbientColor.rgb;
 }
 
-vec3 ApplyDiffuseLighting()
+vec3 ApplyDiffuseLighting(int i)
 {
     vec3 norm = -normalize($TAN_NORMAL$.xyz);
     vec3 outDiff = vec3(0);
+    // for (int i = 0; i < $LIGHTS_MAX$; i++)
     {
-        vec3 lightDir = normalize(fsinLight_TanLightPos.xyz - $TAN_POSITION$.xyz);
+        // vec4 lightPos = LightInfo.LightPosition[i].xyz;
+        vec4 lightPos = vec4(fsinLight_TanLightPos[i].xyz, LightInfo.LightPosition[i].w);
+        vec3 lightDir = normalize(lightPos.xyz - $TAN_POSITION$.xyz);
         float diff = max(dot(norm, lightDir), 0);
-        outDiff += (LightInfo.LightColor.rgb * LightInfo.LightColor.a * diff);
+        outDiff += (LightInfo.LightColor[i].rgb * diff);
     }
+    // outDiff /= LightInfo.AmbientColor.w;
     return outDiff;
 }
 
-vec3 ApplySpecularLighting()
+vec3 ApplySpecularLighting(int i)
 {
     vec3 norm = -normalize($TAN_NORMAL$.xyz);
     vec3 outDiff = vec3(0);
+    // for (int i = 0; i < $LIGHTS_MAX$; i++)
     {
-        vec3 lightDir = normalize(fsinLight_TanLightPos.xyz - $TAN_POSITION$.xyz);
+        // vec4 lightPos = LightInfo.LightPosition[i].xyz;
+        vec4 lightPos = vec4(fsinLight_TanLightPos[i].xyz, LightInfo.LightPosition[i].w);
+        vec3 lightDir = normalize(lightPos.xyz - $TAN_POSITION$.xyz);
         vec3 viewDir = normalize($TAN_VIEW_POSITION$.xyz - $TAN_POSITION$.xyz);
         vec3 halfwayDir = normalize(lightDir + viewDir);
         float spec = pow(max(dot(norm, halfwayDir), 0), $SPECULAR_EXP$);
-        vec3 specular = LightInfo.LightColor.rgb * LightInfo.LightColor.a * spec;
+        vec3 specular = LightInfo.LightColor[i].rgb * spec;
         outDiff += (specular);
     }
+    // outDiff /= LightInfo.AmbientColor.w;
     return outDiff;
 }
 
-float ApplyAlphaLighting()
+float ApplyAlphaLighting(int i, vec3 lighting)
 {
-    vec3 norm = -normalize($TAN_NORMAL$.xyz);
-    vec3 lightDir = normalize(fsinLight_TanLightPos.xyz - $TAN_POSITION$.xyz);
-    vec3 viewDir = normalize($TAN_VIEW_POSITION$.xyz - $TAN_POSITION$.xyz);
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(norm, halfwayDir), 0), $SPECULAR_EXP$);
-    float diff = max(dot(norm, lightDir), 0);
-    return (1 - $FwdAdd$) * (diff + spec);
+    // return (1 - $FwdAdd$);
+    return (lighting.x + lighting.y + lighting.z) / 3.0 * $FwdAdd$;
 }
 
 vec4 ApplyLighting()
 {
-    float a = GetLightAttenuation();
-    vec3 lighting = ApplyAmbientLighting() + ApplyDiffuseLighting() * a + ApplySpecularLighting() * a;
-    // lighting /= 3;
-    return vec4(lighting, ApplyAlphaLighting() * a);
+    vec4 col = vec4(ApplyAmbientLighting(), 0);
+    for (int i = 0; i < $LIGHTS_MAX$; i++)
+    {
+        float a = GetLightAttenuation(i);
+        vec3 lighting = ApplyDiffuseLighting(i) * a + ApplySpecularLighting(i) * a;
+        vec4 fLight = vec4(lighting, ApplyAlphaLighting(i, lighting));
+        col.rgb += fLight.rgb;
+        col.a += fLight.a;
+    }
+    return col;
 }
 
 #endif

@@ -462,6 +462,15 @@ namespace GameSrc
         {
             for (int i = 0; i < meshes.Length; i++)
             {
+                for (int j = 0; j < (float)Lights.Count / ForwardConsts.MaxLightsPerPass; j++)
+                {
+                    if (!ForwardConsts.IsPassValid(j))
+                    // if (j >= ((float)ForwardConsts.MaxRealtimeLights / ForwardConsts.MaxLightsPerPass))
+                        break;
+                    LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(j, true));
+                    meshes[i].Draw(Renderer.Current, j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
+                }
+                /*
                 LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(new ForwardConsts.ForwardLight(), true));
                 meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardBasePassName);
                 foreach (var light in ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights))
@@ -469,6 +478,7 @@ namespace GameSrc
                     LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(light, false));
                     meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardAddPassName);
                 }
+                */
             }
         }
 
