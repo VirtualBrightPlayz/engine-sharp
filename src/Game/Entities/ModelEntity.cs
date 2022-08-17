@@ -42,13 +42,13 @@ namespace Engine.Game.Entities
         public override void PreDraw(double dt)
         {
             base.PreDraw(dt);
-            Model.SetWorldMatrix(WorldMatrix);
             Model.PreDraw(Renderer.Current);
         }
 
         public override void Draw(double dt)
         {
             base.Draw(dt);
+            Model.SetWorldMatrix(WorldMatrix);
             Model.Draw(Renderer.Current);
         }
     }

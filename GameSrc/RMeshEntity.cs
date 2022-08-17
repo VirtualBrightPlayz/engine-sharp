@@ -19,6 +19,7 @@ namespace GameSrc
     {
         public RMeshModel Room { get; private set; }
         public AudioSource[] Sources { get; private set; }
+        public ModelEntity[] Models { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
         public ForwardConsts.ForwardLight[] Lights { get; private set; }
 

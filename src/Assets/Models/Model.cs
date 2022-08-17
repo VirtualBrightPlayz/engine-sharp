@@ -328,7 +328,7 @@ namespace Engine.Assets.Models
             for (int i = 0; i < _meshes.Length; i++)
             {
                 System.Numerics.Matrix4x4[] buf = AssimpAnimate(Program.Time, i);
-                bonesBuffers[i].UploadData(buf);
+                bonesBuffers[i].UploadData(renderer, buf);
                 // _meshes[i].InternalMaterial.SetUniforms(UniformConsts.BonesMatrixBufferSet, new UniformLayout(UniformConsts.BonesMatrixName, bonesBuffers[i], true, false));
                 _meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, _uniforms[i].ToArray());
                 _meshes[i].PreDraw(renderer);

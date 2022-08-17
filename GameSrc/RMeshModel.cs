@@ -39,17 +39,28 @@ namespace GameSrc
         public Vector3[] CollisionPositions { get; private set; }
         public uint[] CollisionTriangles { get; private set; }
         public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 1f / 102.4f;
+        private List<RMeshPointModel> pointModels = new List<RMeshPointModel>();
+        public IReadOnlyList<RMeshPointModel> Models => pointModels;
         private List<RMeshAudioSource> soundEmitters = new List<RMeshAudioSource>();
         public IReadOnlyList<RMeshAudioSource> Sounds => soundEmitters;
         private List<ForwardConsts.ForwardLight> _lights = new List<ForwardConsts.ForwardLight>();
         public IReadOnlyList<ForwardConsts.ForwardLight> Lights => _lights;
         public UniformBuffer LightUniform { get; private set; }
         public CompoundBuffer LightBuffer { get; private set; }
+
         public struct RMeshAudioSource
         {
             public Vector3 position;
             public float range;
             public AudioClip clip;
+        }
+
+        public struct RMeshPointModel
+        {
+            public Vector3 position;
+            public Vector3 euler;
+            public Vector3 scale;
+            public string path;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -408,9 +419,18 @@ namespace GameSrc
                         float xEuler = stream.ReadFloat();
                         float yEuler = stream.ReadFloat();
                         float zEuler = stream.ReadFloat();
+                        Vector3 euler = new Vector3(xEuler, yEuler, zEuler);
                         float xScale = stream.ReadFloat();
                         float yScale = stream.ReadFloat();
                         float zScale = stream.ReadFloat();
+                        Vector3 scale = new Vector3(xScale, yScale, zScale);
+                        pointModels.Add(new RMeshPointModel()
+                        {
+                            path = mdlFile,
+                            position = position,
+                            euler = euler,
+                            scale = scale,
+                        });
                     }
                     break;
                 }
@@ -463,23 +483,11 @@ namespace GameSrc
             for (int i = 0; i < meshes.Length; i++)
             {
                 ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
-                // ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.ToArray();
                 for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
                 {
-                    // if (!ForwardConsts.IsPassValid(j))
-                        // break;
                     LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
                     meshes[i].Draw(Renderer.Current, j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
                 }
-                /*
-                LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(new ForwardConsts.ForwardLight(), true));
-                meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardBasePassName);
-                foreach (var light in ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights))
-                {
-                    LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(light, false));
-                    meshes[i].Draw(Renderer.Current, ForwardConsts.ForwardAddPassName);
-                }
-                */
             }
         }
 
