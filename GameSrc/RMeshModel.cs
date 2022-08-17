@@ -423,7 +423,7 @@ namespace GameSrc
                         float xScale = stream.ReadFloat();
                         float yScale = stream.ReadFloat();
                         float zScale = stream.ReadFloat();
-                        Vector3 scale = new Vector3(xScale, yScale, zScale);
+                        Vector3 scale = new Vector3(xScale, yScale, zScale) * (1f / 102.4f);
                         pointModels.Add(new RMeshPointModel()
                         {
                             path = mdlFile,

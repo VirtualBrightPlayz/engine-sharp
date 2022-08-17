@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Assimp;
 using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
@@ -12,14 +13,20 @@ namespace Engine.Assets.Models
 {
     public class Model : Resource
     {
+        public const string ShaderPath = "Shaders/MainMesh";
+        public const uint ShaderWorldInfoSetId = 3;
+        public const uint ShaderForwardSetId = 4;
         public override bool IsValid => false;
         private Mesh[] _meshes { get; set; }
+        private List<CompoundBuffer> _compoundBuffers = new List<CompoundBuffer>();
         private Dictionary<int, List<UniformLayout>> _uniforms = new Dictionary<int, List<UniformLayout>>();
         private Dictionary<int, UniformBuffer> bonesBuffers = new Dictionary<int, UniformBuffer>();
         private Scene _assimpScene;
         private Animation _animation;
         private Dictionary<string, uint> _boneIdByName = new Dictionary<string, uint>();
         public Rendering.Material InternalMaterial { get; private set; }
+        public UniformBuffer LightUniform { get; private set; }
+        public CompoundBuffer LightBuffer { get; private set; }
         private string _path;
         private Assimp.Matrix4x4 _rootNodeInverseTransform
         {
@@ -31,12 +38,26 @@ namespace Engine.Assets.Models
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ModelVertexLayout : IVertex
+        {
+            public Vector3 Position;
+            public Vector3 Normal;
+            public Vector2 UV0;
+            public Vector2 UV1;
+            public Vector4 Color;
+            public Vector3 Tangent;
+            public Vector3 BiTangent;
+        }
+
         public Model(string path, Rendering.Material material)
         {
             Name = path;
             _path = path;
             InternalMaterial = material;
+            LightUniform = ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
             AssimpLoadMeshes(path, material);
+            LightBuffer = ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", material.Shader, ShaderForwardSetId, LightUniform);
         }
 
         private System.Numerics.Matrix4x4[] AssimpAnimate(double time, int i)
@@ -196,10 +217,11 @@ namespace Engine.Assets.Models
         private void AssimpLoadMeshes(string path, Rendering.Material material)
         {
             using AssimpContext ctx = new AssimpContext();
-            Scene scene = ctx.ImportFile(path, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs);
+            Scene scene = ctx.ImportFile(path, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace | PostProcessSteps.ForceGenerateNormals);
             _meshes = new Mesh[scene.MeshCount];
             for (int i = 0; i < _meshes.Length; i++)
             {
+                List<ModelVertexLayout> vertices = new List<ModelVertexLayout>();
                 Assimp.Mesh amesh = scene.Meshes[i];
                 _meshes[i] = new Mesh(amesh.Name, false, material);
                 Mesh mesh = _meshes[i];
@@ -213,24 +235,29 @@ namespace Engine.Assets.Models
                 }
                 mesh.Indices = inds2.ToList();
                 // mesh.Indices = amesh.GetIndices().Select(x => (uint)x).ToList();
-                mesh.Vertices = amesh.Vertices.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
-                mesh.Normals = amesh.Normals.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
+                var positions = amesh.Vertices.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
+                var normals = amesh.Normals.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
+                var tangents = amesh.Tangents.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
+                var bitangents = amesh.BiTangents.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
+                List<Vector2> uv0s;
                 if (amesh.TextureCoordinateChannelCount > 0)
-                    mesh.UV0s = amesh.TextureCoordinateChannels[0].Select(x => new Vector2(x.X, x.Y)).ToList();
+                    uv0s = amesh.TextureCoordinateChannels[0].Select(x => new Vector2(x.X, x.Y)).ToList();
                 else
-                    mesh.UV0s = new Vector2[amesh.VertexCount].ToList();
+                    uv0s = new Vector2[amesh.VertexCount].ToList();
+                List<Vector2> uv1s;
                 if (amesh.TextureCoordinateChannelCount > 1)
-                    mesh.UV1s = amesh.TextureCoordinateChannels[1].Select(x => new Vector2(x.X, x.Y)).ToList();
+                    uv1s = amesh.TextureCoordinateChannels[1].Select(x => new Vector2(x.X, x.Y)).ToList();
                 else
-                    mesh.UV1s = new Vector2[amesh.VertexCount].ToList();
+                    uv1s = new Vector2[amesh.VertexCount].ToList();
+                List<Vector4> colors;
                 if (amesh.VertexColorChannelCount > 0)
-                    mesh.Colors = amesh.VertexColorChannels[0].Select(x => new RgbaFloat(x.R, x.G, x.B, x.A)).ToList();
+                    colors = amesh.VertexColorChannels[0].Select(x => new Vector4(x.R, x.G, x.B, x.A)).ToList();
                 else
                 {
-                    RgbaFloat[] cols = new RgbaFloat[amesh.VertexCount];
+                    Vector4[] cols = new Vector4[amesh.VertexCount];
                     for (uint j = 0; j < amesh.VertexCount; j++)
-                        cols[j] = RgbaFloat.White;
-                    mesh.Colors = cols.ToList();
+                        cols[j] = Vector4.One;
+                    colors = cols.ToList();
                 }
                 if (amesh.BoneCount > 0)
                 {
@@ -275,12 +302,35 @@ namespace Engine.Assets.Models
                     if (mat.GetMaterialTexture(Assimp.TextureType.Diffuse, 0, out TextureSlot slot))
                     {
                         string diffusePath = Path.Combine(Path.GetDirectoryName(path), Path.GetFileName(slot.FilePath));
+                        CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(diffusePath, mesh.InternalMaterial.Shader, UniformConsts.DiffuseTextureSet, ResourceManager.LoadTexture(diffusePath), Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+                        _compoundBuffers.Add(buffer);
                         _uniforms[i].Add(new UniformLayout(UniformConsts.DiffuseTextureName, ResourceManager.LoadTexture(diffusePath), false, true));
                     }
+                    else
+                    {
+                        _compoundBuffers.Add(null);
+                    }
                 }
-                bonesBuffers[i] = new UniformBuffer($"{Name}_BonesBuffer_{i}", (uint)16 * 4 * 64);
-                mesh.UploadDataOld();
-                mesh.InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, _uniforms[i].ToArray());
+                else
+                {
+                    _compoundBuffers.Add(null);
+                }
+                bonesBuffers[i] = ResourceManager.CreateUniformBuffer($"{Name}_BonesBuffer_{i}", (uint)16 * 4 * 64);
+                for (int j = 0; j < positions.Count; j++)
+                {
+                    vertices.Add(new ModelVertexLayout()
+                    {
+                        Position = positions[j],
+                        Normal = normals[j],
+                        UV0 = uv0s[j],
+                        UV1 = uv1s[j],
+                        Color = colors[j],
+                        Tangent = tangents[j],
+                        BiTangent = bitangents[j],
+                    });
+                }
+                mesh.UploadData(vertices.ToArray());
+                mesh.InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, _compoundBuffers[i]);
             }
             _assimpScene = scene;
             if (_assimpScene.HasAnimations)
@@ -314,32 +364,26 @@ namespace Engine.Assets.Models
             return m;
         }
 
-        public void SetWorldMatrix(System.Numerics.Matrix4x4 WorldMatrix)
-        {
-            for (int i = 0; i < _meshes.Length; i++)
-            {
-                _meshes[i].SetWorldMatrix(WorldMatrix);
-                _meshes[i].PreDraw(Renderer.Current);
-            }
-        }
-
-        public void PreDraw(Renderer renderer)
+        public void SetWorldMatrixDraw(Renderer renderer, System.Numerics.Matrix4x4 WorldMatrix)
         {
             for (int i = 0; i < _meshes.Length; i++)
             {
                 System.Numerics.Matrix4x4[] buf = AssimpAnimate(Program.Time, i);
                 bonesBuffers[i].UploadData(renderer, buf);
-                // _meshes[i].InternalMaterial.SetUniforms(UniformConsts.BonesMatrixBufferSet, new UniformLayout(UniformConsts.BonesMatrixName, bonesBuffers[i], true, false));
-                _meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, _uniforms[i].ToArray());
+                _meshes[i].SetWorldMatrix(WorldMatrix);
+                _meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, _compoundBuffers[i]);
+                _meshes[i].InternalMaterial.SetUniforms(ShaderForwardSetId, LightBuffer);
+                renderer.SetupStandardWorldInfoUniforms(_meshes[i].InternalMaterial, ShaderWorldInfoSetId);
                 _meshes[i].PreDraw(renderer);
-            }
-        }
-
-        public void Draw(Renderer renderer)
-        {
-            for (int i = 0; i < _meshes.Length; i++)
-            {
-                _meshes[i].Draw(renderer);
+            // }
+            // for (int i = 0; i < _meshes.Length; i++)
+            // {
+                ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
+                for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
+                {
+                    LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
+                    _meshes[i].Draw(Renderer.Current, j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
+                }
             }
         }
 

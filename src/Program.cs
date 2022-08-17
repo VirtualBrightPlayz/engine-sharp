@@ -202,6 +202,10 @@ namespace Engine
         private static void FocusChange(bool state)
         {
             IsFocused = state;
+            if (!IsFocused)
+            {
+                GameInputSnapshotHandler.IsMouseLocked = false;
+            }
         }
 
         private static void Frame(double delta)
@@ -211,6 +215,7 @@ namespace Engine
             {
                 FPS = (1f / delta);
             }
+            // GameInputSnapshotHandler.PreUpdate();
             ResourceManager.Update();
             GameImGui.Update((float)delta, GameInputSnapshotHandler);
             MainRenderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)MainRenderer.InternalRenderTexture.Width / MainRenderer.InternalRenderTexture.Height, 0.1f, 1000f);

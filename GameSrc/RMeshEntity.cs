@@ -63,6 +63,16 @@ namespace GameSrc
             }
             ForwardConsts.Lights.AddRange(Lights);
             StopAudio();
+            Models = new ModelEntity[Room.Models.Count];
+            for (int i = 0; i < Models.Length; i++)
+            {
+                Models[i] = new ModelEntity(Room.Models[i].path, Path.Combine(SCPCB.Instance.Data.PropsDir, Room.Models[i].path), ResourceManager.CreateMaterial(Room.Models[i].path, ResourceManager.LoadShader(Model.ShaderPath)));
+                Models[i].Position = Vector3.Transform(Room.Models[i].position, WorldMatrix);
+                var rot = Quaternion.CreateFromYawPitchRoll(Room.Models[i].euler.X, Room.Models[i].euler.Y, Room.Models[i].euler.Z);
+                Models[i].Rotation = rot * Rotation;
+                Models[i].Scale = Room.Models[i].scale;
+                Models[i].MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
+            }
         }
 
         public void PlayAudio()
@@ -84,7 +94,7 @@ namespace GameSrc
         public override void MarkTransformDirty(TransformDirtyFlags flags)
         {
             base.MarkTransformDirty(flags);
-            if (flags.HasFlag(TransformDirtyFlags.Position) || flags.HasFlag(TransformDirtyFlags.Rotation))
+            if (flags.HasFlag(TransformDirtyFlags.Position) || flags.HasFlag(TransformDirtyFlags.Rotation) || flags.HasFlag(TransformDirtyFlags.Scale))
             {
                 for (int i = 0; i < Sources.Length; i++)
                 {
@@ -95,12 +105,24 @@ namespace GameSrc
                 {
                     Lights[i].Position = Vector3.Transform(Room.Lights[i].Position, WorldMatrix);
                 }
+                for (int i = 0; i < Models.Length; i++)
+                {
+                    Models[i].Position = Vector3.Transform(Room.Models[i].position, WorldMatrix);
+                    var rot = Quaternion.CreateFromYawPitchRoll(Room.Models[i].euler.Y * (MathF.PI / 180f), -Room.Models[i].euler.X * (MathF.PI / 180f), Room.Models[i].euler.Z * (MathF.PI / 180f));
+                    Models[i].Rotation = rot * Rotation;
+                    Models[i].Scale = Room.Models[i].scale;
+                    Models[i].MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
+                }
             }
         }
 
         public override void PreDraw(double dt)
         {
             base.PreDraw(dt);
+            for (int i = 0; i < Models.Length; i++)
+            {
+                Models[i].PreDraw(dt);
+            }
         }
 
         public override void Draw(double dt)
@@ -110,6 +132,10 @@ namespace GameSrc
             {
                 return;
             }
+            for (int i = 0; i < Models.Length; i++)
+            {
+                Models[i].Draw(dt);
+            }
             Room.SetWorldMatrix(WorldMatrix);
             Room.Draw(dt);
         }
@@ -117,6 +143,10 @@ namespace GameSrc
         public override void Tick(double dt)
         {
             base.Tick(dt);
+            for (int i = 0; i < Models.Length; i++)
+            {
+                Models[i].Tick(dt);
+            }
         }
 
         public override void Dispose()
@@ -124,6 +154,10 @@ namespace GameSrc
             for (int i = 0; i < Sources.Length; i++)
             {
                 Sources[i].Dispose();
+            }
+            for (int i = 0; i < Models.Length; i++)
+            {
+                Models[i].Dispose();
             }
             base.Dispose();
         }

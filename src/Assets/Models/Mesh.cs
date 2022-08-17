@@ -72,12 +72,19 @@ namespace Engine.Assets.Models
         public List<uint> Indices { get; set; } = new List<uint>();
         public IReadOnlyList<IVertex> VertexList => _vertexList;
         private List<IVertex> _vertexList = new List<IVertex>();
+        [Obsolete]
         public List<Vector3> Vertices { get; set; } = new List<Vector3>();
+        [Obsolete]
         public List<Vector3> Normals { get; set; } = new List<Vector3>();
+        [Obsolete]
         public List<Vector2> UV0s { get; set; } = new List<Vector2>();
+        [Obsolete]
         public List<Vector2> UV1s { get; set; } = new List<Vector2>();
+        [Obsolete]
         public List<Vector4> BoneWeights { get; set; } = new List<Vector4>();
+        [Obsolete]
         public List<UInt4> BoneIndices { get; set; } = new List<UInt4>();
+        [Obsolete]
         public List<RgbaFloat> Colors { get; set; } = new List<RgbaFloat>();
         public bool IsBigMesh { get; private set; }
 
@@ -230,6 +237,7 @@ namespace Engine.Assets.Models
             _indexCount = (uint)Indices.Count;
         }
 
+        [Obsolete]
         public void UploadDataOld()
         {
             VertexPositionColorUV[] data = new VertexPositionColorUV[Vertices.Count];

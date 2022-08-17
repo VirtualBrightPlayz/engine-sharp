@@ -9,6 +9,7 @@ namespace Engine.Game.Entities
     {
         Position = 1,
         Rotation = 2,
+        Scale = 4,
     }
 
     public class Entity : IDisposable
@@ -32,7 +33,6 @@ namespace Engine.Game.Entities
 
         public virtual void MarkTransformDirty(TransformDirtyFlags flags)
         {
-
         }
 
         public virtual void PreDraw(double dt)

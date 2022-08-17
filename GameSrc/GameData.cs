@@ -12,6 +12,8 @@ namespace GameSrc
         public string GameDir = "SCPCB";
         public string DataDir => Path.Combine(GameDir, "Data");
         public string GFXDir => Path.Combine(GameDir, "GFX");
+        public string MapDir => Path.Combine(GFXDir, "map");
+        public string PropsDir => Path.Combine(MapDir, "Props");
         public string SFXDir => Path.Combine(GameDir, "SFX");
         public string RoomsFile => Path.Combine(DataDir, "rooms.ini");
         public string MaterialsFile => Path.Combine(DataDir, "materials.ini");
