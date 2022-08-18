@@ -12,6 +12,30 @@ namespace GameBSrc
 {
     public class FloorEntity : StaticModelEntity
     {
+        public enum FloorAction
+        {
+            Unknown = 0,
+            Steps = 1,
+            Lights = 2,
+            Flash = 3,
+            Walk = 4,
+            Run = 5,
+            Kalle = 6,
+            Breath = 7,
+            Proceed = 8,
+            Trap = 9,
+            Act_173 = 11,
+            Cell = 12,
+            Lock = 13,
+            Radio2 = 15,
+            Radio3 = 16,
+            Radio4 = 17,
+            Trick1 = 18,
+            Trick2 = 19,
+            Roar = 20,
+            Darkness = 21,
+        }
+
         public const string CubePath = "Shaders/cube.gltf";
         public string DiffusePath => Path.Combine(BGame.Instance.Data.GFXDir, "sign.jpg");
         public const string MarkerName = "FloorMarker";
@@ -26,6 +50,7 @@ namespace GameBSrc
         public readonly int FloorNumber;
         public uint TexSize = 512;
         public bool hasRendered = false;
+        public FloorAction Action;
 
         public FloorEntity(int number, string path, Material material) : base($"Floor_{number}", path, material)
         {

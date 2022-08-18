@@ -34,12 +34,14 @@ namespace Engine
         public static ImGuiRenderer GameImGui { get; private set; }
         public static Renderer MainRenderer { get; private set; }
         public static GraphicsShader MainMeshShader { get; private set; }
-        public static double Time { get; private set; }
+        public static double FrameTime { get; private set; }
+        public static double TickTime { get; private set; }
         public static RenderDoc RenderDocInstance { get; set; }
         public static GraphicsBackend? NextFrameBackend { get; set; }
         public static bool ReCreateAllNextFrame { get; set; } = false;
         public static bool IsClosing { get; set; } = false;
         public static double FPS { get; private set; }
+        public static double TPS { get; private set; }
         public static bool IsFocused { get; private set; }
 
         public static int Main(string[] args)
@@ -136,8 +138,8 @@ namespace Engine
                     options.FramesPerSecond = Monitor.GetMainMonitor(null).VideoMode.RefreshRate ?? 60;
                     if (GameAudioContext == null)
                     {
-                        GameAudioContext = ALContext.GetApi(false);
-                        GameAudio = AL.GetApi(false);
+                        GameAudioContext = ALContext.GetApi(true);
+                        GameAudio = AL.GetApi(true);
                         GameAudioDevice = GameAudioContext.OpenDevice("");
                         if (GameAudioDevice == null)
                             throw new Exception("GameAudioDevice == null");
@@ -217,26 +219,12 @@ namespace Engine
             }
         }
 
-        private static void Frame(double delta)
+        public static void DrawDebugWindow()
         {
-            Time += delta;
-            if ((long)(Time - delta) != (long)(Time))
-            {
-                FPS = (1f / delta);
-            }
-            // GameInputSnapshotHandler.PreUpdate();
-            Renderer.Current = MainRenderer;
-            ResourceManager.Update();
-            GameImGui.Update((float)delta, GameInputSnapshotHandler);
-            MainRenderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)MainRenderer.InternalRenderTexture.Width / MainRenderer.InternalRenderTexture.Height, 0.1f, 1000f);
-            Game.PreDraw(MainRenderer, delta);
-            MainRenderer.Begin();
-            MainRenderer.Clear();
-            Game.Draw(MainRenderer, delta);
             if (ImGui.Begin("Debug"))
             {
                 ImGui.Text($"FPS: {FPS}");
-                ImGui.Text($"Time Delta: {delta}");
+                ImGui.Text($"TPS: {TPS}");
                 ImGui.Text($"Current Rendering API: {APIBackend.ToString()}");
                 if (ImGui.Button("Exit"))
                 {
@@ -290,6 +278,24 @@ namespace Engine
                 }
                 ImGui.End();
             }
+        }
+
+        private static void Frame(double delta)
+        {
+            FrameTime += delta;
+            if ((long)(FrameTime - delta) != (long)(FrameTime))
+            {
+                FPS = (1f / delta);
+            }
+            // GameInputSnapshotHandler.PreUpdate();
+            Renderer.Current = MainRenderer;
+            ResourceManager.Update();
+            GameImGui.Update((float)delta, GameInputSnapshotHandler);
+            MainRenderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)MainRenderer.InternalRenderTexture.Width / MainRenderer.InternalRenderTexture.Height, 0.1f, 1000f);
+            Game.PreDraw(MainRenderer, delta);
+            MainRenderer.Begin();
+            MainRenderer.Clear();
+            Game.Draw(MainRenderer, delta);
             GameImGui.Render(GameGraphics, MainRenderer.CommandList);
             MainRenderer.End();
             MainRenderer.Submit();
@@ -297,9 +303,14 @@ namespace Engine
             GameInputSnapshotHandler.Update();
         }
 
-        private static void Update(double dt)
+        private static void Update(double delta)
         {
-            Game.Tick(dt);
+            TickTime += delta;
+            if ((long)(TickTime - delta) != (long)(TickTime))
+            {
+                TPS = (1f / delta);
+            }
+            Game.Tick(delta);
         }
     }
 }

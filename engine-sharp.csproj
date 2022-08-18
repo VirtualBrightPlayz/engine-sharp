@@ -24,16 +24,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Shaders/MainMesh.frag">
+    <None Update="Shaders/MainMesh.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders/MainMesh.vert">
+    <None Update="Shaders/ForwardLights.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Shaders/MainMeshBones.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Shaders/MainMeshBones.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Shaders/cube.gltf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Shaders/white.bmp">
@@ -45,10 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Shaders/RMesh.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Shaders/RMesh.vert">
+    <None Update="Shaders/RMesh.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

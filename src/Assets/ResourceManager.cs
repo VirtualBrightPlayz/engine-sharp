@@ -145,7 +145,7 @@ namespace Engine.Assets
             Model buf = CheckAndReturn<Model>(path);
             if (buf != null)
                 return buf;
-            buf = new Model(path, path, material);
+            buf = new Model(path, path, material, true, false);
             Add(buf);
             return buf;
         }
@@ -155,7 +155,17 @@ namespace Engine.Assets
             Model buf = CheckAndReturn<Model>(path);
             if (buf != null)
                 return buf;
-            buf = new Model(path, path, material);
+            buf = new Model(path, path, material, true, false);
+            Add(buf);
+            return buf;
+        }
+
+        public static Model LoadModel(string name, Material material, string path, bool shouldLoadMats, bool animated)
+        {
+            Model buf = CheckAndReturn<Model>(path);
+            if (buf != null)
+                return buf;
+            buf = new Model(path, path, material, shouldLoadMats, animated);
             Add(buf);
             return buf;
         }

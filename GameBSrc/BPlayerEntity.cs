@@ -24,6 +24,7 @@ namespace GameBSrc
         public InputHandler InputHandler => Program.GameInputSnapshotHandler;
         public Capsule shape;
         public float speed = 2f;
+        public Vector3 viewPos = Vector3.Zero;
         public Vector3 viewDirection = -Vector3.UnitZ;
         public Vector3 direction = -Vector3.UnitZ;
         public Vector2 lookAxis = Vector2.Zero;
@@ -50,7 +51,7 @@ namespace GameBSrc
             footstepSource = new AudioSource("PlayerFootsteps");
             footstepSource.MinGain = 1f;
             footstepSource.MaxGain = 1f;
-            shape = new Capsule(0.25f, 1f);
+            shape = new Capsule(0.25f, 1.25f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             var inertia = shape.ComputeInertia(1f);
             bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Discrete), shape.Radius * 0.02f));
@@ -60,7 +61,7 @@ namespace GameBSrc
         {
             base.PreDraw(renderer, dt);
             UpdateLook();
-            Vector3 viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob;
+            viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * 5f * (MathF.PI / 180f)), out Vector3 up);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             footstepSource.Position = viewPos;
@@ -71,17 +72,24 @@ namespace GameBSrc
         {
             base.Draw(renderer, dt);
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
-            if (ImGui.Begin("Test"))
+            if (BGame.Instance.DebugMode && ImGui.Begin("Test"))
             {
                 ImGui.Text("Test Window");
                 ImGui.Text($"Position {Position.ToString()}");
                 ImGui.Text($"Velocity {body.Velocity.Linear.ToString()}");
+                ImGui.Text($"Current Floor: {BGame.Instance.currentFloor} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor]}");
+                ImGui.Text($"Next Floor: {BGame.Instance.currentFloor+1} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor+1]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor+1]}");
                 ImGui.InputFloat("ViewBobSpeed", ref viewBobSpeed);
                 ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
                 ImGui.InputFloat("FootstepInterval", ref footstepInterval);
                 ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
                 ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
+                ImGui.DragFloat4("FogData", ref BGame.Instance.fogData);
                 ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
+                if (ImGui.Button("Kill"))
+                {
+                    BGame.Instance.killTimer = 1;
+                }
                 ImGui.End();
             }
         }
@@ -89,7 +97,7 @@ namespace GameBSrc
         public override unsafe void Tick(double dt)
         {
             base.Tick(dt);
-            UpdateLook();
+            UpdateLookRotation();
             UpdateMovement(dt);
             Program.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
             float[] orientation = new float[6];
@@ -127,6 +135,7 @@ namespace GameBSrc
             MarkTransformDirty(TransformDirtyFlags.Rotation);
             if (InputHandler.IsMouseDown(Veldrid.MouseButton.Right) && !wasEscPressed)
             {
+                BGame.Instance.DebugMode = InputHandler.IsMouseLocked;
                 InputHandler.IsMouseLocked = !InputHandler.IsMouseLocked;
             }
             wasEscPressed = InputHandler.IsMouseDown(Veldrid.MouseButton.Right);
@@ -177,12 +186,14 @@ namespace GameBSrc
                 }
                 else
                 {
-                    velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, velocity.Y, 0f), maxVelChange);
+                    var y = velocity.Y;
+                    velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, 0f, 0f), maxVelChange);
                 }
             }
             else
             {
-                velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, velocity.Y, 0f), maxVelChange);
+                var y = velocity.Y;
+                velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, 0f, 0f), maxVelChange);
             }
             float velLen = targetVelocity.Length();
             if (prevFootstepTime + footstepInterval < footstepTime)

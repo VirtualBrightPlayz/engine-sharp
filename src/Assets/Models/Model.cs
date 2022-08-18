@@ -16,6 +16,7 @@ namespace Engine.Assets.Models
         public const string ShaderPath = "Shaders/MainMesh";
         public const uint ShaderWorldInfoSetId = 3;
         public const uint ShaderForwardSetId = 4;
+        public const uint ShaderBonesSetId = 5;
         public override bool IsValid => false;
         private Mesh[] _meshes { get; set; }
         public Mesh[] Meshes => _meshes;
@@ -23,8 +24,8 @@ namespace Engine.Assets.Models
         public uint[] CollisionTriangles { get; private set; }
         private Rendering.Material _ogMaterial;
         public List<CompoundBuffer> CompoundBuffers { get; private set; } = new List<CompoundBuffer>();
-        private Dictionary<int, List<UniformLayout>> _uniforms = new Dictionary<int, List<UniformLayout>>();
-        private Dictionary<int, UniformBuffer> bonesBuffers = new Dictionary<int, UniformBuffer>();
+        private Dictionary<int, UniformBuffer> bonesUniforms = new Dictionary<int, UniformBuffer>();
+        private Dictionary<int, CompoundBuffer> bonesBuffers = new Dictionary<int, CompoundBuffer>();
         private Scene _assimpScene;
         private Animation _animation;
         private Dictionary<string, uint> _boneIdByName = new Dictionary<string, uint>();
@@ -32,6 +33,9 @@ namespace Engine.Assets.Models
         public UniformBuffer LightUniform { get; private set; }
         public CompoundBuffer LightBuffer { get; private set; }
         private string _path;
+        private bool _shouldLoadMats;
+        private bool _shouldAnimate;
+        public double AnimationTime { get; set; }
         private Assimp.Matrix4x4 _rootNodeInverseTransform
         {
             get
@@ -54,15 +58,31 @@ namespace Engine.Assets.Models
             public Vector3 BiTangent;
         }
 
-        public Model(string name, string path, Rendering.Material material)
+        [StructLayout(LayoutKind.Sequential)]
+        public struct AnimModelVertexLayout : IVertex
+        {
+            public Vector3 Position;
+            public Vector3 Normal;
+            public Vector2 UV0;
+            public Vector2 UV1;
+            public Vector4 Color;
+            public Vector3 Tangent;
+            public Vector3 BiTangent;
+            public Vector4 BoneWeights;
+            public UInt4 BoneIndices;
+        }
+
+        public Model(string name, string path, Rendering.Material material, bool loadMaterials, bool animate)
         {
             Name = name;
             _path = path;
             _ogMaterial = material;
+            _shouldLoadMats = loadMaterials;
+            _shouldAnimate = animate;
             InternalMaterials = new List<Rendering.Material>();
             LightUniform = ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
-            AssimpLoadMeshes(path, material);
-            LightBuffer = ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", ResourceManager.LoadShader(ShaderPath), ShaderForwardSetId, LightUniform);
+            AssimpLoadMeshes(path, material, animate);
+            LightBuffer = ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial?.Shader ?? ResourceManager.LoadShader(ShaderPath), ShaderForwardSetId, LightUniform);
         }
 
         private System.Numerics.Matrix4x4[] AssimpAnimate(double time, int i)
@@ -219,7 +239,7 @@ namespace Engine.Assets.Models
             return false;
         }
 
-        private void AssimpLoadMeshes(string path, Rendering.Material defMaterial)
+        private void AssimpLoadMeshes(string path, Rendering.Material defMaterial, bool animate)
         {
             int vertexCount = 0;
             List<Vector3> colPos = new List<Vector3>();
@@ -229,9 +249,10 @@ namespace Engine.Assets.Models
             _meshes = new Mesh[scene.MeshCount];
             for (int i = 0; i < _meshes.Length; i++)
             {
-                InternalMaterials.Add(defMaterial ?? ResourceManager.CreateMaterial($"{Name}_{i}", ResourceManager.LoadShader(ShaderPath)));
+                InternalMaterials.Add(defMaterial ?? ResourceManager.CreateMaterial($"{Name}_{i}", _ogMaterial?.Shader ?? ResourceManager.LoadShader(ShaderPath)));
                 Rendering.Material material = InternalMaterials[i];
                 List<ModelVertexLayout> vertices = new List<ModelVertexLayout>();
+                List<AnimModelVertexLayout> animVertices = new List<AnimModelVertexLayout>();
                 Assimp.Mesh amesh = scene.Meshes[i];
                 _meshes[i] = ResourceManager.CreateMesh($"{Name}_{i}", false, material);
                 Mesh mesh = _meshes[i];
@@ -269,10 +290,10 @@ namespace Engine.Assets.Models
                         cols[j] = Vector4.One;
                     colors = cols.ToList();
                 }
+                Vector4[] bWeights = new Vector4[amesh.VertexCount];
+                UInt4[] bInds = new UInt4[amesh.VertexCount];
                 if (amesh.BoneCount > 0)
                 {
-                    Vector4[] bWeights = new Vector4[amesh.VertexCount];
-                    UInt4[] bInds = new UInt4[amesh.VertexCount];
                     for (int j = 0; j < amesh.BoneCount; j++)
                     {
                         _boneIdByName.Add(amesh.Bones[j].Name, (uint)j);
@@ -302,11 +323,10 @@ namespace Engine.Assets.Models
                             }
                         }
                     }
-                    mesh.BoneWeights = bWeights.ToList();
-                    mesh.BoneIndices = bInds.ToList();
+                    // mesh.BoneWeights = bWeights.ToList();
+                    // mesh.BoneIndices = bInds.ToList();
                 }
-                _uniforms[i] = new List<UniformLayout>();
-                if (scene.HasMaterials)
+                if (scene.HasMaterials && _shouldLoadMats)
                 {
                     Assimp.Material mat = scene.Materials[amesh.MaterialIndex];
                     if (mat.GetMaterialTexture(Assimp.TextureType.Diffuse, 0, out TextureSlot slot))
@@ -314,7 +334,6 @@ namespace Engine.Assets.Models
                         string diffusePath = Path.Combine(Path.GetDirectoryName(path), Path.GetFileName(slot.FilePath));
                         CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(diffusePath, mesh.InternalMaterial.Shader, UniformConsts.DiffuseTextureSet, ResourceManager.LoadTexture(diffusePath), Texture2D.DefaultWhite, Texture2D.DefaultNormal);
                         CompoundBuffers.Add(buffer);
-                        _uniforms[i].Add(new UniformLayout(UniformConsts.DiffuseTextureName, ResourceManager.LoadTexture(diffusePath), false, true));
                         mesh.InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
                     }
                     else
@@ -326,7 +345,11 @@ namespace Engine.Assets.Models
                 {
                     // _compoundBuffers.Add(null);
                 }
-                bonesBuffers[i] = ResourceManager.CreateUniformBuffer($"{Name}_BonesBuffer_{i}", (uint)16 * 4 * 64);
+                if (_shouldAnimate)
+                {
+                    bonesUniforms[i] = ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}", (uint)16 * 4 * 64);
+                    bonesBuffers[i] = ResourceManager.CreateCompoundBuffer($"{Name}_BonesBuffer_{i}", mesh.InternalMaterial.Shader, ShaderBonesSetId, bonesUniforms[i]);
+                }
                 for (int j = 0; j < positions.Count; j++)
                 {
                     vertices.Add(new ModelVertexLayout()
@@ -339,8 +362,22 @@ namespace Engine.Assets.Models
                         Tangent = tangents[j],
                         BiTangent = bitangents[j],
                     });
+                    animVertices.Add(new AnimModelVertexLayout()
+                    {
+                        Position = positions[j],
+                        Normal = normals[j],
+                        UV0 = uv0s[j],
+                        Color = colors[j],
+                        Tangent = tangents[j],
+                        BiTangent = bitangents[j],
+                        BoneWeights = bWeights[j],
+                        BoneIndices = bInds[j],
+                    });
                 }
-                mesh.UploadData(vertices.ToArray());
+                if (animate)
+                    mesh.UploadData(animVertices.ToArray());
+                else
+                    mesh.UploadData(vertices.ToArray());
                 colPos.AddRange(positions);
                 colTris.AddRange(inds.Select(x => (uint)(x + vertexCount)).ToArray());
                 vertexCount += positions.Count;
@@ -368,7 +405,7 @@ namespace Engine.Assets.Models
             {
                 _meshes[i].ReCreate();
             }
-            foreach (var buf in bonesBuffers)
+            foreach (var buf in bonesUniforms)
             {
                 buf.Value.ReCreate();
             }
@@ -376,7 +413,7 @@ namespace Engine.Assets.Models
 
         public override Resource Clone(string cloneName)
         {
-            Model m = new Model(cloneName, _path, _ogMaterial != null ? ResourceManager.Clone<Rendering.Material>(cloneName + _ogMaterial.Name, _ogMaterial) : null);
+            Model m = new Model(cloneName, _path, _ogMaterial != null ? ResourceManager.Clone<Rendering.Material>(cloneName + _ogMaterial.Name, _ogMaterial) : null, _shouldLoadMats, _shouldAnimate);
             return m;
         }
 
@@ -384,8 +421,12 @@ namespace Engine.Assets.Models
         {
             for (int i = 0; i < _meshes.Length; i++)
             {
-                // System.Numerics.Matrix4x4[] buf = AssimpAnimate(Program.Time, i);
-                // bonesBuffers[i].UploadData(renderer, buf);
+                if (_shouldAnimate)
+                {
+                    System.Numerics.Matrix4x4[] buf = AssimpAnimate(AnimationTime, i);
+                    bonesUniforms[i].UploadData(renderer, buf);
+                    _meshes[i].InternalMaterial.SetUniforms(ShaderBonesSetId, bonesBuffers[i]);
+                }
                 _meshes[i].SetWorldMatrix(renderer, WorldMatrix);
                 if (CompoundBuffers.Count > 0 && CompoundBuffers.Count == _meshes.Length)
                     _meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
@@ -413,7 +454,7 @@ namespace Engine.Assets.Models
 
         public override void Dispose()
         {
-            foreach (var buf in bonesBuffers)
+            foreach (var buf in bonesUniforms)
             {
                 buf.Value.Dispose();
             }
