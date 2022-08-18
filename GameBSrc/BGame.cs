@@ -43,6 +43,7 @@ namespace GameBSrc
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "horror2.ogg")),
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "horror3.ogg")),
         };
+        public AudioClip stoneClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "stone.ogg"));
         public AudioClip fireOnClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "match.ogg"));
         public AudioClip fireOffClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "fireout.ogg"));
         public string MusicClipPath => Path.Combine(Data.SFXDir, "music.ogg");
@@ -59,7 +60,8 @@ namespace GameBSrc
         public CompoundBuffer fogBuffer;
         public Vector4 fogData;
         public const float MinFloorTime = 0.01f;
-        public EnemyEntity enemy;
+        public EnemyEntity enemy = null;
+        public Entity currentObject = null;
         public int Brightness = 40;
         public bool DebugMode = false;
 
@@ -189,10 +191,11 @@ namespace GameBSrc
         {
             string doorPath = Path.Combine(BGame.Instance.Data.GFXDir, "door.jpg");
             string cubePath = "Shaders/cube.gltf";
-            Material doorMat = ResourceManager.CreateMaterial("Door", BGame.Instance.Shader);
-            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(doorPath, doorMat.Shader, UniformConsts.DiffuseTextureSet, ResourceManager.LoadTexture(doorPath), Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+            Material doorMat = ResourceManager.CreateMaterial("Door", Shader);
+            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(doorPath, Shader, UniformConsts.DiffuseTextureSet, ResourceManager.LoadTexture(doorPath), Texture2D.DefaultWhite, Texture2D.DefaultNormal);
             doorMat.SetUniforms(UniformConsts.DiffuseTextureSet, buffer);
             var door = new ModelEntity("Door", cubePath, doorMat);
+            // door.Model.CompoundBuffers.Clear();
             door.Model.CompoundBuffers.Add(buffer);
             door.Position = new Vector3(-3.5f, -1f, 0.5f);
             door.Scale = new Vector3(0.5f, 1f, 0.5f);
@@ -242,14 +245,52 @@ namespace GameBSrc
             floorTimers[temp] = rng.Next(1, 4);
 
             temp = rng.Next(19, 22);
-            temp = 1;
             floorActions[temp] = FloorEntity.FloorAction.Lights;
             floorTimers[temp] = MinFloorTime;
 
-            // LINE 499 game.bb
+            switch (rng.Next(1, 5))
+            {
+                case 1:
+                    temp = rng.Next(24, 28);
+                    floorActions[temp] = FloorEntity.FloorAction.Trick1;
+                    floorTimers[temp] = MinFloorTime;
+                    break;
+                case 2:
+                    temp = rng.Next(24, 28);
+                    floorActions[temp] = FloorEntity.FloorAction.Trick2;
+                    floorTimers[temp] = MinFloorTime;
+                    break;
+            }
+
+            temp = rng.Next(28, 33);
+            temp = 1;
+            floorActions[temp] = FloorEntity.FloorAction.Run;
+            floorTimers[temp] = MinFloorTime;
+
+            temp = rng.Next(33, 37);
+            floorActions[temp] = FloorEntity.FloorAction.Act_173;
+            floorTimers[temp] = MinFloorTime;
+
+            temp = rng.Next(39, 60);
+            floorActions[temp] = FloorEntity.FloorAction.Run;
+            floorTimers[temp] = MinFloorTime;
+
+            temp = rng.Next(39, 60);
+            floorActions[temp] = FloorEntity.FloorAction.Roar;
+            floorTimers[temp] = MinFloorTime;
+
+            temp = rng.Next(39, 60);
+            floorActions[temp] = FloorEntity.FloorAction.Trap;
+            floorTimers[temp] = MinFloorTime;
+
+            temp = rng.Next(39, 60);
+            floorActions[temp] = FloorEntity.FloorAction.Flash;
+            floorTimers[temp] = MinFloorTime;
+
+            // LINE 532 game.bb
 
             temp = rng.Next(150, 201);
-            floorActions[temp] = FloorEntity.FloorAction.Lock;
+            floorActions[temp] = FloorEntity.FloorAction.Darkness;
             floorTimers[temp] = MinFloorTime;
 
             for (int i = 0; i < floorActions.Length; i++)
@@ -271,15 +312,40 @@ namespace GameBSrc
             }
         }
 
+        public void CreateObject(float x, float y, float z)
+        {
+            ClearObject();
+            string diffusePath = Path.Combine(Data.GFXDir, "brickwall.jpg");
+            Material material = ResourceManager.CreateMaterial(diffusePath, Shader);
+            Texture2D diffuse = ResourceManager.LoadTexture(diffusePath);
+            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(diffusePath, Shader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+            currentObject = new StaticModelEntity("CurrentObject", "Shaders/cube.gltf", material);
+            currentObject.Position = new Vector3(x, y, z);
+            currentObject.Scale = new Vector3(0.5f, 1f, 0.5f);
+            currentObject.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
+            Entities.Add(currentObject);
+        }
+
+        public void ClearObject()
+        {
+            if (currentObject != null)
+            {
+                Entities.Remove(currentObject);
+                currentObject.Dispose();
+                currentObject = null;
+            }
+        }
+
         public void CreateEnemy(float x, float y, float z, string texture)
         {
             ClearEnemy();
             string diffusePath = Path.Combine(Data.GFXDir, texture);
-            Material material = ResourceManager.CreateMaterial(diffusePath, AnimShader);
+            Material material = ResourceManager.CreateMaterial($"{diffusePath}_Anim", AnimShader);
             Texture2D diffuse = ResourceManager.LoadTexture(diffusePath);
-            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(diffusePath, AnimShader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer($"{diffusePath}_Anim", AnimShader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, Texture2D.DefaultNormal);
             enemy = new EnemyEntity("Enemy", Path.Combine(Data.GFXDir, "mental.b3d"), material);
-            enemy.Model.CompoundBuffers.Clear();
+            enemy.buffer = buffer;
+            // enemy.Model.CompoundBuffers.Clear();
             enemy.Model.CompoundBuffers.Add(buffer);
             enemy.Position = new Vector3(x, y, z);
             enemy.Scale = Vector3.One * 0.17f;
@@ -300,6 +366,11 @@ namespace GameBSrc
         public void SetAmbient(int light)
         {
             ForwardConsts.AmbientColor = new Vector4(light / 255f, light / 255f, light / 255f, 1f);
+        }
+
+        public void SetFogDist(float dist)
+        {
+            fogData.W = dist;
         }
 
         public void KillViewMatrix(Renderer renderer)
@@ -411,15 +482,69 @@ namespace GameBSrc
                                 if (floorTimers[i] > 1.6f && pastTimer <= 1.6f)
                                 {
                                     CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
-                                    enemy.speed = 0.01f;
+                                    enemy.speed = 0.03f;
+                                }
+                                if ((floorTimers[i] > 2.16f && pastTimer <= 2.16f) || (floorTimers[i] > 4.3f && pastTimer <= 4.3f) || (floorTimers[i] > 6.3f && pastTimer <= 6.3f))
+                                {
+                                    if (pastTimer <= 2.16f)
+                                        horrorSource.SetBuffer(horrorClips[0]);
+                                    horrorSource.Play();
+                                    SetFogDist(20f);
+                                    SetAmbient(Brightness);
+                                    enemy.speed = 0f;
+                                }
+                                if ((floorTimers[i] > 2.83f && pastTimer <= 2.83f) || (floorTimers[i] > 5f && pastTimer <= 5f))
+                                {
+                                    enemy.speed = 0.03f;
+                                    SetFogDist(2.5f);
+                                    SetAmbient(15);
+                                }
+                                if ((floorTimers[i] > 7.5f && pastTimer <= 7.5f))
+                                {
+                                    SetFogDist(2.5f);
+                                    SetAmbient(Brightness);
+                                    ClearEnemy();
+                                    floorTimers[i] = 0f;
                                 }
 
                                 if (floorTimers[i] > 1.6f)
                                 {
+                                    enemy.startAnimTime = 0d;
+                                    enemy.endAnimTime = 14d;
+                                    enemy.animSpeed = 0d;
+                                    if (Vector3.Distance(plrPos, enemy.Position) < 0.8f)
+                                    {
+                                        killTimer = Math.Max(killTimer, 1);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                        case FloorEntity.FloorAction.Trap:
+                        {
+                            if (floorTimers[i] > MinFloorTime * 2f)
+                            {
+                                float pastTimer = floorTimers[i];
+                                floorTimers[i] += delta;
+
+                                if ((floorTimers[i] > 8.3f && pastTimer <= 8.3f))
+                                {
+                                    ClearObject();
+                                    miscSource.SetBuffer(stoneClip);
+                                    miscSource.Play();
+                                }
+                                if ((floorTimers[i] > 16.6f && pastTimer <= 16.6f))
+                                {
+                                    ClearEnemy();
+                                    floorTimers[i] = 0f;
+                                }
+
+                                if (enemy != null)
+                                {
                                     enemy.startAnimTime = 1d;
                                     enemy.endAnimTime = 14d;
                                     enemy.animSpeed = 0.15d;
-                                    if (Vector3.Distance(player.Position, enemy.Position) < 0.8f)
+                                    if (Vector3.Distance(plrPos, enemy.Position) < 0.8f)
                                     {
                                         killTimer = Math.Max(killTimer, 1);
                                     }
@@ -463,6 +588,45 @@ namespace GameBSrc
                                 miscSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 2f;
                                 SetAmbient(25);
+                            }
+                        }
+                    }
+                    break;
+                    case FloorEntity.FloorAction.Run:
+                    {
+                        if (floorTimers[currentFloor] <= MinFloorTime)
+                        {
+                            if (Vector3.Distance(player.Position, floorPos) < 3f)
+                            {
+                                horrorSource.SetBuffer(horrorClips[1]);
+                                horrorSource.Play();
+                                miscSource.SetBuffer(fireOffClip);
+                                miscSource.Play();
+                                floorTimers[currentFloor] = MinFloorTime * 2f;
+                                SetAmbient(25);
+                            }
+                        }
+                    }
+                    break;
+                    case FloorEntity.FloorAction.Trap:
+                    {
+                        if (floorTimers[currentFloor] <= MinFloorTime)
+                        {
+                            CreateObject(currentFloor % 2 == 0 ? endX : endX, floorPos.Y, floorPos.Z);
+                            floorTimers[currentFloor] = MinFloorTime * 2f;
+                        }
+                        else if (floorTimers[currentFloor] <= MinFloorTime * 2f)
+                        {
+                            if (Vector3.Distance(player.Position, floorPos) < 1f)
+                            {
+                                CreateEnemy(startX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                enemy.speed = 0.01f;
+                                enemy.startAnimTime = 0d;
+                                enemy.endAnimTime = 1d;
+                                enemy.animSpeed = 0d;
+                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.Play();
+                                floorTimers[currentFloor] = MinFloorTime * 3f;
                             }
                         }
                     }

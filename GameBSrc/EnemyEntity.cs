@@ -15,6 +15,7 @@ namespace GameBSrc
         public double startAnimTime;
         public double endAnimTime;
         public double animSpeed = 1d;
+        public CompoundBuffer buffer;
 
         public EnemyEntity(string name, string path, Material material) : base(name)
         {

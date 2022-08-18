@@ -35,9 +35,21 @@ namespace Engine.Game.Entities
             {
                 triBuf[i] = tris[i];
             }
-            shape = new BepuPhysics.Collidables.Mesh(triBuf, Vector3.One, Game.BufferPool);
+            shape = new BepuPhysics.Collidables.Mesh(triBuf, Scale, Game.BufferPool);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
+        }
+
+        public override void MarkTransformDirty(TransformDirtyFlags flags)
+        {
+            if (flags.HasFlag(TransformDirtyFlags.Scale) && shapeIndex.HasValue && staticHandle.HasValue)
+            {
+                shape.Scale = Scale;
+                Game.Simulation.Shapes.Remove(shapeIndex.Value);
+                shapeIndex = Game.Simulation.Shapes.Add(shape);
+                Game.Simulation.Statics[staticHandle.Value].SetShape(shapeIndex.Value);
+            }
+            base.MarkTransformDirty(flags);
         }
 
         public override void PreDraw(Renderer renderer, double dt)

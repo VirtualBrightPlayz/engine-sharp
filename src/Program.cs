@@ -81,7 +81,15 @@ namespace Engine
                     if (NextFrameBackend.HasValue)
                         ChangeBackend(NextFrameBackend.Value, true, true);
                     else if (ReCreateAllNextFrame)
+                    {
+                        if (MainRenderer != null)
+                        {
+                            if (MainRenderer.InternalRenderTexture != null)
+                                MainRenderer.InternalRenderTexture.Dispose();
+                            MainRenderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", GameGraphics.MainSwapchain));
+                        }
                         ResourceManager.ReCreateAll();
+                    }
                     ReCreateAllNextFrame = false;
                 }
                 GameWindow.DoEvents();
@@ -184,6 +192,12 @@ namespace Engine
             GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, GameWindow.Size.X, GameWindow.Size.Y);
 
             MainMeshShader = ResourceManager.LoadShader("Shaders/MainMesh");
+            if (MainRenderer != null)
+            {
+                if (MainRenderer.InternalRenderTexture != null)
+                    MainRenderer.InternalRenderTexture.Dispose();
+                MainRenderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", GameGraphics.MainSwapchain));
+            }
             ResourceManager.ReCreateAll();
         }
 

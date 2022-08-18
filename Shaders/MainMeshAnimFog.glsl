@@ -170,7 +170,7 @@ void main()
     fog = fog / FogInfo.w;
     if (fog > 1)
         fog = 1;
-    FragColor = diffuseColor * vec4(finalLighting.rgb, 1) * fsin_Color;
+    FragColor = diffuseColor * vec4(finalLighting.rgb, 1) * fsin_Color * lightmapColor;
 
     FragColor.rgb = FragColor.rgb + (FogInfo.rgb - FragColor.rgb) * fog;
     FragColor.a = lighting.a;

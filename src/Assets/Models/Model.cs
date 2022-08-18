@@ -432,6 +432,7 @@ namespace Engine.Assets.Models
                     _meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
                 _meshes[i].InternalMaterial.SetUniforms(ShaderForwardSetId, LightBuffer);
                 renderer.SetupStandardWorldInfoUniforms(_meshes[i].InternalMaterial, ShaderWorldInfoSetId);
+                renderer.SetupStandardMatrixUniforms(_meshes[i].InternalMaterial);
                 _meshes[i].PreDraw(renderer);
 
                 ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
