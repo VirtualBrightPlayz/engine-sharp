@@ -29,6 +29,7 @@ namespace GameBSrc
         public AudioSource Radio;
         public AudioSource miscSource;
         public AudioSource horrorSource;
+        public AudioSource soundEmitter;
         public AudioClip[] radioClips => new AudioClip[]
         {
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "radio1.ogg")),
@@ -46,6 +47,7 @@ namespace GameBSrc
         public AudioClip stoneClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "stone.ogg"));
         public AudioClip fireOnClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "match.ogg"));
         public AudioClip fireOffClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "fireout.ogg"));
+        public AudioClip loudStepClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "loudstep.ogg"));
         public string MusicClipPath => Path.Combine(Data.SFXDir, "music.ogg");
         public List<StaticModelEntity> floors = new List<StaticModelEntity>();
         public GraphicsShader Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
@@ -117,6 +119,16 @@ namespace GameBSrc
             horrorSource.MinGain = 1f;
             horrorSource.MaxGain = 1f;
             horrorSource.Stop();
+
+            soundEmitter = new AudioSource("SoundEmitter");
+            soundEmitter.SetBuffer(loudStepClip);
+            soundEmitter.Looping = false;
+            soundEmitter.MaxDistance = float.PositiveInfinity;
+            soundEmitter.RolloffFactor = 0f;
+            soundEmitter.ReferenceDistance = 0f;
+            soundEmitter.MinGain = 1f;
+            soundEmitter.MaxGain = 1f;
+            soundEmitter.Stop();
 
             SpawnFloors(201);
             SpawnPlayer();
@@ -242,7 +254,7 @@ namespace GameBSrc
 
             temp = rng.Next(9, 19);
             floorActions[temp] = FloorEntity.FloorAction.Flash;
-            floorTimers[temp] = rng.Next(1, 4);
+            floorTimers[temp] = MinFloorTime * rng.Next(1, 4);
 
             temp = rng.Next(19, 22);
             floorActions[temp] = FloorEntity.FloorAction.Lights;
@@ -287,6 +299,95 @@ namespace GameBSrc
             floorTimers[temp] = MinFloorTime;
 
             // LINE 532 game.bb
+            FloorEntity.FloorAction randAct = FloorEntity.FloorAction.Unknown;
+            for (int i = 0; i < 8; i++)
+            {
+                switch (rng.Next(1, 11))
+                {
+                    case 1:
+                    case 9:
+                        randAct = FloorEntity.FloorAction.Cell;
+                        break;
+                    case 2:
+                        randAct = FloorEntity.FloorAction.Flash;
+                        break;
+                    case 3:
+                        randAct = FloorEntity.FloorAction.Trick1;
+                        break;
+                    case 4:
+                        randAct = FloorEntity.FloorAction.Trick2;
+                        break;
+                    case 5:
+                        randAct = FloorEntity.FloorAction.Breath;
+                        break;
+                    case 6:
+                        randAct = FloorEntity.FloorAction.Steps;
+                        break;
+                    case 7:
+                        randAct = FloorEntity.FloorAction.Trap;
+                        break;
+                    case 8:
+                        randAct = FloorEntity.FloorAction.Roar;
+                        break;
+                }
+
+                bool temper = false;
+                while (!temper)
+                {
+                    temp = rng.Next(24, 69);
+                    if (floorActions[temp] == FloorEntity.FloorAction.Unknown)
+                    {
+                        floorActions[temp] = randAct;
+                        floorTimers[temp] = MinFloorTime;
+                        temper = true;
+                    }
+                }
+            }
+
+            randAct = FloorEntity.FloorAction.Unknown;
+            for (int i = 0; i < 60; i++)
+            {
+                switch (rng.Next(1, 11))
+                {
+                    case 1:
+                    case 9:
+                        randAct = FloorEntity.FloorAction.Cell;
+                        break;
+                    case 2:
+                        randAct = FloorEntity.FloorAction.Lights;
+                        break;
+                    case 3:
+                        randAct = FloorEntity.FloorAction.Trick1;
+                        break;
+                    case 4:
+                        randAct = FloorEntity.FloorAction.Trick2;
+                        break;
+                    case 5:
+                        randAct = FloorEntity.FloorAction.Breath;
+                        break;
+                    case 6:
+                        randAct = FloorEntity.FloorAction.Steps;
+                        break;
+                    case 7:
+                        randAct = FloorEntity.FloorAction.Trap;
+                        break;
+                    case 8:
+                        randAct = FloorEntity.FloorAction.Roar;
+                        break;
+                }
+
+                bool temper = false;
+                while (!temper)
+                {
+                    temp = rng.Next(74, 200);
+                    if (floorActions[temp] == FloorEntity.FloorAction.Unknown)
+                    {
+                        floorActions[temp] = randAct;
+                        floorTimers[temp] = MinFloorTime;
+                        temper = true;
+                    }
+                }
+            }
 
             temp = rng.Next(150, 201);
             floorActions[temp] = FloorEntity.FloorAction.Darkness;
@@ -657,6 +758,104 @@ namespace GameBSrc
                         Radio.Play();
                         floorTimers[currentFloor] = 0f;
                         break;
+                    case FloorEntity.FloorAction.Flash:
+                    {
+                        if (floorTimers[currentFloor] <= MinFloorTime)
+                        {
+                            if (Vector3.Distance(player.Position, new Vector3(endX, floorPos.Y, floorPos.Z)) < 1.5f)
+                            {
+                                CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                enemy.speed = 0f;
+                                enemy.startAnimTime = 0d;
+                                enemy.endAnimTime = 1d;
+                                enemy.animSpeed = 0d;
+                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                floorTimers[currentFloor] = MinFloorTime * 5f;
+                            }
+                        }
+                        else if (floorTimers[currentFloor] <= MinFloorTime * 2)
+                        {
+                            if (Vector3.Distance(player.Position, new Vector3(floorPos.X, floorPos.Y, floorPos.Z)) < 1.5f)
+                            {
+                                CreateEnemy(floorPos.X, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                enemy.speed = 0f;
+                                enemy.startAnimTime = 0d;
+                                enemy.endAnimTime = 1d;
+                                enemy.animSpeed = 0d;
+                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                floorTimers[currentFloor] = MinFloorTime * 5f;
+                            }
+                        }
+                        else if (floorTimers[currentFloor] <= MinFloorTime * 3)
+                        {
+                            if (Vector3.Distance(player.Position, new Vector3(startX, floorPos.Y, floorPos.Z)) < 1.5f)
+                            {
+                                CreateEnemy(startX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                enemy.speed = 0f;
+                                enemy.startAnimTime = 0d;
+                                enemy.endAnimTime = 1d;
+                                enemy.animSpeed = 0d;
+                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                floorTimers[currentFloor] = MinFloorTime * 5f;
+                            }
+                        }
+                        else
+                        {
+                            floorTimers[currentFloor] += delta;
+                            if (floorTimers[currentFloor] > 0.5f)
+                            {
+                                ClearEnemy();
+                                floorTimers[currentFloor] = 0f;
+                            }
+                        }
+                    }
+                    break;
+                    case FloorEntity.FloorAction.Steps:
+                    {
+                        if (floorTimers[currentFloor] <= MinFloorTime)
+                        {
+                            floorTimers[currentFloor] = MinFloorTime * 2f;
+                            soundEmitter.SetBuffer(loudStepClip);
+                        }
+                        else if (floorTimers[currentFloor] < 50f)
+                        {
+                            if (Vector3.Distance(player.Position, new Vector3(endX, floorPos.Y, floorPos.Z)) < 6f)
+                            {
+                                soundEmitter.Position = new Vector3(floorPos.X + (floorPos.X - endX)* 1.1f, floorPos.Y, floorPos.Z);
+                                float lastFrameTimer = floorTimers[currentFloor];
+                                floorTimers[currentFloor] += delta;
+                                if (floorTimers[currentFloor] % 2.5f < Random.Shared.Next(1, 51) / 60f)
+                                {
+                                    soundEmitter.Play();
+                                    floorTimers[currentFloor] = 0.85f;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    case FloorEntity.FloorAction.Breath:
+                    {
+                        if (floorTimers[currentFloor] <= MinFloorTime)
+                        {
+                            floorTimers[currentFloor] = MinFloorTime * 2f;
+                            soundEmitter.SetBuffer(loudStepClip);
+                        }
+                        else if (floorTimers[currentFloor] < 50f)
+                        {
+                            if (Vector3.Distance(player.Position, new Vector3(endX, floorPos.Y, floorPos.Z)) < 7f)
+                            {
+                                soundEmitter.Position = new Vector3(floorPos.X + (floorPos.X - endX)* 1.1f, floorPos.Y, floorPos.Z);
+                                float lastFrameTimer = floorTimers[currentFloor];
+                                floorTimers[currentFloor] += delta;
+                                if (floorTimers[currentFloor] % 10f < 0.16f)
+                                {
+                                    soundEmitter.Play();
+                                    floorTimers[currentFloor] = 0.183f;
+                                }
+                            }
+                        }
+                    }
+                    break;
                 }
             }
 
