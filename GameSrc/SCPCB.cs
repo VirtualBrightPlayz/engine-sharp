@@ -5,6 +5,7 @@ using BepuPhysics;
 using BepuUtilities;
 using BepuUtilities.Memory;
 using Engine;
+using Engine.Assets.Rendering;
 using Engine.Game;
 using Engine.Game.Entities;
 using ImGuiNET;
@@ -56,10 +57,10 @@ namespace GameSrc
             Entities.Add(player);
         }
 
-        public override void Draw(double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
             UIExt.BeginDraw();
-            base.Draw(dt);
+            base.Draw(renderer, dt);
         }
 
         public override void Tick(double dt)

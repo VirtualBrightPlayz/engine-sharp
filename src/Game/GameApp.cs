@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BepuPhysics;
 using BepuUtilities;
 using BepuUtilities.Memory;
+using Engine.Assets.Rendering;
 using Engine.Game.Entities;
 
 namespace Engine.Game
@@ -28,19 +29,19 @@ namespace Engine.Game
             dispatcher = new ThreadDispatcher(targetThreadCount);
         }
 
-        public virtual void PreDraw(double dt)
+        public virtual void PreDraw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                ent.PreDraw(dt);
+                ent.PreDraw(renderer, dt);
             }
         }
 
-        public virtual void Draw(double dt)
+        public virtual void Draw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                ent.Draw(dt);
+                ent.Draw(renderer, dt);
             }
         }
 

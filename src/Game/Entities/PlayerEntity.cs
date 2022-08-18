@@ -35,16 +35,16 @@ namespace Engine.Game.Entities
             bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Passive), /*shape.Radius **/ 0.02f));
         }
 
-        public override void PreDraw(double dt)
+        public override void PreDraw(Renderer renderer, double dt)
         {
-            base.PreDraw(dt);
+            base.PreDraw(renderer, dt);
             UpdateLook();
-            Renderer.Current.ViewMatrix = Matrix4x4.CreateLookAt(Position + Vector3.UnitY * shape.HalfLength, Position + Vector3.UnitY * shape.HalfLength + viewDirection, LocalUp);
+            renderer.ViewMatrix = Matrix4x4.CreateLookAt(Position + Vector3.UnitY * shape.HalfLength, Position + Vector3.UnitY * shape.HalfLength + viewDirection, LocalUp);
         }
 
-        public override void Draw(double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
-            base.Draw(dt);
+            base.Draw(renderer, dt);
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
             if (ImGui.Begin("Test"))
             {

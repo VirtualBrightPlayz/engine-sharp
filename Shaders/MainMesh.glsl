@@ -43,6 +43,8 @@ vec3 bumpNormal;
 // includes
 
 #include "ForwardLights.glsl"
+#draw FwdBase None
+#draw FwdAdd None
 
 layout(set = 0, binding = 0) uniform ViewMatrix
 {
@@ -136,8 +138,8 @@ void main()
 
     vec3 viewDir = normalize(fsin_TanViewPos - fsin_TanFragPos);
     vec2 uvOffset0 = ParallaxMapping(fsin_UV0, viewDir, 0.05);
-    const float gamma = 2.2;
-    // const float gamma = 1.0;
+    // const float gamma = 2.2;
+    const float gamma = 1.0;
     vec4 diffuseColor = pow(texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), fsin_UV0), vec4(gamma));
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
     vec4 lighting = ApplyLighting();

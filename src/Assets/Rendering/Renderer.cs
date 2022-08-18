@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Engine.Assets.Models;
 using Engine.Assets.Textures;
 using Veldrid;
 
@@ -23,6 +25,23 @@ namespace Engine.Assets.Rendering
         public Dictionary<GraphicsShader, CompoundBuffer> MatrixBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
         public Dictionary<GraphicsShader, CompoundBuffer> WorldInfoBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
         public RenderTexture2D InternalRenderTexture { get; private set; }
+        private Mesh BlitMesh;
+        private GraphicsShader BlitShader => ResourceManager.LoadShader("Shaders/Blit");
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct BlitVertex : IVertex
+        {
+            public Vector3 Position;
+            public Vector2 UV0;
+            public Vector4 Color;
+
+            public BlitVertex(Vector3 pos, Vector2 uv, Vector4 col)
+            {
+                Position = pos;
+                UV0 = uv;
+                Color = col;
+            }
+        }
 
         public Renderer(string name)
         {
@@ -56,6 +75,21 @@ namespace Engine.Assets.Rendering
             }
             _commandList = ResourceManager.GraphicsFactory.CreateCommandList();
             _commandList.Name = Name;
+            BlitMesh = ResourceManager.CreateMesh("BlitMesh", false, ResourceManager.CreateMaterial("BlitMaterial", BlitShader));
+            BlitVertex[] blitVertices = new BlitVertex[]
+            {
+                new BlitVertex(new Vector3(-1f, -1f, 1f), new Vector2(0f, 0f), Vector4.One),
+                new BlitVertex(new Vector3(-1f, 1f, 1f), new Vector2(0f, 1f), Vector4.One),
+                new BlitVertex(new Vector3(1f, -1f, 1f), new Vector2(1f, 0f), Vector4.One),
+                new BlitVertex(new Vector3(1f, 1f, 1f), new Vector2(1f, 1f), Vector4.One),
+            };
+            uint[] inds = new uint[]
+            {
+                0, 1, 2,
+                3, 2, 1,
+            };
+            BlitMesh.Indices.AddRange(inds);
+            BlitMesh.UploadData(blitVertices);
         }
 
         public override Resource Clone(string cloneName)
@@ -66,8 +100,8 @@ namespace Engine.Assets.Rendering
         public void Begin()
         {
             _commandList.Begin();
-            // _commandList.SetFramebuffer(InternalRenderTexture.InternalFramebuffer ?? InternalRenderTexture.InternalSwapchain.Framebuffer);
-            _commandList.SetFramebuffer(Program.GameGraphics.SwapchainFramebuffer);
+            _commandList.SetFramebuffer(InternalRenderTexture.InternalFramebuffer ?? InternalRenderTexture.InternalSwapchain.Framebuffer);
+            // _commandList.SetFramebuffer(Program.GameGraphics.SwapchainFramebuffer);
             ViewMatrixResource.UploadData(this, ViewMatrix);
             ProjMatrixResource.UploadData(this, ProjectionMatrix);
             WorldInfoResource.UploadData(this, ViewPosition);
@@ -100,7 +134,8 @@ namespace Engine.Assets.Rendering
         public void Clear()
         {
             _commandList.ClearColorTarget(0, RgbaFloat.Black);
-            _commandList.ClearDepthStencil(1f, 0);
+            if (InternalRenderTexture.HasDepth())
+                _commandList.ClearDepthStencil(1f, 0);
         }
 
         public void End()
@@ -111,6 +146,13 @@ namespace Engine.Assets.Rendering
         public void Submit()
         {
             Program.GameGraphics.SubmitCommands(_commandList);
+        }
+
+        public void Blit(Texture2D tex)
+        {
+            // BlitMesh.InternalMaterial.ClearUniforms(0);
+            BlitMesh.InternalMaterial.SetUniforms(0, new UniformLayout("Diffuse", tex, false, true));
+            BlitMesh.Draw(this, "main");
         }
 
         public override void Dispose()

@@ -3,6 +3,7 @@ using System.Numerics;
 using Engine;
 using Engine.Assets;
 using Engine.Assets.Audio;
+using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using Engine.Game.Entities;
 using Engine.VeldridSilk;
@@ -66,10 +67,10 @@ namespace GameSrc
             State = state;
         }
 
-        public override void Draw(double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
             // ImGui.SliderFloat2("Size", ref MenuScale, 0.1f, 2f);
-            base.Draw(dt);
+            base.Draw(renderer, dt);
             switch (State)
             {
                 case MenuState.PreLoad:

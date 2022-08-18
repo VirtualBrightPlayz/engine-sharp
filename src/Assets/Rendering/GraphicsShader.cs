@@ -49,6 +49,13 @@ namespace Engine.Assets.Rendering
             Always = 7
         }
 
+        public enum ShaderCullMode
+        {
+            Back = 0,
+            Front = 1,
+            None = 2,
+        }
+
         public class ShaderPass
         {
             public string PassName;
@@ -62,6 +69,7 @@ namespace Engine.Assets.Rendering
             public ShaderBlendFactor SrcAlpha = ShaderBlendFactor.One;
             public ShaderBlendFactor DestAlpha = ShaderBlendFactor.Zero;
             public ShaderBlendFunction AlphaFunc = ShaderBlendFunction.Add;
+            public ShaderCullMode CullMode = ShaderCullMode.Back;
 
             public BlendStateDescription GetBlendStateDescription()
             {
@@ -139,6 +147,11 @@ namespace Engine.Assets.Rendering
             return res;
         }
 
+        public bool HasSet(uint index)
+        {
+            return _reflResourceLayouts.Count > index;
+        }
+
         private void ProccessShaderCode(string file, string shaderCode, string curpass, ref Dictionary<string, string> defines, ref int fragInputs, ref List<string> passes, out string[] vertexCode, out string[] fragmentCode)
         {
             const string pragmaVert = "#pragma vertex ";
@@ -153,6 +166,7 @@ namespace Engine.Assets.Rendering
             const string pragmaDefine = "#define ";
             const string pragmaDepth = "#depth ";
             const string pragmaBlend = "#blend ";
+            const string pragmaDraw = "#draw ";
             const string pragmaPass = "#pass ";
             // const string version = "#version 450";
             string filename = $"\"{file}\"";
@@ -237,6 +251,26 @@ namespace Engine.Assets.Rendering
                         Passes[passIndex].DepthTest = testEnabled;
                         Passes[passIndex].DepthWrite = writeEnabled;
                         Passes[passIndex].DepthCompare = compare;
+                    }
+                    else
+                        Passes.Add(pass);
+                }
+                else if (line.ToLower().StartsWith(pragmaDraw))
+                {
+                    string depth = line.Substring(pragmaDraw.Length - 1).Trim();
+                    string[] settings = depth.Split(' ');
+                    const string depthErrorString = "#draw PassName Cull";
+                    if (settings.Length != 2)
+                        throw new InvalidOperationException(depthErrorString);
+                    string passName = settings[0];
+                    if (!Enum.TryParse<ShaderCullMode>(settings[1], true, out var compare))
+                        throw new InvalidOperationException(depthErrorString);
+                    ShaderPass pass = new ShaderPass();
+                    pass.CullMode = compare;
+                    int passIndex = Passes.FindIndex(x => x.PassName == passName);
+                    if (passIndex != -1)
+                    {
+                        Passes[passIndex].CullMode = compare;
                     }
                     else
                         Passes.Add(pass);

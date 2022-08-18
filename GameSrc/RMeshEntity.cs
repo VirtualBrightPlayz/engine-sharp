@@ -19,7 +19,7 @@ namespace GameSrc
     {
         public RMeshModel Room { get; private set; }
         public AudioSource[] Sources { get; private set; }
-        public ModelEntity[] Models { get; private set; }
+        public StaticModelEntity[] Models { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
         public ForwardConsts.ForwardLight[] Lights { get; private set; }
 
@@ -63,10 +63,10 @@ namespace GameSrc
             }
             ForwardConsts.Lights.AddRange(Lights);
             StopAudio();
-            Models = new ModelEntity[Room.Models.Count];
+            Models = new StaticModelEntity[Room.Models.Count];
             for (int i = 0; i < Models.Length; i++)
             {
-                Models[i] = new ModelEntity(Room.Models[i].path, Path.Combine(SCPCB.Instance.Data.PropsDir, Room.Models[i].path), ResourceManager.CreateMaterial(Room.Models[i].path, ResourceManager.LoadShader(Model.ShaderPath)));
+                Models[i] = new StaticModelEntity(Room.Models[i].path, Path.Combine(SCPCB.Instance.Data.PropsDir, Room.Models[i].path), ResourceManager.CreateMaterial(Room.Models[i].path, ResourceManager.LoadShader(Model.ShaderPath)));
                 Models[i].Position = Vector3.Transform(Room.Models[i].position, WorldMatrix);
                 var rot = Quaternion.CreateFromYawPitchRoll(Room.Models[i].euler.X, Room.Models[i].euler.Y, Room.Models[i].euler.Z);
                 Models[i].Rotation = rot * Rotation;
@@ -116,28 +116,28 @@ namespace GameSrc
             }
         }
 
-        public override void PreDraw(double dt)
+        public override void PreDraw(Renderer renderer, double dt)
         {
-            base.PreDraw(dt);
+            base.PreDraw(renderer, dt);
             for (int i = 0; i < Models.Length; i++)
             {
-                Models[i].PreDraw(dt);
+                Models[i].PreDraw(renderer, dt);
             }
         }
 
-        public override void Draw(double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
-            base.Draw(dt);
-            if ((Position - Renderer.Current.ViewPosition).LengthSquared() > 50f * 50f)
+            base.Draw(renderer, dt);
+            if ((Position - renderer.ViewPosition).LengthSquared() > 50f * 50f)
             {
                 return;
             }
             for (int i = 0; i < Models.Length; i++)
             {
-                Models[i].Draw(dt);
+                Models[i].Draw(renderer, dt);
             }
-            Room.SetWorldMatrix(WorldMatrix);
-            Room.Draw(dt);
+            Room.SetWorldMatrix(renderer, WorldMatrix);
+            Room.Draw(renderer, dt);
         }
 
         public override void Tick(double dt)

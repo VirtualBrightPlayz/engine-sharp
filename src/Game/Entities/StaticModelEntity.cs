@@ -1,19 +1,27 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using BepuPhysics;
+using BepuPhysics.Collidables;
 using Engine.Assets;
 using Engine.Assets.Models;
 using Engine.Assets.Rendering;
+using Engine.Assets.Textures;
+using Veldrid;
 
 namespace Engine.Game.Entities
 {
-    public class MeshEntity : PhysicsEntity
+    public class StaticModelEntity : PhysicsEntity
     {
-        public Mesh Mesh { get; private set; }
+        public Model Model { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
 
-        public MeshEntity(string name, string path, Material material) : base(name)
+        public StaticModelEntity(string name, string path, Material material) : base(name)
         {
-            Mesh = ResourceManager.Clone<Mesh>($"{name}_{Random.Shared.Next()}", ResourceManager.CreateMesh(path, false, material));
-            /*List<Triangle> tris = new List<Triangle>();
+            Model = ResourceManager.Clone<Model>($"{name}_{Random.Shared.Next()}", ResourceManager.LoadModel(name, material, path));
+            List<Triangle> tris = new List<Triangle>();
             for (int i = 0; i < Model.CollisionTriangles.Length - 2; i+=3)
             {
                 var v0 = Model.CollisionPositions[Model.CollisionTriangles[i+0]];
@@ -23,25 +31,24 @@ namespace Engine.Game.Entities
                 tris.Add(new Triangle(v2, v1, v0));
             }
             Game.BufferPool.Take<Triangle>(tris.Count, out var triBuf);
+            for (int i = 0; i < tris.Count; i++)
+            {
+                triBuf[i] = tris[i];
+            }
             shape = new BepuPhysics.Collidables.Mesh(triBuf, Vector3.One, Game.BufferPool);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
-            var inertia = shape.ComputeOpenInertia(1f);
-            // bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, shapeIndex.Value, 0.01f));
-            // bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateKinematic(Position, new CollidableDescription(shapeIndex.Value, 0.3f), -10f));
-            staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));*/
+            staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
         }
 
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
-            Mesh.SetWorldMatrix(renderer, WorldMatrix);
-            Mesh.PreDraw(renderer);
         }
 
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            Mesh.Draw(renderer);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
         }
     }
 }

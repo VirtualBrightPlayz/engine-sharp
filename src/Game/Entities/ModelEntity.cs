@@ -13,41 +13,24 @@ using Veldrid;
 
 namespace Engine.Game.Entities
 {
-    public class ModelEntity : PhysicsEntity
+    public class ModelEntity : Entity
     {
         public Model Model { get; private set; }
-        public BepuPhysics.Collidables.Mesh shape;
 
         public ModelEntity(string name, string path, Material material) : base(name)
         {
-            Model = ResourceManager.Clone<Model>($"{name}_{Random.Shared.Next()}", ResourceManager.LoadModel(material, path));
-            /*List<Triangle> tris = new List<Triangle>();
-            for (int i = 0; i < Model.CollisionTriangles.Length - 2; i+=3)
-            {
-                var v0 = Model.CollisionPositions[Model.CollisionTriangles[i+0]];
-                var v1 = Model.CollisionPositions[Model.CollisionTriangles[i+1]];
-                var v2 = Model.CollisionPositions[Model.CollisionTriangles[i+2]];
-                tris.Add(new Triangle(v0, v1, v2));
-                tris.Add(new Triangle(v2, v1, v0));
-            }
-            Game.BufferPool.Take<Triangle>(tris.Count, out var triBuf);
-            shape = new BepuPhysics.Collidables.Mesh(triBuf, Vector3.One, Game.BufferPool);
-            shapeIndex = Game.Simulation.Shapes.Add(shape);
-            var inertia = shape.ComputeOpenInertia(1f);
-            // bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, shapeIndex.Value, 0.01f));
-            // bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateKinematic(Position, new CollidableDescription(shapeIndex.Value, 0.3f), -10f));
-            staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));*/
+            Model = ResourceManager.Clone<Model>($"{name}_{Random.Shared.Next()}", ResourceManager.LoadModel(name, material, path));
         }
 
-        public override void PreDraw(double dt)
+        public override void PreDraw(Renderer renderer, double dt)
         {
-            base.PreDraw(dt);
+            base.PreDraw(renderer, dt);
         }
 
-        public override void Draw(double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
-            base.Draw(dt);
-            Model.SetWorldMatrixDraw(Renderer.Current, WorldMatrix);
+            base.Draw(renderer, dt);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
         }
     }
 }

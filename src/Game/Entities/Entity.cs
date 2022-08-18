@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using BepuUtilities;
+using Engine.Assets.Rendering;
 
 namespace Engine.Game.Entities
 {
@@ -35,11 +36,11 @@ namespace Engine.Game.Entities
         {
         }
 
-        public virtual void PreDraw(double dt)
+        public virtual void PreDraw(Renderer renderer, double dt)
         {
         }
 
-        public virtual void Draw(double dt)
+        public virtual void Draw(Renderer renderer, double dt)
         {
         }
 

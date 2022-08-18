@@ -83,15 +83,14 @@ namespace Engine.Assets
             }
         }
 
-        public static ImFontPtr LoadImGuiFont(string path)
+        public static ImFontPtr LoadImGuiFont(string path, float size = 24f)
         {
-            // return ImGui.GetFont();
             if (Fonts.Any(x => x.Key == path))
             {
                 return Fonts.First(x => x.Key == path).Value;
             }
             ImGuiIOPtr io = ImGui.GetIO();
-            ImFontPtr font = io.Fonts.AddFontFromFileTTF(path, 24f);
+            ImFontPtr font = io.Fonts.AddFontFromFileTTF(path, size);
             Fonts.Add(path, font);
             io.Fonts.Build();
             Program.GameImGui.RecreateFontDeviceTexture();
@@ -146,7 +145,17 @@ namespace Engine.Assets
             Model buf = CheckAndReturn<Model>(path);
             if (buf != null)
                 return buf;
-            buf = new Model(path, material);
+            buf = new Model(path, path, material);
+            Add(buf);
+            return buf;
+        }
+
+        public static Model LoadModel(string name, Material material, string path)
+        {
+            Model buf = CheckAndReturn<Model>(path);
+            if (buf != null)
+                return buf;
+            buf = new Model(path, path, material);
             Add(buf);
             return buf;
         }

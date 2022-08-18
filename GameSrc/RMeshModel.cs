@@ -465,28 +465,28 @@ namespace GameSrc
             }
         }
 
-        public void SetWorldMatrix(Matrix4x4 WorldMatrix)
+        public void SetWorldMatrix(Renderer renderer, Matrix4x4 WorldMatrix)
         {
             // LightUniform.UploadData(ForwardConsts.GetLightInfo());
             for (int i = 0; i < meshes.Length; i++)
             {
-                meshes[i].SetWorldMatrix(WorldMatrix);
+                meshes[i].SetWorldMatrix(renderer, WorldMatrix);
                 meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
                 meshes[i].InternalMaterial.SetUniforms(ShaderForwardSetId, LightBuffer);
-                Renderer.Current.SetupStandardWorldInfoUniforms(meshes[i].InternalMaterial, ShaderWorldInfoSetId);
-                meshes[i].PreDraw(Renderer.Current);
+                renderer.SetupStandardWorldInfoUniforms(meshes[i].InternalMaterial, ShaderWorldInfoSetId);
+                meshes[i].PreDraw(renderer);
             }
         }
 
-        public void Draw(double dt)
+        public void Draw(Renderer renderer, double dt)
         {
             for (int i = 0; i < meshes.Length; i++)
             {
-                ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - Renderer.Current.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
+                ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
                 for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
                 {
-                    LightUniform.UploadData(Renderer.Current, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
-                    meshes[i].Draw(Renderer.Current, j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
+                    LightUniform.UploadData(renderer, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
+                    meshes[i].Draw(renderer, j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
                 }
             }
         }

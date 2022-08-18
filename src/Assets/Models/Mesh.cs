@@ -88,14 +88,15 @@ namespace Engine.Assets.Models
         public List<RgbaFloat> Colors { get; set; } = new List<RgbaFloat>();
         public bool IsBigMesh { get; private set; }
 
-        public Matrix4x4 WorldMatrix { get; set; } = Matrix4x4.Identity;
-
         public Mesh(string name, bool isBigMesh, Material material)
         {
             Name = name;
             InternalMaterial = material;
-            InternalWorldUniform = new UniformBuffer("WorldUniform", (uint)16 * 4);
-            InternalWorldBuffer = new CompoundBuffer("WorldBuffer", material.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
+            if (material.Shader.HasSet(UniformConsts.WorldMatrixBufferSet))
+            {
+                InternalWorldUniform = new UniformBuffer("WorldUniform", (uint)16 * 4);
+                InternalWorldBuffer = new CompoundBuffer("WorldBuffer", material.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
+            }
             // InternalWorldBuffer = ResourceManager.CreateCompoundBuffer("WorldBuffer", material.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
             IsBigMesh = isBigMesh;
         }
@@ -334,16 +335,16 @@ namespace Engine.Assets.Models
             BoneIndices.Add(index);
         }
 
-        public void SetWorldMatrix(Matrix4x4 worldBuffer)
+        public void SetWorldMatrix(Renderer renderer, Matrix4x4 worldBuffer)
         {
-            InternalWorldUniform.UploadData(Renderer.Current, worldBuffer);
+            InternalWorldUniform.UploadData(renderer, worldBuffer);
             InternalMaterial.SetUniforms(UniformConsts.WorldMatrixBufferSet, InternalWorldBuffer);
         }
 
         public void PreDraw(Renderer renderer)
         {
             renderer.SetupStandardMatrixUniforms(InternalMaterial);
-            InternalMaterial.PreDraw();
+            InternalMaterial.PreDraw(renderer);
         }
 
         public void Draw(Renderer renderer, string pass = "")

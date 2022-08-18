@@ -44,7 +44,16 @@ namespace Engine
 
         public static int Main(string[] args)
         {
-            Game = new GameSrc.SCPCB();
+            // Game = new GameSrc.SCPCB();
+            Game = new GameBSrc.BGame();
+            
+            /*
+            RenderDoc rd = null;
+            if (RenderDoc.Load(out rd))
+            {
+                RenderDocInstance = rd;
+            }
+            */
 
             ChangeBackend(GraphicsBackend.Vulkan, false, true);
             GameWindow.Initialize();
@@ -216,13 +225,14 @@ namespace Engine
                 FPS = (1f / delta);
             }
             // GameInputSnapshotHandler.PreUpdate();
+            Renderer.Current = MainRenderer;
             ResourceManager.Update();
             GameImGui.Update((float)delta, GameInputSnapshotHandler);
             MainRenderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)MainRenderer.InternalRenderTexture.Width / MainRenderer.InternalRenderTexture.Height, 0.1f, 1000f);
-            Game.PreDraw(delta);
+            Game.PreDraw(MainRenderer, delta);
             MainRenderer.Begin();
             MainRenderer.Clear();
-            Game.Draw(delta);
+            Game.Draw(MainRenderer, delta);
             if (ImGui.Begin("Debug"))
             {
                 ImGui.Text($"FPS: {FPS}");

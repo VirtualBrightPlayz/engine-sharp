@@ -1,12 +1,13 @@
 using System;
 using System.IO;
+using Engine.Assets.Rendering;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 
 namespace Engine.Assets.Textures
 {
-    public class RenderTexture2D : Resource
+    public class RenderTexture2D : Resource, IMaterialBindable
     {
         public override bool IsValid => ColorTex != null;
         public Texture ColorTex { get; private set; }
@@ -14,10 +15,12 @@ namespace Engine.Assets.Textures
         public bool IsRaw { get; private set; }
         public Framebuffer InternalFramebuffer { get; private set; }
         public Swapchain InternalSwapchain { get; private set; }
-        // public Sampler InternalSampler { get; private set; }
+        public Sampler InternalSampler { get; private set; }
         public SamplerInfo Info { get; private set; } = SamplerInfo.Linear;
         public uint Width { get; private set; }
         public uint Height { get; private set; }
+
+        public BindableResource[] Bindables => new BindableResource[] { ColorTex, InternalSampler };
 
         public RenderTexture2D(string name, Framebuffer framebuffer)
         {
@@ -48,18 +51,18 @@ namespace Engine.Assets.Textures
 
         public override void ReCreate()
         {
-            if (HasBeenInitialized)
-                return;
+            // if (HasBeenInitialized)
+            //     return;
             base.ReCreate();
-            return;
             if (IsRaw)
-                throw new NotSupportedException($"Can't clone raw framebuffers!");
-                // return;
+                // throw new NotSupportedException($"Can't clone raw framebuffers!");
+                return;
             TextureDescription colorDesc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled | TextureUsage.RenderTarget);
             ColorTex = ResourceManager.GraphicsFactory.CreateTexture(colorDesc);
             ColorTex.Name = Name;
             FramebufferDescription fbDesc = new FramebufferDescription(null, ColorTex);
             InternalFramebuffer = ResourceManager.GraphicsFactory.CreateFramebuffer(fbDesc);
+            UpdateSamplerInfo(Info);
         }
 
         public override Resource Clone(string cloneName)
@@ -72,18 +75,21 @@ namespace Engine.Assets.Textures
             return tex;
         }
 
+        public bool HasDepth()
+        {
+            return IsRaw && (InternalFramebuffer != null ? InternalFramebuffer.DepthTarget.HasValue : InternalSwapchain.Framebuffer.DepthTarget.HasValue);
+        }
+
         public void UpdateSamplerInfo(SamplerInfo info)
         {
-            return;
-            /*
             if (IsRaw)
-                throw new NotImplementedException($"Can't use samplers in framebuffers!");
+                return;
+                // throw new NotImplementedException($"Can't use samplers in framebuffers!");
             Info = info;
             if (InternalSampler != null && !InternalSampler.IsDisposed)
                 InternalSampler.Dispose();
             InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription());
             InternalSampler.Name = Name;
-            */
         }
 
         public override void Dispose()
