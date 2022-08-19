@@ -280,7 +280,6 @@ namespace GameBSrc
             floorTimers[temp] = MinFloorTime;
 
             temp = rng.Next(33, 37);
-            temp = 1;
             floorActions[temp] = FloorEntity.FloorAction.Act_173;
             floorTimers[temp] = MinFloorTime;
 
