@@ -78,10 +78,10 @@ namespace Engine.Assets.Rendering
             BlitMesh = ResourceManager.CreateMesh("BlitMesh", false, ResourceManager.CreateMaterial("BlitMaterial", BlitShader));
             BlitVertex[] blitVertices = new BlitVertex[]
             {
-                new BlitVertex(new Vector3(-1f, -1f, 1f), new Vector2(0f, 0f), Vector4.One),
-                new BlitVertex(new Vector3(-1f, 1f, 1f), new Vector2(0f, 1f), Vector4.One),
-                new BlitVertex(new Vector3(1f, -1f, 1f), new Vector2(1f, 0f), Vector4.One),
-                new BlitVertex(new Vector3(1f, 1f, 1f), new Vector2(1f, 1f), Vector4.One),
+                new BlitVertex(new Vector3(-1f, -1f, 1f), new Vector2(0f, 1f), Vector4.One),
+                new BlitVertex(new Vector3(-1f, 1f, 1f), new Vector2(0f, 0f), Vector4.One),
+                new BlitVertex(new Vector3(1f, -1f, 1f), new Vector2(1f, 1f), Vector4.One),
+                new BlitVertex(new Vector3(1f, 1f, 1f), new Vector2(1f, 0f), Vector4.One),
             };
             uint[] inds = new uint[]
             {

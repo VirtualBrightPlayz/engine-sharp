@@ -49,6 +49,7 @@ namespace GameBSrc
         public AudioClip fireOffClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "fireout.ogg"));
         public AudioClip loudStepClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "loudstep.ogg"));
         public AudioClip dontLookClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "dontlook.ogg"));
+        public Texture2D logo => ResourceManager.LoadTexture(Path.Combine(BGame.Instance.Data.GFXDir, "scp.jpg"));
         public string MusicClipPath => Path.Combine(Data.SFXDir, "music.ogg");
         public List<StaticModelEntity> floors = new List<StaticModelEntity>();
         public GraphicsShader Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
@@ -67,6 +68,7 @@ namespace GameBSrc
         public Entity currentObject = null;
         public int Brightness = 40;
         public bool DebugMode = true;
+        public uint frameCount = 0;
 
         public BGame() : base()
         {
@@ -76,6 +78,10 @@ namespace GameBSrc
         public override void Setup()
         {
             base.Setup();
+        }
+
+        public void Init()
+        {
             fogUniform = ResourceManager.CreateUniformBuffer("WorldFogInfo", (uint)4 * 4);
             fogBuffer = ResourceManager.CreateCompoundBuffer("WorldFogInfo", Shader, FogSetId, fogUniform);
             SetAmbient(Brightness);
@@ -940,6 +946,8 @@ namespace GameBSrc
 
         public override void PreDraw(Renderer renderer, double dt)
         {
+            if (player == null)
+                return;
             base.PreDraw(renderer, dt);
             Music.Position = renderer.ViewPosition;
             Radio.Position = renderer.ViewPosition;
@@ -951,6 +959,14 @@ namespace GameBSrc
 
         public override void Draw(Renderer renderer, double dt)
         {
+            frameCount++;
+            if (player == null)
+            {
+                renderer.Blit(logo);
+                if (frameCount > 1)
+                    Init();
+                return;
+            }
             if (DebugMode)
                 Program.DrawDebugWindow();
             fogUniform.UploadData(renderer, fogData);
@@ -970,6 +986,8 @@ namespace GameBSrc
 
         public override void Tick(double dt)
         {
+            if (player == null)
+                return;
             var oldPlayerPos = player.Position;
             base.Tick(dt);
             TimeScale = Program.IsFocused ? 1f : 0f;
