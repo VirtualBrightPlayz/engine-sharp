@@ -58,19 +58,7 @@ namespace GameBSrc
             floorTextureRenderer = ResourceManager.CreateRenderer($"Floor_{FloorNumber}");
             floorTexture = new RenderTexture2D($"Floor_{FloorNumber}", TexSize, TexSize);
             floorTextureUIRenderer = new ImGuiRenderer(Program.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
-            /*
-            floorTextureRenderer.SetRenderTarget(floorTexture);
-            floorTextureRenderer.Begin();
-            floorTextureRenderer.Clear();
-            floorTextureRenderer.Blit(DiffuseTexture);
-            UIExt.BeginDraw();
-            UIExt.Pretext(floorTextureUIRenderer);
-            floorTextureUIRenderer.RecreateFontDeviceTexture();
-            UIExt.TextLeft(UIExt.Pretext(floorTextureUIRenderer), TexSize / 4f, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
-            floorTextureUIRenderer.Render(Program.GameGraphics, floorTextureRenderer.CommandList);
-            floorTextureRenderer.End();
-            floorTextureRenderer.Submit();
-            */
+            // RenderFloorTexture();
             cubeMat = ResourceManager.CreateMaterial($"{MarkerName}_{FloorNumber}", BGame.Instance.Shader);
             cubeBuffer = ResourceManager.CreateCompoundBuffer($"{DiffusePath}_{FloorNumber}", cubeMat.Shader, UniformConsts.DiffuseTextureSet, floorTexture, Texture2D.DefaultWhite, Texture2D.DefaultNormal);
             cubeMat.SetUniforms(UniformConsts.DiffuseTextureSet, cubeBuffer);
@@ -94,7 +82,8 @@ namespace GameBSrc
             floorTextureUIRenderer.Update(0f, Program.GameInputSnapshotHandler);
             UIExt.BeginDraw();
             UIExt.Pretext(floorTextureUIRenderer);
-            floorTextureUIRenderer.RecreateFontDeviceTexture();
+            if (!hasRendered)
+                floorTextureUIRenderer.RecreateFontDeviceTexture();
             UIExt.TextLeft(UIExt.Pretext(floorTextureUIRenderer), TexSize / 4f, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
             floorTextureUIRenderer.Render(Program.GameGraphics, floorTextureRenderer.CommandList);
             floorTextureRenderer.End();

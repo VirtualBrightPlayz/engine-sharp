@@ -150,7 +150,7 @@ namespace Engine.Assets.Rendering
 
         public void Blit(Texture2D tex)
         {
-            // BlitMesh.InternalMaterial.ClearUniforms(0);
+            BlitMesh.InternalMaterial.ClearUniforms(0);
             BlitMesh.InternalMaterial.SetUniforms(0, new UniformLayout("Diffuse", tex, false, true));
             BlitMesh.Draw(this, "main");
         }

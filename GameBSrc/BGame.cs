@@ -963,8 +963,6 @@ namespace GameBSrc
             if (player == null)
             {
                 renderer.Blit(logo);
-                if (frameCount > 1)
-                    Init();
                 return;
             }
             if (DebugMode)
@@ -987,7 +985,11 @@ namespace GameBSrc
         public override void Tick(double dt)
         {
             if (player == null)
+            {
+                if (frameCount > 1)
+                    Init();
                 return;
+            }
             var oldPlayerPos = player.Position;
             base.Tick(dt);
             TimeScale = Program.IsFocused ? 1f : 0f;
