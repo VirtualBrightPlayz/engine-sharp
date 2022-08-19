@@ -82,6 +82,10 @@ namespace GameBSrc
                 ImGui.Text($"Velocity {body.Velocity.Linear.ToString()}");
                 ImGui.Text($"Current Floor: {BGame.Instance.currentFloor} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor]}");
                 ImGui.Text($"Next Floor: {BGame.Instance.currentFloor+1} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor+1]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor+1]}");
+                if (BGame.Instance.enemy != null)
+                {
+                    ImGui.Text($"Can See Enemy {CanSee(BGame.Instance.enemy.Center)}");
+                }
                 ImGui.InputFloat("ViewBobSpeed", ref viewBobSpeed);
                 ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
                 ImGui.InputFloat("FootstepInterval", ref footstepInterval);
@@ -98,6 +102,13 @@ namespace GameBSrc
                 }
                 ImGui.End();
             }
+        }
+
+        public bool CanSee(Vector3 position)
+        {
+            Matrix4x4 viewProj = Matrix4x4.Multiply(Renderer.Current.ViewMatrix, Renderer.Current.ProjectionMatrix);
+            var pos = Vector3.Transform(position, viewProj);
+            return pos.X <= 1 && pos.X >= -1 && pos.Y <= 1 && pos.Y >= -1 && pos.Z > 0f;
         }
 
         public override unsafe void Tick(double dt)

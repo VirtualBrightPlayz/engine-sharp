@@ -16,6 +16,8 @@ namespace GameBSrc
         public double endAnimTime;
         public double animSpeed = 1d;
         public CompoundBuffer buffer;
+        public bool fog = true;
+        public Vector3 Center => Position + Vector3.UnitY;
 
         public EnemyEntity(string name, string path, Material material) : base(name)
         {
@@ -24,6 +26,10 @@ namespace GameBSrc
 
         public override void Draw(Renderer renderer, double dt)
         {
+            if (!fog)
+            {
+                BGame.Instance.fogUniform.UploadData(renderer, new Vector4(0f, 0f, 0f, 100f));
+            }
             if (Model.AnimationTime < startAnimTime)
             {
                 Model.AnimationTime = startAnimTime;
@@ -35,6 +41,10 @@ namespace GameBSrc
             }
             Model.SetWorldMatrixDraw(renderer, WorldMatrix);
             base.Draw(renderer, dt);
+            if (!fog)
+            {
+                BGame.Instance.fogUniform.UploadData(renderer, BGame.Instance.fogData);
+            }
         }
 
         public override void Tick(double dt)

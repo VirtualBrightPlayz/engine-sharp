@@ -48,6 +48,7 @@ namespace GameBSrc
         public AudioClip fireOnClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "match.ogg"));
         public AudioClip fireOffClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "fireout.ogg"));
         public AudioClip loudStepClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "loudstep.ogg"));
+        public AudioClip dontLookClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "dontlook.ogg"));
         public string MusicClipPath => Path.Combine(Data.SFXDir, "music.ogg");
         public List<StaticModelEntity> floors = new List<StaticModelEntity>();
         public GraphicsShader Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
@@ -279,6 +280,7 @@ namespace GameBSrc
             floorTimers[temp] = MinFloorTime;
 
             temp = rng.Next(33, 37);
+            temp = 1;
             floorActions[temp] = FloorEntity.FloorAction.Act_173;
             floorTimers[temp] = MinFloorTime;
 
@@ -450,6 +452,9 @@ namespace GameBSrc
             enemy.Position = new Vector3(x, y, z);
             enemy.Scale = Vector3.One * 0.17f;
             enemy.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
+            enemy.startAnimTime = 0d;
+            enemy.endAnimTime = 14d;
+            enemy.animSpeed = 0d;
             Entities.Add(enemy);
         }
 
@@ -653,6 +658,56 @@ namespace GameBSrc
                             }
                         }
                         break;
+                        case FloorEntity.FloorAction.Act_173:
+                        {
+                            if (floorTimers[i] > MinFloorTime)
+                            {
+                                float pastTimer = floorTimers[i];
+                                floorTimers[i] += delta;
+
+                                if (floorTimers[i] > 2.5f)
+                                {
+                                    if (player.CanSee(enemy.Center))
+                                    {
+                                        enemy.speed = 0f;
+                                        enemy.startAnimTime = 206f;
+                                        enemy.endAnimTime = 250f;
+                                        enemy.animSpeed = 0.05f;
+                                        if (floorTimers[i] < 166.66f)
+                                        {
+                                            horrorSource.SetBuffer(horrorClips[2]);
+                                            horrorSource.Play();
+                                            floorTimers[i] = 166.683f;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        enemy.speed = 0.02f;
+                                        if (Vector3.Distance(plrPos, enemy.Position) < 0.8f)
+                                        {
+                                            killTimer = Math.Max(killTimer, 1);
+                                            floorTimers[i] = 0f;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    enemy.speed = 0f;
+                                }
+                                if (floorTimers[i] % 11f > 0.25f && pastTimer % 11f <= 0.25f)
+                                {
+                                    soundEmitter.SetBuffer(dontLookClip);
+                                    soundEmitter.Position = enemy.Position;
+                                    soundEmitter.Play();
+                                }
+                            }
+                            if (currentFloor > i)
+                            {
+                                ClearEnemy();
+                                floorTimers[i] = 0f;
+                            }
+                        }
+                        break;
                     }
                 }
             }
@@ -771,6 +826,7 @@ namespace GameBSrc
                                 enemy.endAnimTime = 1d;
                                 enemy.animSpeed = 0d;
                                 horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 5f;
                             }
                         }
@@ -784,6 +840,7 @@ namespace GameBSrc
                                 enemy.endAnimTime = 1d;
                                 enemy.animSpeed = 0d;
                                 horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 5f;
                             }
                         }
@@ -797,6 +854,7 @@ namespace GameBSrc
                                 enemy.endAnimTime = 1d;
                                 enemy.animSpeed = 0d;
                                 horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 5f;
                             }
                         }
@@ -857,6 +915,24 @@ namespace GameBSrc
                         }
                     }
                     break;
+                    case FloorEntity.FloorAction.Act_173:
+                    {
+                        if (floorTimers[currentFloor] <= MinFloorTime)
+                        {
+                            if (currentFloor % 2 == 0)
+                            {
+                                CreateEnemy(startX - 1.8f, floorPos.Y - 1f, floorPos.Z - 6f, "173.jpg");
+                            }
+                            else
+                            {
+                                CreateEnemy(startX + 1.8f, floorPos.Y - 1f, floorPos.Z + 6f, "173.jpg");
+                            }
+                            enemy.fog = false;
+                            enemy.speed = 0f;
+                            floorTimers[currentFloor] = MinFloorTime * 2f;
+                        }
+                    }
+                    break;
                 }
             }
 
@@ -876,9 +952,10 @@ namespace GameBSrc
 
         public override void Draw(Renderer renderer, double dt)
         {
+            DebugMode = true;
             if (DebugMode)
                 Program.DrawDebugWindow();
-            fogUniform.UploadData(fogData);
+            fogUniform.UploadData(renderer, fogData);
             foreach (var item in ResourceManager.AllResources)
             {
                 if (item is Material mat && mat.Shader.HasSet(FogSetId))

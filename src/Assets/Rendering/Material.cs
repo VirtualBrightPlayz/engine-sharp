@@ -295,7 +295,7 @@ namespace Engine.Assets.Rendering
                 pipeline = _pipelines[passName][renderer];
             }
             renderer.CommandList.SetPipeline(pipeline);
-            foreach (var resSet in _resourceSets)
+            foreach (var resSet in _resourceSets.OrderBy(x => x.Key))
             {
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value);
             }
