@@ -47,16 +47,6 @@ namespace Engine
         public static int Run(GameApp game)
         {
             Game = game;
-            // Game = new GameSrc.SCPCB();
-            // Game = new GameBSrc.BGame();
-            
-            /*
-            RenderDoc rd = null;
-            if (RenderDoc.Load(out rd))
-            {
-                RenderDocInstance = rd;
-            }
-            */
 
             ChangeBackend(GraphicsBackend.Vulkan, false, true);
             GameWindow.Initialize();
