@@ -65,7 +65,7 @@ namespace GameBSrc
         public EnemyEntity enemy = null;
         public Entity currentObject = null;
         public int Brightness = 40;
-        public bool DebugMode = false;
+        public bool DebugMode = true;
 
         public BGame() : base()
         {
@@ -501,6 +501,7 @@ namespace GameBSrc
         {
             float delta = (float)dt;
             currentFloor = (int)((-player.Position.Y - 0.5f) / 2f);
+            currentFloor = Math.Clamp(currentFloor, 0, 200);
             var plrPos = player.Position;
             if (enemy != null)
                 plrPos.Y = enemy.Position.Y;

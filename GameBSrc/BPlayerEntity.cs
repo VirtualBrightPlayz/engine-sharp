@@ -24,6 +24,8 @@ namespace GameBSrc
         public InputHandler InputHandler => Program.GameInputSnapshotHandler;
         public Capsule shape;
         public float speed = 2f;
+        public float acceleration = 20f;
+        public float deAcceleration = 1000000f;
         public Vector3 viewPos = Vector3.Zero;
         public Vector3 viewDirection = -Vector3.UnitZ;
         public Vector3 direction = -Vector3.UnitZ;
@@ -32,10 +34,10 @@ namespace GameBSrc
         public Vector3 desiredVelocity = Vector3.Zero;
         private bool wasEscPressed = false;
         private float walkViewTimer;
-        private float viewBobSpeed = 7.5f;
-        private float viewBobAmount = 0.025f;
-        private float upDownBob => MathF.Sin(walkViewTimer) * viewBobAmount;
-        private float leftRightBob => MathF.Sin(walkViewTimer * 0.5f) * viewBobAmount;
+        private float viewBobSpeed = 1f;
+        private float viewBobAmount = 0.1f;
+        private float upDownBob => MathF.Abs(walkViewTimer - MathF.Floor(walkViewTimer + 0.5f)) * viewBobAmount * 2f - viewBobAmount * 0.5f;
+        private float leftRightBob => MathF.Abs(walkViewTimer * 0.5f - MathF.Floor(walkViewTimer * 0.5f + 0.5f)) * viewBobAmount * 2f - viewBobAmount * 0.5f;
         private float footstepInterval = 0.75f;
         private float prevFootstepTime;
         private float footstepTime;
@@ -53,8 +55,8 @@ namespace GameBSrc
             footstepSource.MaxGain = 1f;
             shape = new Capsule(0.25f, 1.25f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
-            var inertia = shape.ComputeInertia(1f);
-            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Discrete), shape.Radius * 0.02f));
+            var inertia = shape.ComputeInertia(0.1f);
+            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Continuous()), shape.Radius * 0.02f));
         }
 
         public override void PreDraw(Renderer renderer, double dt)
@@ -63,7 +65,7 @@ namespace GameBSrc
             UpdateLook();
             QuaternionEx.Transform(Vector3.UnitX, Rotation, out var localUnitX);
             viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob + localUnitX * leftRightBob;
-            QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, /*leftRightBob*/0f * 5f * (MathF.PI / 180f)), out Vector3 up);
+            QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * 5f * (MathF.PI / 180f)), out Vector3 up);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             footstepSource.Position = viewPos;
             renderer.ViewPosition = viewPos;
@@ -87,6 +89,9 @@ namespace GameBSrc
                 ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
                 ImGui.DragFloat4("FogData", ref BGame.Instance.fogData);
                 ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
+                ImGui.InputFloat("Acceleration", ref acceleration);
+                ImGui.InputFloat("DeAcceleration", ref deAcceleration);
+                ImGui.InputFloat("Speed", ref speed);
                 if (ImGui.Button("Kill"))
                 {
                     BGame.Instance.killTimer = 1;
@@ -100,6 +105,10 @@ namespace GameBSrc
             base.Tick(dt);
             UpdateLookRotation();
             UpdateMovement(dt);
+            if (MathF.Abs(Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear.Y) > 8f)
+            {
+                BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
+            }
             Program.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
             float[] orientation = new float[6];
             orientation[0] = viewDirection.X;
@@ -168,7 +177,8 @@ namespace GameBSrc
                 inputDirection /= MathF.Sqrt(inputLength);
             Vector2 targetVelocity = inputDirection * speed;
             Vector3 velocity = body.Velocity.Linear;
-            float maxVelChange = (float)dt * speed;
+            float maxVelChange = (float)dt * acceleration;
+            float maxVelChangeDec = (float)dt * deAcceleration;
             if (!body.Awake && targetVelocity != Vector2.Zero)
             {
                 Game.Simulation.Awakener.AwakenBody(bodyHandle.Value);
@@ -183,18 +193,18 @@ namespace GameBSrc
                 Vector3 worldMovement = charRight * targetVelocity.X + charForward * targetVelocity.Y;
                 if (worldMovement.LengthSquared() > 0f)
                 {
-                    velocity = MathUtils.MoveTowards(velocity, new Vector3(worldMovement.X, velocity.Y, worldMovement.Z), maxVelChange);
+                    velocity = MathUtils.MoveTowards(velocity, new Vector3(worldMovement.X, velocity.Y - 1f, worldMovement.Z), maxVelChange);
                 }
                 else
                 {
                     var y = velocity.Y;
-                    velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, 0f, 0f), maxVelChange);
+                    velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, y, 0f), maxVelChangeDec);
                 }
             }
             else
             {
                 var y = velocity.Y;
-                velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, 0f, 0f), maxVelChange);
+                velocity = MathUtils.MoveTowards(velocity, new Vector3(0f, y, 0f), maxVelChangeDec);
             }
             float velLen = targetVelocity.Length();
             if (prevFootstepTime + footstepInterval < footstepTime)

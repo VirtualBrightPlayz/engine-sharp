@@ -22,20 +22,11 @@ namespace Engine.Game
         public static Vector3 MoveTowards(Vector3 current, Vector3 target, float maxDistanceDelta)
         {
             Vector3 final = current;
-            final += (Normalized(current - target) * maxDistanceDelta);
-            if ((final - target).LengthSquared() > maxDistanceDelta * maxDistanceDelta)
+            if (current.LengthSquared() > 0 || target.LengthSquared() > 0)
+                final += (Vector3.Normalize(target - current) * maxDistanceDelta);
+            if ((current - target).LengthSquared() <= maxDistanceDelta * maxDistanceDelta)
                 final = target;
             return final;
-        }
-
-        public static Vector3 Normalized(Vector3 current)
-        {
-            float len = current.LengthSquared();
-            if (len > 0f)
-            {
-                current /= MathF.Sqrt(len);
-            }
-            return current;
         }
     }
 }

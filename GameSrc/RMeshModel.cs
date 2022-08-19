@@ -184,7 +184,7 @@ namespace GameSrc
                     Vector3 tangent1 = default;
                     Vector3 bitangent1 = default;
 
-                    normal1 = MathUtils.Normalized(Vector3.Cross(pos1 - pos0, pos2 - pos0));
+                    normal1 = Vector3.Normalize(Vector3.Cross(pos1 - pos0, pos2 - pos0));
 
                     float f = 1f / (deltaUV0.X * deltaUV1.Y - deltaUV1.X * deltaUV0.Y);
 
