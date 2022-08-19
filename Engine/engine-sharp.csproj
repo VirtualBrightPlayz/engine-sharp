@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
+    <!-- <OutputType>WinExe</OutputType> -->
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>engine_sharp</RootNamespace>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -11,7 +11,7 @@
     <PackageReference Include="AssimpNet" Version="5.0.0-beta1" />
     <PackageReference Include="BepuPhysics" Version="2.5.0-beta.7" />
     <PackageReference Include="BepuUtilities" Version="2.5.0-beta.7" />
-    <PackageReference Include="ini-parser" Version="2.5.2" />
+    <!-- <PackageReference Include="ini-parser" Version="2.5.2" /> -->
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
     <PackageReference Include="Silk.NET" Version="2.16.0" />
     <PackageReference Include="Veldrid" Version="4.8.0" />
@@ -24,31 +24,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Shaders/MainMesh.glsl">
+    <None Update="../Shaders/MainMesh.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders/ForwardLights.glsl">
+    <None Update="../Shaders/MainMeshAnim.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders/MainMeshBones.frag">
+    <None Update="../Shaders/ForwardLights.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders/MainMeshBones.vert">
+    <None Update="../Shaders/Blit.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders/cube.gltf">
+    <None Update="../Shaders/cube.gltf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders/white.bmp">
+    <None Update="../Shaders/white.bmp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Shaders/bump.bmp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Shaders/RMesh.glsl">
+    <None Update="../Shaders/bump.bmp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

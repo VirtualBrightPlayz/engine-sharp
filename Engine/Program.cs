@@ -44,10 +44,11 @@ namespace Engine
         public static double TPS { get; private set; }
         public static bool IsFocused { get; private set; }
 
-        public static int Main(string[] args)
+        public static int Run(GameApp game)
         {
+            Game = game;
             // Game = new GameSrc.SCPCB();
-            Game = new GameBSrc.BGame();
+            // Game = new GameBSrc.BGame();
             
             /*
             RenderDoc rd = null;
