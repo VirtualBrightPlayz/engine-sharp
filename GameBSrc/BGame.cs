@@ -952,7 +952,6 @@ namespace GameBSrc
 
         public override void Draw(Renderer renderer, double dt)
         {
-            DebugMode = true;
             if (DebugMode)
                 Program.DrawDebugWindow();
             fogUniform.UploadData(renderer, fogData);
