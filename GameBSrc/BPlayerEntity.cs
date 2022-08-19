@@ -61,8 +61,9 @@ namespace GameBSrc
         {
             base.PreDraw(renderer, dt);
             UpdateLook();
-            viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob;
-            QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * 5f * (MathF.PI / 180f)), out Vector3 up);
+            QuaternionEx.Transform(Vector3.UnitX, Rotation, out var localUnitX);
+            viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob + localUnitX * leftRightBob;
+            QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, /*leftRightBob*/0f * 5f * (MathF.PI / 180f)), out Vector3 up);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             footstepSource.Position = viewPos;
             renderer.ViewPosition = viewPos;
@@ -132,7 +133,6 @@ namespace GameBSrc
                 lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                 UpdateLookRotation();
             }
-            MarkTransformDirty(TransformDirtyFlags.Rotation);
             if (InputHandler.IsMouseDown(Veldrid.MouseButton.Right) && !wasEscPressed)
             {
                 BGame.Instance.DebugMode = InputHandler.IsMouseLocked;
@@ -148,6 +148,7 @@ namespace GameBSrc
             Rotation = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), 0f, 0f);
             QuaternionEx.Transform(-Vector3.UnitZ, cameraRot, out viewDirection);
             QuaternionEx.Transform(-Vector3.UnitZ, Rotation, out direction);
+            MarkTransformDirty(TransformDirtyFlags.Rotation);
         }
 
         public void UpdateMovement(double dt)
