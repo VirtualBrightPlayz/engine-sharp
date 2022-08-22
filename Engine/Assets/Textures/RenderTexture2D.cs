@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Engine.Assets.Rendering;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -65,14 +66,14 @@ namespace Engine.Assets.Textures
             UpdateSamplerInfo(Info);
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
-            return this;
+            return Task.FromResult<Resource>(this);
             if (IsRaw)
                 throw new NotSupportedException($"Can't clone raw framebuffers!");
             RenderTexture2D tex = new RenderTexture2D(cloneName, Width, Height);
             tex.ReCreate();
-            return tex;
+            return Task.FromResult<Resource>(tex);
         }
 
         public bool HasDepth()
@@ -97,7 +98,7 @@ namespace Engine.Assets.Textures
             if (IsRaw)
                 return;
             // InternalSampler.Dispose();
-            Program.GameImGui.RemoveImGuiBinding(ColorTex);
+            RenderingGlobals.GameImGui.RemoveImGuiBinding(ColorTex);
             InternalFramebuffer.Dispose();
             ColorTex.Dispose();
         }

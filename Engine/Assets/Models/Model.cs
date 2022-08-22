@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Assimp;
 using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
@@ -80,9 +81,14 @@ namespace Engine.Assets.Models
             _shouldLoadMats = loadMaterials;
             _shouldAnimate = animate;
             InternalMaterials = new List<Rendering.Material>();
-            LightUniform = ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
+            Load(path, material, loadMaterials, animate);
+        }
+
+        private async void Load(string path, Rendering.Material material, bool loadMaterials, bool animate)
+        {
+            LightUniform = await ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
             AssimpLoadMeshes(path, material, animate);
-            LightBuffer = ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial?.Shader ?? ResourceManager.LoadShader(ShaderPath), ShaderForwardSetId, LightUniform);
+            LightBuffer = await ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath), ShaderForwardSetId, LightUniform);
         }
 
         private System.Numerics.Matrix4x4[] AssimpAnimate(double time, int i)
@@ -239,22 +245,22 @@ namespace Engine.Assets.Models
             return false;
         }
 
-        private void AssimpLoadMeshes(string path, Rendering.Material defMaterial, bool animate)
+        private async void AssimpLoadMeshes(string path, Rendering.Material defMaterial, bool animate)
         {
             int vertexCount = 0;
             List<Vector3> colPos = new List<Vector3>();
             List<uint> colTris = new List<uint>();
             using AssimpContext ctx = new AssimpContext();
-            Scene scene = ctx.ImportFile(path, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace | PostProcessSteps.GenerateNormals | PostProcessSteps.FixInFacingNormals | PostProcessSteps.FindInvalidData);
+            Scene scene = ctx.ImportFileFromStream(await FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace | PostProcessSteps.GenerateNormals | PostProcessSteps.FixInFacingNormals | PostProcessSteps.FindInvalidData);
             _meshes = new Mesh[scene.MeshCount];
             for (int i = 0; i < _meshes.Length; i++)
             {
-                InternalMaterials.Add(defMaterial ?? ResourceManager.CreateMaterial($"{Name}_{i}", _ogMaterial?.Shader ?? ResourceManager.LoadShader(ShaderPath)));
+                InternalMaterials.Add(defMaterial ?? await ResourceManager.CreateMaterial($"{Name}_{i}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath)));
                 Rendering.Material material = InternalMaterials[i];
                 List<ModelVertexLayout> vertices = new List<ModelVertexLayout>();
                 List<AnimModelVertexLayout> animVertices = new List<AnimModelVertexLayout>();
                 Assimp.Mesh amesh = scene.Meshes[i];
-                _meshes[i] = ResourceManager.CreateMesh($"{Name}_{i}", false, material);
+                _meshes[i] = await ResourceManager.CreateMesh($"{Name}_{i}", false, material);
                 Mesh mesh = _meshes[i];
                 uint[] inds = amesh.GetUnsignedIndices();
                 uint[] inds2 = new uint[inds.Length];
@@ -332,7 +338,7 @@ namespace Engine.Assets.Models
                     if (mat.GetMaterialTexture(Assimp.TextureType.Diffuse, 0, out TextureSlot slot))
                     {
                         string diffusePath = Path.Combine(Path.GetDirectoryName(path), Path.GetFileName(slot.FilePath));
-                        CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(diffusePath, mesh.InternalMaterial.Shader, UniformConsts.DiffuseTextureSet, ResourceManager.LoadTexture(diffusePath), Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+                        CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, mesh.InternalMaterial.Shader, UniformConsts.DiffuseTextureSet, await ResourceManager.LoadTexture(diffusePath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
                         CompoundBuffers.Add(buffer);
                         mesh.InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
                     }
@@ -347,8 +353,8 @@ namespace Engine.Assets.Models
                 }
                 if (_shouldAnimate)
                 {
-                    bonesUniforms[i] = ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}", (uint)16 * 4 * 64);
-                    bonesBuffers[i] = ResourceManager.CreateCompoundBuffer($"{Name}_BonesBuffer_{i}", mesh.InternalMaterial.Shader, ShaderBonesSetId, bonesUniforms[i]);
+                    bonesUniforms[i] = await ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}", (uint)16 * 4 * 64);
+                    bonesBuffers[i] = await ResourceManager.CreateCompoundBuffer($"{Name}_BonesBuffer_{i}", mesh.InternalMaterial.Shader, ShaderBonesSetId, bonesUniforms[i]);
                 }
                 for (int j = 0; j < positions.Count; j++)
                 {
@@ -411,9 +417,9 @@ namespace Engine.Assets.Models
             }
         }
 
-        public override Resource Clone(string cloneName)
+        public override async Task<Resource> Clone(string cloneName)
         {
-            Model m = new Model(cloneName, _path, _ogMaterial != null ? ResourceManager.Clone<Rendering.Material>(cloneName + _ogMaterial.Name, _ogMaterial) : null, _shouldLoadMats, _shouldAnimate);
+            Model m = new Model(cloneName, _path, _ogMaterial != null ? await ResourceManager.Clone<Rendering.Material>(cloneName + _ogMaterial.Name, _ogMaterial) : null, _shouldLoadMats, _shouldAnimate);
             return m;
         }
 

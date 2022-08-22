@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Engine.Assets.Audio;
 using Engine.Assets.Models;
 using Engine.Assets.Rendering;
@@ -13,11 +14,13 @@ namespace Engine.Assets
 {
     public static class ResourceManager
     {
-        public static ResourceFactory GraphicsFactory => Program.GameGraphics.ResourceFactory;
+        public static ResourceFactory GraphicsFactory => RenderingGlobals.GameGraphics.ResourceFactory;
         public static List<Resource> AllResources { get; private set; } = new List<Resource>();
         private static List<Resource> StagedResources = new List<Resource>();
         public static Dictionary<string, ImFontPtr> Fonts { get; private set; } = new Dictionary<string, ImFontPtr>();
         private readonly static object _poolLock = new object();
+        private static bool isBusy = false;
+        public static bool IsBusy => FileManager.IsBusy;
 
         public static void Update()
         {
@@ -52,23 +55,27 @@ namespace Engine.Assets
             return AllResources.Any(x => x.Name == name);
         }
 
-        public static Resource Clone(string name, Resource asset)
+        public static Task<Resource> Clone(string name, Resource asset)
         {
             return Clone<Resource>(name, asset);
         }
 
-        public static T Clone<T>(string name, T asset) where T : Resource
+        public static async Task<T> Clone<T>(string name, T asset) where T : Resource
         {
-            T cl = CheckAndReturn<T>(name);
+            T cl = await CheckAndReturn<T>(name);
             if (cl != null)
                 return cl;
-            cl = asset.Clone(name) as T;
+            cl = await asset.Clone(name) as T;
             Add(cl);
             return cl;
         }
 
-        public static T CheckAndReturn<T>(string name) where T : Resource
+        public static async Task<T> CheckAndReturn<T>(string name) where T : Resource
         {
+            while (isBusy)
+            {
+                await Task.Yield();
+            }
             lock (_poolLock)
             {
                 if (AllResources.Any(x => x.Name == name && x is T))
@@ -93,7 +100,7 @@ namespace Engine.Assets
             ImFontPtr font = io.Fonts.AddFontFromFileTTF(path, size);
             Fonts.Add(path, font);
             io.Fonts.Build();
-            Program.GameImGui.RecreateFontDeviceTexture();
+            RenderingGlobals.GameImGui.RecreateFontDeviceTexture();
             return font;
         }
 
@@ -105,14 +112,14 @@ namespace Engine.Assets
             }
         }
 
-        public static Texture2D LoadTexture(string path)
+        public static Task<Texture2D> LoadTexture(string path)
         {
             return LoadTexture(path, path);
         }
 
-        public static Texture2D LoadTexture(string name, string path)
+        public static async Task<Texture2D> LoadTexture(string name, string path)
         {
-            Texture2D tex = CheckAndReturn<Texture2D>(name);
+            Texture2D tex = await CheckAndReturn<Texture2D>(name);
             if (tex != null)
                 return tex;
             tex = new Texture2D(name, path);
@@ -120,9 +127,9 @@ namespace Engine.Assets
             return tex;
         }
 
-        public static AudioClip LoadAudioClip(string path)
+        public static async Task<AudioClip> LoadAudioClip(string path)
         {
-            AudioClip buf = CheckAndReturn<AudioClip>(path);
+            AudioClip buf = await CheckAndReturn<AudioClip>(path);
             if (buf != null)
                 return buf;
             buf = new AudioClip(path);
@@ -130,9 +137,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static GraphicsShader LoadShader(string path)
+        public static async Task<GraphicsShader> LoadShader(string path)
         {
-            GraphicsShader buf = CheckAndReturn<GraphicsShader>(path);
+            GraphicsShader buf = await CheckAndReturn<GraphicsShader>(path);
             if (buf != null)
                 return buf;
             buf = new GraphicsShader(path);
@@ -140,9 +147,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static Model LoadModel(Material material, string path)
+        public static async Task<Model> LoadModel(Material material, string path)
         {
-            Model buf = CheckAndReturn<Model>(path);
+            Model buf = await CheckAndReturn<Model>(path);
             if (buf != null)
                 return buf;
             buf = new Model(path, path, material, true, false);
@@ -150,9 +157,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static Model LoadModel(string name, Material material, string path)
+        public static async Task<Model> LoadModel(string name, Material material, string path)
         {
-            Model buf = CheckAndReturn<Model>(path);
+            Model buf = await CheckAndReturn<Model>(path);
             if (buf != null)
                 return buf;
             buf = new Model(path, path, material, true, false);
@@ -160,9 +167,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static Model LoadModel(string name, Material material, string path, bool shouldLoadMats, bool animated)
+        public static async Task<Model> LoadModel(string name, Material material, string path, bool shouldLoadMats, bool animated)
         {
-            Model buf = CheckAndReturn<Model>(path);
+            Model buf = await CheckAndReturn<Model>(path);
             if (buf != null)
                 return buf;
             buf = new Model(path, path, material, shouldLoadMats, animated);
@@ -170,9 +177,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static UniformBuffer CreateUniformBuffer(string name, uint size)
+        public static async Task<UniformBuffer> CreateUniformBuffer(string name, uint size)
         {
-            UniformBuffer buf = CheckAndReturn<UniformBuffer>(name);
+            UniformBuffer buf = await CheckAndReturn<UniformBuffer>(name);
             if (buf != null && buf.Size == size)
                 return buf;
             buf = new UniformBuffer(name, size);
@@ -180,9 +187,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static CompoundBuffer CreateCompoundBuffer(string name, GraphicsShader shader, uint index, params IMaterialBindable[] bindables)
+        public static async Task<CompoundBuffer> CreateCompoundBuffer(string name, GraphicsShader shader, uint index, params IMaterialBindable[] bindables)
         {
-            CompoundBuffer buf = CheckAndReturn<CompoundBuffer>(name);
+            CompoundBuffer buf = await CheckAndReturn<CompoundBuffer>(name);
             if (buf != null && buf.Contains(shader, index, bindables))
                 return buf;
             buf = new CompoundBuffer(name, shader, index, bindables);
@@ -190,9 +197,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static Material CreateMaterial(string name, GraphicsShader shader)
+        public static async Task<Material> CreateMaterial(string name, GraphicsShader shader)
         {
-            Material buf = CheckAndReturn<Material>(name);
+            Material buf = await CheckAndReturn<Material>(name);
             if (buf != null)
                 return buf;
             buf = new Material(name, shader);
@@ -200,9 +207,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static Renderer CreateRenderer(string name)
+        public static async Task<Renderer> CreateRenderer(string name)
         {
-            Renderer buf = CheckAndReturn<Renderer>(name);
+            Renderer buf = await CheckAndReturn<Renderer>(name);
             if (buf != null)
                 return buf;
             buf = new Renderer(name);
@@ -210,9 +217,9 @@ namespace Engine.Assets
             return buf;
         }
 
-        public static Mesh CreateMesh(string name, bool isBig, Material material)
+        public static async Task<Mesh> CreateMesh(string name, bool isBig, Material material)
         {
-            Mesh buf = CheckAndReturn<Mesh>(name);
+            Mesh buf = await CheckAndReturn<Mesh>(name);
             if (buf != null)
                 return buf;
             buf = new Mesh(name, isBig, material);

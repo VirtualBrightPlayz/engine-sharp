@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using Engine.Assets.Rendering;
 using Veldrid;
 using Veldrid.SPIRV;
@@ -119,7 +120,7 @@ namespace Engine.Assets.Models
             UploadDataSkipChecks();
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
             Mesh m = new Mesh(cloneName, IsBigMesh, InternalMaterial);
             m.Vertices = Vertices.ToList();
@@ -130,7 +131,7 @@ namespace Engine.Assets.Models
             m.BoneIndices = BoneIndices.ToList();
             m.Colors = Colors.ToList();
             m.ReCreate();
-            return m;
+            return Task.FromResult<Resource>(m);
         }
 
         public static uint GetFormatSize(VertexElementFormat format)
@@ -159,21 +160,21 @@ namespace Engine.Assets.Models
             }
         }
 
-        public void UploadData<T>(T[] vertices) where T : struct, IVertex
+        public void UploadData<T>(T[] vertices) where T : unmanaged, IVertex
         {
             SetVertexList<T>(vertices);
             UploadData<T>();
         }
 
-        public void UploadData<T>() where T : struct, IVertex
+        public void UploadData<T>() where T : unmanaged, IVertex
         {
             if (_vertexList.Count == 0)
                 throw new InvalidOperationException("VertexList contains no values");
             if (_vertexList[^1] is not T)
                 throw new InvalidOperationException($"{typeof(T).FullName} is not valid in the current VertexList");
-            for (int i = 0; i < InternalMaterial.Shader._compileResult.Reflection.VertexElements.Length; i++)
+            for (int i = 0; i < InternalMaterial.Shader._compileResult.VertexElements.Length; i++)
             {
-                VertexElementDescription elem = InternalMaterial.Shader._compileResult.Reflection.VertexElements[i];
+                VertexElementDescription elem = InternalMaterial.Shader._compileResult.VertexElements[i];
                 string elemName = elem.Name;
                 FieldInfo info = typeof(T).GetField(elemName, BindingFlags.Instance | BindingFlags.Public);
                 if (info == null)
@@ -198,11 +199,11 @@ namespace Engine.Assets.Models
             _indexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)Indices.Count * (uint)(IsBigMesh ? sizeof(uint) : sizeof(ushort)), BufferUsage.IndexBuffer));
             _vertexBuffer.Name = $"{Name}_VertexBuffer";
             _indexBuffer.Name = $"{Name}_IndexBuffer";
-            Program.GameGraphics.UpdateBuffer(_vertexBuffer, 0, data);
+            ModelGlobals.GameGraphics.UpdateBuffer(_vertexBuffer, 0, data);
             if (IsBigMesh)
-                Program.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
+                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
             else
-                Program.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
+                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
             _indexCount = (uint)Indices.Count;
         }
 
@@ -229,12 +230,12 @@ namespace Engine.Assets.Models
             _indexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)Indices.Count * (uint)(IsBigMesh ? sizeof(uint) : sizeof(ushort)), BufferUsage.IndexBuffer));
             _vertexBuffer.Name = $"{Name}_VertexBuffer";
             _indexBuffer.Name = $"{Name}_IndexBuffer";
-            Program.GameGraphics.UpdateBuffer(_vertexBuffer, 0, ptr, (uint)data.Length * size);
+            ModelGlobals.GameGraphics.UpdateBuffer(_vertexBuffer, 0, ptr, (uint)data.Length * size);
             Marshal.FreeHGlobal(ptr);
             if (IsBigMesh)
-                Program.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
+                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
             else
-                Program.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
+                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
             _indexCount = (uint)Indices.Count;
         }
 

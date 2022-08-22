@@ -1,7 +1,10 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Engine.Assets.Rendering;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
 using Veldrid;
 
@@ -70,8 +73,8 @@ namespace Engine.Assets.Textures
         public IntPtr ImGuiTex { get; private set; }
         public Sampler InternalSampler { get; private set; }
         public SamplerInfo Info { get; private set; } = SamplerInfo.Linear;
-        public static Texture2D DefaultWhite => ResourceManager.LoadTexture("Shaders/white.bmp");
-        public static Texture2D DefaultNormal => ResourceManager.LoadTexture("Shaders/bump.bmp");
+        public static Task<Texture2D> DefaultWhite => ResourceManager.LoadTexture("Shaders/white.bmp");
+        public static Task<Texture2D> DefaultNormal => ResourceManager.LoadTexture("Shaders/bump.bmp");
         private string _path;
         private Rgba32[] _texData;
         public uint Width { get; private set; }
@@ -94,7 +97,7 @@ namespace Engine.Assets.Textures
             ReCreate();
         }
 
-        public override void ReCreate()
+        public override async void ReCreate()
         {
             if (HasBeenInitialized)
                 return;
@@ -103,7 +106,7 @@ namespace Engine.Assets.Textures
                 Tex.Dispose();
             if (_texData == null)
             {
-                using Image<Rgba32> img = Image.Load<Rgba32>(_path);
+                using Image<Rgba32> img = Image.Load<Rgba32>(await FileManager.LoadStream(_path));
                 Width = (uint)img.Width;
                 Height = (uint)img.Height;
                 _texData = new Rgba32[img.Width * img.Height];
@@ -112,18 +115,23 @@ namespace Engine.Assets.Textures
             TextureDescription desc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled);
             Tex = ResourceManager.GraphicsFactory.CreateTexture(desc);
             Tex.Name = Name;
-            Program.GameGraphics.UpdateTexture(Tex, _texData, 0, 0, 0, Width, Height, 1, 0, 0);
+            RenderingGlobals.GameGraphics.UpdateTexture(Tex, _texData, 0, 0, 0, Width, Height, 1, 0, 0);
             InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription());
             InternalSampler.Name = Name;
-            ImGuiTex = Program.GameImGui.GetOrCreateImGuiBinding(ResourceManager.GraphicsFactory, Tex);
+            ImGuiTex = RenderingGlobals.GameImGui.GetOrCreateImGuiBinding(ResourceManager.GraphicsFactory, Tex);
         }
 
-        public override Resource Clone(string cloneName)
+        public void CreateCallback(Stream stream)
         {
-            base.ReCreate();
+
+        }
+
+        public override Task<Resource> Clone(string cloneName)
+        {
+            // base.ReCreate();
             Texture2D tex = new Texture2D(cloneName, _path);
             tex.ReCreate();
-            return tex;
+            return Task.FromResult<Resource>(tex);
         }
 
         public void UpdateSamplerInfo(SamplerInfo info)
@@ -137,7 +145,7 @@ namespace Engine.Assets.Textures
 
         public override void Dispose()
         {
-            Program.GameImGui.RemoveImGuiBinding(Tex);
+            RenderingGlobals.GameImGui.RemoveImGuiBinding(Tex);
             InternalSampler.Dispose();
             Tex.Dispose();
         }

@@ -10,6 +10,7 @@ namespace Engine.Game
 {
     public abstract class GameApp : IDisposable
     {
+        public static GameApp Current { get; private set; }
         public Simulation Simulation { get; protected set; }
         public BufferPool BufferPool { get; protected set; }
         public ThreadDispatcher dispatcher { get; protected set; }
@@ -19,6 +20,7 @@ namespace Engine.Game
 
         public GameApp()
         {
+            Current = this;
         }
 
         public virtual void Setup()

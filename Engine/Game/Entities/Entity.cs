@@ -16,7 +16,7 @@ namespace Engine.Game.Entities
     public class Entity : IDisposable
     {
         public string Name { get; set; }
-        public GameApp Game => Program.Game;
+        public GameApp Game => GameApp.Current;
         public Vector3 Position { get; set; } = Vector3.Zero;
         public Vector3 LocalUp { get; set; } = Vector3.UnitY;
         public Quaternion Rotation { get; set; } = Quaternion.Identity;

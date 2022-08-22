@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Engine.Assets
 {
@@ -8,7 +9,7 @@ namespace Engine.Assets
         public string Name { get; set; }
         public bool HasBeenInitialized { get; set; } = false;
         public abstract void Dispose();
-        public abstract Resource Clone(string cloneName);
+        public abstract Task<Resource> Clone(string cloneName);
         public virtual void ReCreate()
         {
             Console.WriteLine($"ReCreate {Name} ({GetType().Name})");

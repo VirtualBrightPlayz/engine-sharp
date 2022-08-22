@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Veldrid;
 
 namespace Engine.Assets.Rendering
@@ -43,7 +44,7 @@ namespace Engine.Assets.Rendering
             InternalResourceSet.Name = Name;
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
             throw new NotSupportedException("Can't clone CompoundBuffers");
         }

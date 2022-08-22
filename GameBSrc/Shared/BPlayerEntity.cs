@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
+using System.Threading.Tasks;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuUtilities;
@@ -12,16 +13,14 @@ using Engine.Assets.Rendering;
 using Engine.Game;
 using Engine.Game.Entities;
 using Engine.Game.Physics;
-using Engine.VeldridSilk;
 using ImGuiNET;
-using Silk.NET.Input;
+using Veldrid;
 
 namespace GameBSrc
 {
     public class BPlayerEntity : PhysicsEntity
     {
-        public IInputContext Input => Program.GameInputContext;
-        public InputHandler InputHandler => Program.GameInputSnapshotHandler;
+        public InputHandler Input => MiscGlobals.GameInputSnapshot;
         public Capsule shape;
         public float speed = 2f;
         public float acceleration = 20f;
@@ -42,7 +41,7 @@ namespace GameBSrc
         private float prevFootstepTime;
         private float footstepTime;
         private AudioSource footstepSource;
-        private AudioClip[] footstepClips = new AudioClip[]
+        private Task<AudioClip>[] footstepClips = new Task<AudioClip>[]
         {
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "step.wav")),
         };
@@ -120,7 +119,7 @@ namespace GameBSrc
             {
                 BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
             }
-            Program.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
+            AudioGlobals.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
             float[] orientation = new float[6];
             orientation[0] = viewDirection.X;
             orientation[1] = viewDirection.Y;
@@ -130,7 +129,7 @@ namespace GameBSrc
             orientation[5] = LocalUp.Z;
             fixed (float* d = &orientation[0])
             {
-                Program.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerFloatArray.Orientation, d);
+                AudioGlobals.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerFloatArray.Orientation, d);
             }
         }
 
@@ -142,23 +141,23 @@ namespace GameBSrc
 
         public void UpdateLook()
         {
-            if (!Program.IsFocused)
+            if (!MiscGlobals.IsFocused)
             {
-                InputHandler.IsMouseLocked = false;
+                Input.IsMouseLocked = false;
             }
-            if (InputHandler.IsMouseLocked)
+            if (Input.IsMouseLocked)
             {
-                InputHandler.Position = new Vector2(Program.GameWindow.Size.X / 2, Program.GameWindow.Size.Y / 2);
-                lookAxis += InputHandler.MouseDelta * Vector2.One * 0.25f;
+                Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
+                lookAxis += Input.MouseDelta * Vector2.One * 0.25f;
                 lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                 UpdateLookRotation();
             }
-            if (InputHandler.IsMouseDown(Veldrid.MouseButton.Right) && !wasEscPressed)
+            if (Input.IsMouseDown(Veldrid.MouseButton.Right) && !wasEscPressed)
             {
-                BGame.Instance.DebugMode = InputHandler.IsMouseLocked;
-                InputHandler.IsMouseLocked = !InputHandler.IsMouseLocked;
+                BGame.Instance.DebugMode = Input.IsMouseLocked;
+                Input.IsMouseLocked = !Input.IsMouseLocked;
             }
-            wasEscPressed = InputHandler.IsMouseDown(Veldrid.MouseButton.Right);
+            wasEscPressed = Input.IsMouseDown(Veldrid.MouseButton.Right);
         }
 
         public void UpdateLookRotation()
@@ -171,17 +170,17 @@ namespace GameBSrc
             MarkTransformDirty(TransformDirtyFlags.Rotation);
         }
 
-        public void UpdateMovement(double dt)
+        public async void UpdateMovement(double dt)
         {
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
             Vector2 inputDirection = Vector2.Zero;
-            if (Input.Keyboards[0].IsKeyPressed(Key.W))
+            if (Input.IsKeyPressed(Key.W))
                 inputDirection.Y += 1f;
-            if (Input.Keyboards[0].IsKeyPressed(Key.S))
+            if (Input.IsKeyPressed(Key.S))
                 inputDirection.Y -= 1f;
-            if (Input.Keyboards[0].IsKeyPressed(Key.A))
+            if (Input.IsKeyPressed(Key.A))
                 inputDirection.X -= 1f;
-            if (Input.Keyboards[0].IsKeyPressed(Key.D))
+            if (Input.IsKeyPressed(Key.D))
                 inputDirection.X += 1f;
             float inputLength = inputDirection.LengthSquared();
             if (inputLength > 0)
@@ -220,7 +219,7 @@ namespace GameBSrc
             float velLen = targetVelocity.Length();
             if (prevFootstepTime + footstepInterval < footstepTime)
             {
-                footstepSource.SetBuffer(footstepClips[Random.Shared.Next(footstepClips.Length)]);
+                footstepSource.SetBuffer(await footstepClips[Random.Shared.Next(footstepClips.Length)]);
                 footstepSource.Play();
                 prevFootstepTime = footstepTime;
             }

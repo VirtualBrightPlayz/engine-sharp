@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Veldrid;
 
 namespace Engine.Assets.Rendering
@@ -44,39 +45,39 @@ namespace Engine.Assets.Rendering
             InternalBuffer.Name = Name;
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
             throw new NotImplementedException();
         }
 
-        public void UploadData<T>(T[] data) where T : struct
+        public void UploadData<T>(T[] data) where T : unmanaged
         {
-            Program.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
+            RenderingGlobals.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
         }
 
-        public void UploadData<T>(T data) where T : struct
+        public void UploadData<T>(T data) where T : unmanaged
         {
-            Program.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
+            RenderingGlobals.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
         }
 
-        public void UploadData<T>(Renderer renderer, T[] data) where T : struct
+        public void UploadData<T>(Renderer renderer, T[] data) where T : unmanaged
         {
             renderer.CommandList.UpdateBuffer(InternalBuffer, 0, data);
         }
 
-        public void UploadData<T>(Renderer renderer, T data) where T : struct
+        public void UploadData<T>(Renderer renderer, T data) where T : unmanaged
         {
             renderer.CommandList.UpdateBuffer(InternalBuffer, 0, data);
         }
 
-        public void UploadData<T>(uint offsetInBytes, T[] data) where T : struct
+        public void UploadData<T>(uint offsetInBytes, T[] data) where T : unmanaged
         {
-            Program.GameGraphics.UpdateBuffer(InternalBuffer, offsetInBytes, data);
+            RenderingGlobals.GameGraphics.UpdateBuffer(InternalBuffer, offsetInBytes, data);
         }
 
         public void UploadData(uint offsetInBytes, uint sizeInBytes, IntPtr data)
         {
-            Program.GameGraphics.UpdateBuffer(InternalBuffer, offsetInBytes, data, sizeInBytes);
+            RenderingGlobals.GameGraphics.UpdateBuffer(InternalBuffer, offsetInBytes, data, sizeInBytes);
         }
 
         public override void Dispose()

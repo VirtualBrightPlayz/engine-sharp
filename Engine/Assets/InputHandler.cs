@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Silk.NET.Input;
+// using Silk.NET.Input;
 using Veldrid;
 
-namespace Engine.VeldridSilk
+namespace Engine.Assets
 {
-    public class InputHandler : InputSnapshot, IDisposable
+    public partial class InputHandler : InputSnapshot, IDisposable
     {
         private HashSet<Veldrid.Key> _currentlyPressedKeys = new HashSet<Veldrid.Key>();
         private HashSet<Veldrid.Key> _newlyPressedKeysThisFrame = new HashSet<Veldrid.Key>();
@@ -21,31 +21,38 @@ namespace Engine.VeldridSilk
         private Vector2 _mouseDeltaOffset;
         public Vector2 Position
         {
-            get => Program.GameInputContext.Mice[0].Position;
+            get => _mousePosition;
             set
             {
-                if (Program.IsFocused)
+                if (MiscGlobals.IsFocused)
                 {
+                    // TODO:
+                    /*
                     var oldpos = Program.GameInputContext.Mice[0].Position;
                     Program.GameInputContext.Mice[0].Position = value;
                     _mouseDeltaOffset = value - oldpos;
+                    */
                 }
             }
         }
+        public bool _mouseLocked = false;
         public bool IsMouseLocked
         {
-            get => Program.GameInputContext.Mice[0].Cursor.CursorMode != CursorMode.Normal;
+            get => _mouseLocked;
             set
             {
-                if (Program.IsFocused || !value)
+                if (MiscGlobals.IsFocused || !value)
                 {
-                    Program.GameInputContext.Mice[0].Cursor.CursorMode = value ? CursorMode.Hidden : CursorMode.Normal;
+                    // TODO:
+                    _mouseLocked = value;
+                    // Program.GameInputContext.Mice[0].Cursor.CursorMode = value ? CursorMode.Hidden : CursorMode.Normal;
                 }
             }
         }
 
         public Vector2 MouseDelta => _mouseDelta;
 
+        /*
         public static Veldrid.Key SilkToVeldridKey(Silk.NET.Input.Key key)
         {
             try
@@ -77,20 +84,23 @@ namespace Engine.VeldridSilk
                 return Veldrid.MouseButton.Left;
             }
         }
+        */
 
         public InputHandler()
         {
-            Program.GameInputContext.Keyboards[0].KeyUp += KeyUp;
+            /*Program.GameInputContext.Keyboards[0].KeyUp += KeyUp;
             Program.GameInputContext.Keyboards[0].KeyDown += KeyDown;
             Program.GameInputContext.Keyboards[0].KeyChar += KeyChar;
             Program.GameInputContext.Mice[0].MouseUp += MouseUp;
-            Program.GameInputContext.Mice[0].MouseDown += MouseDown;
+            Program.GameInputContext.Mice[0].MouseDown += MouseDown;*/
         }
 
+        /*
         private void KeyChar(Silk.NET.Input.IKeyboard arg1, char arg2)
         {
             _keyCharEvents.Add(arg2);
         }
+        */
 
         private ModifierKeys GetModifierKeys()
         {
@@ -104,6 +114,7 @@ namespace Engine.VeldridSilk
             return mod;
         }
 
+        /*
         private void MouseUp(Silk.NET.Input.IMouse m, Silk.NET.Input.MouseButton btn)
         {
             Veldrid.MouseButton k = SilkToVeldridMouseButton(btn);
@@ -139,6 +150,7 @@ namespace Engine.VeldridSilk
             _currentlyPressedKeys.Remove(k);
             _newlyPressedKeysThisFrame.Remove(k);
         }
+        */
 
         public void Update()
         {
@@ -147,9 +159,10 @@ namespace Engine.VeldridSilk
             _keyEvents.Clear();
             _keyCharEvents.Clear();
             _mouseEvents.Clear();
-            _mouseDelta = _mousePosition - Program.GameInputContext.Mice[0].Position + _mouseDeltaOffset;
+            UpdateMouse();
+            /*_mouseDelta = _mousePosition - Program.GameInputContext.Mice[0].Position + _mouseDeltaOffset;
             _mouseDeltaOffset = Vector2.Zero;
-            _mousePosition = Program.GameInputContext.Mice[0].Position;
+            _mousePosition = Program.GameInputContext.Mice[0].Position;*/
         }
 
         public IReadOnlyList<KeyEvent> KeyEvents => _keyEvents;
@@ -167,13 +180,18 @@ namespace Engine.VeldridSilk
             return (_currentlyPressedMouseButtons.Contains(button));
         }
 
+        public bool IsKeyPressed(Veldrid.Key key)
+        {
+            return _currentlyPressedKeys.Contains(key);
+        }
+
         public void Dispose()
         {
-            Program.GameInputContext.Keyboards[0].KeyUp -= KeyUp;
+            /*Program.GameInputContext.Keyboards[0].KeyUp -= KeyUp;
             Program.GameInputContext.Keyboards[0].KeyDown -= KeyDown;
             Program.GameInputContext.Keyboards[0].KeyChar -= KeyChar;
             Program.GameInputContext.Mice[0].MouseUp -= MouseUp;
-            Program.GameInputContext.Mice[0].MouseDown -= MouseDown;
+            Program.GameInputContext.Mice[0].MouseDown -= MouseDown;*/
         }
     }
 }

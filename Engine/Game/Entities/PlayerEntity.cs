@@ -1,3 +1,4 @@
+#if !WEBGL
 using System;
 using System.Diagnostics;
 using System.Numerics;
@@ -151,3 +152,4 @@ namespace Engine.Game.Entities
         }
     }
 }
+#endif

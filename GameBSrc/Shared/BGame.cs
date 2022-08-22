@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using BepuPhysics;
 using BepuUtilities;
 using BepuUtilities.Memory;
@@ -20,7 +21,7 @@ namespace GameBSrc
     public class BGame : GameApp
     {
         public const uint FogSetId = 6;
-        public static BGame Instance => Program.Game as BGame;
+        public static BGame Instance => Current as BGame;
         public override string Name => "SCP-087-B CSharp";
         public GameData Data { get; private set; }
         public BPlayerEntity player;
@@ -30,7 +31,7 @@ namespace GameBSrc
         public AudioSource miscSource;
         public AudioSource horrorSource;
         public AudioSource soundEmitter;
-        public AudioClip[] radioClips => new AudioClip[]
+        public Task<AudioClip>[] radioClips => new Task<AudioClip>[]
         {
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "radio1.ogg")),
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "radio2.ogg")),
@@ -38,22 +39,22 @@ namespace GameBSrc
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "radio4.ogg")),
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "death.ogg")),
         };
-        public AudioClip[] horrorClips => new AudioClip[]
+        public Task<AudioClip>[] horrorClips => new Task<AudioClip>[]
         {
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "horror1.ogg")),
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "horror2.ogg")),
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "horror3.ogg")),
         };
-        public AudioClip stoneClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "stone.ogg"));
-        public AudioClip fireOnClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "match.ogg"));
-        public AudioClip fireOffClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "fireout.ogg"));
-        public AudioClip loudStepClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "loudstep.ogg"));
-        public AudioClip dontLookClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "dontlook.ogg"));
-        public Texture2D logo => ResourceManager.LoadTexture(Path.Combine(BGame.Instance.Data.GFXDir, "scp.jpg"));
+        public Task<AudioClip> stoneClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "stone.ogg"));
+        public Task<AudioClip> fireOnClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "match.ogg"));
+        public Task<AudioClip> fireOffClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "fireout.ogg"));
+        public Task<AudioClip> loudStepClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "loudstep.ogg"));
+        public Task<AudioClip> dontLookClip => ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "dontlook.ogg"));
+        public Task<Texture2D> logo => ResourceManager.LoadTexture(Path.Combine(BGame.Instance.Data.GFXDir, "scp.jpg"));
         public string MusicClipPath => Path.Combine(Data.SFXDir, "music.ogg");
         public List<StaticModelEntity> floors = new List<StaticModelEntity>();
-        public GraphicsShader Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
-        public GraphicsShader AnimShader => ResourceManager.LoadShader("Shaders/MainMeshAnimFog");
+        public Task<GraphicsShader> Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
+        public Task<GraphicsShader> AnimShader => ResourceManager.LoadShader("Shaders/MainMeshAnimFog");
         public int radioState = 0;
         public int currentFloor = 0;
         public int killTimer = 0;
@@ -80,13 +81,13 @@ namespace GameBSrc
             base.Setup();
         }
 
-        public void Init()
+        public async Task Init()
         {
-            fogUniform = ResourceManager.CreateUniformBuffer("WorldFogInfo", (uint)4 * 4);
-            fogBuffer = ResourceManager.CreateCompoundBuffer("WorldFogInfo", Shader, FogSetId, fogUniform);
+            fogUniform = await ResourceManager.CreateUniformBuffer("WorldFogInfo", (uint)4 * 4);
+            fogBuffer = await ResourceManager.CreateCompoundBuffer("WorldFogInfo", await Shader, FogSetId, fogUniform);
             SetAmbient(Brightness);
             fogData = new Vector4(0f, 0f, 0f, 2.5f);
-            musicClip = ResourceManager.LoadAudioClip(MusicClipPath);
+            musicClip = await ResourceManager.LoadAudioClip(MusicClipPath);
             Music = new AudioSource("Music");
             Music.SetBuffer(musicClip);
             Music.Looping = true;
@@ -98,7 +99,7 @@ namespace GameBSrc
             Music.Play();
 
             Radio = new AudioSource("Radio");
-            Radio.SetBuffer(radioClips[0]);
+            Radio.SetBuffer(await radioClips[0]);
             Radio.Looping = false;
             Radio.MaxDistance = float.PositiveInfinity;
             Radio.RolloffFactor = 0f;
@@ -108,7 +109,7 @@ namespace GameBSrc
             Radio.Stop();
 
             miscSource = new AudioSource("Misc");
-            miscSource.SetBuffer(fireOnClip);
+            miscSource.SetBuffer(await fireOnClip);
             miscSource.Looping = false;
             miscSource.MaxDistance = float.PositiveInfinity;
             miscSource.RolloffFactor = 0f;
@@ -118,7 +119,7 @@ namespace GameBSrc
             miscSource.Stop();
 
             horrorSource = new AudioSource("Horror");
-            horrorSource.SetBuffer(horrorClips[0]);
+            horrorSource.SetBuffer(await horrorClips[0]);
             horrorSource.Looping = false;
             horrorSource.MaxDistance = float.PositiveInfinity;
             horrorSource.RolloffFactor = 0f;
@@ -128,7 +129,7 @@ namespace GameBSrc
             horrorSource.Stop();
 
             soundEmitter = new AudioSource("SoundEmitter");
-            soundEmitter.SetBuffer(loudStepClip);
+            soundEmitter.SetBuffer(await loudStepClip);
             soundEmitter.Looping = false;
             soundEmitter.MaxDistance = float.PositiveInfinity;
             soundEmitter.RolloffFactor = 0f;
@@ -137,7 +138,7 @@ namespace GameBSrc
             soundEmitter.MaxGain = 1f;
             soundEmitter.Stop();
 
-            SpawnFloors(201);
+            await SpawnFloors(201);
             SpawnPlayer();
         }
 
@@ -206,12 +207,12 @@ namespace GameBSrc
             }
         }
 
-        public void SpawnFloors(int floorCount)
+        public async Task SpawnFloors(int floorCount)
         {
             string doorPath = Path.Combine(BGame.Instance.Data.GFXDir, "door.jpg");
             string cubePath = "Shaders/cube.gltf";
-            Material doorMat = ResourceManager.CreateMaterial("Door", Shader);
-            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(doorPath, Shader, UniformConsts.DiffuseTextureSet, ResourceManager.LoadTexture(doorPath), Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+            Material doorMat = await ResourceManager.CreateMaterial("Door", await Shader);
+            CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(doorPath, await Shader, UniformConsts.DiffuseTextureSet, await ResourceManager.LoadTexture(doorPath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             doorMat.SetUniforms(UniformConsts.DiffuseTextureSet, buffer);
             var door = new ModelEntity("Door", cubePath, doorMat);
             // door.Model.CompoundBuffers.Clear();
@@ -402,7 +403,7 @@ namespace GameBSrc
 
             for (int i = 0; i < floorActions.Length; i++)
             {
-                var floor = new FloorEntity(i+1, Path.Combine(Data.GFXDir, GetFloor(rng, i, floorActions[i])), ResourceManager.CreateMaterial("map0", Shader));
+                var floor = new FloorEntity(i+1, Path.Combine(Data.GFXDir, GetFloor(rng, i, floorActions[i])), await ResourceManager.CreateMaterial("map0", await Shader));
                 if (i % 2 == 0)
                 {
                     floor.Position = new Vector3(0f, -i*2f, 0f);
@@ -419,13 +420,13 @@ namespace GameBSrc
             }
         }
 
-        public void CreateObject(float x, float y, float z)
+        public async Task CreateObject(float x, float y, float z)
         {
             ClearObject();
             string diffusePath = Path.Combine(Data.GFXDir, "brickwall.jpg");
-            Material material = ResourceManager.CreateMaterial(diffusePath, Shader);
-            Texture2D diffuse = ResourceManager.LoadTexture(diffusePath);
-            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer(diffusePath, Shader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+            Material material = await ResourceManager.CreateMaterial(diffusePath, await Shader);
+            Texture2D diffuse = await ResourceManager.LoadTexture(diffusePath);
+            CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, await Shader, UniformConsts.DiffuseTextureSet, diffuse, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             currentObject = new StaticModelEntity("CurrentObject", "Shaders/cube.gltf", material);
             currentObject.Position = new Vector3(x, y, z);
             currentObject.Scale = new Vector3(0.5f, 1f, 0.5f);
@@ -443,13 +444,13 @@ namespace GameBSrc
             }
         }
 
-        public void CreateEnemy(float x, float y, float z, string texture)
+        public async Task CreateEnemy(float x, float y, float z, string texture)
         {
             ClearEnemy();
             string diffusePath = Path.Combine(Data.GFXDir, texture);
-            Material material = ResourceManager.CreateMaterial($"{diffusePath}_Anim", AnimShader);
-            Texture2D diffuse = ResourceManager.LoadTexture(diffusePath);
-            CompoundBuffer buffer = ResourceManager.CreateCompoundBuffer($"{diffusePath}_Anim", AnimShader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, Texture2D.DefaultNormal);
+            Material material = await ResourceManager.CreateMaterial($"{diffusePath}_Anim", await AnimShader);
+            Texture2D diffuse = await ResourceManager.LoadTexture(diffusePath);
+            CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer($"{diffusePath}_Anim", await AnimShader, UniformConsts.DiffuseTextureSet, diffuse, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             enemy = new EnemyEntity("Enemy", Path.Combine(Data.GFXDir, "mental.b3d"), material);
             enemy.buffer = buffer;
             // enemy.Model.CompoundBuffers.Clear();
@@ -490,12 +491,12 @@ namespace GameBSrc
             renderer.ViewMatrix *= Matrix4x4.CreateFromYawPitchRoll(0f, -killTimerSec * (MathF.PI / 180f), -(killTimerSec / 2f) * (MathF.PI / 180f));
         }
 
-        public unsafe void Kill()
+        public async void Kill()
         {
             TimeScale = 0f;
             if (killTimer == 1)
             {
-                Radio.SetBuffer(radioClips[4]);
+                Radio.SetBuffer(await radioClips[4]);
                 Radio.Play();
             }
             killTimer++;
@@ -503,11 +504,11 @@ namespace GameBSrc
             if (killTimer > 90)
             {
                 // Silk.NET.SDL.Sdl.GetApi().ShowSimpleMessageBox(0, Name, "NO", null);
-                Program.IsClosing = true;
+                MiscGlobals.IsClosing = true;
             }
         }
 
-        public void UpdateFloors(double dt)
+        public async void UpdateFloors(double dt)
         {
             float delta = (float)dt;
             currentFloor = (int)((-player.Position.Y - 0.5f) / 2f);
@@ -547,12 +548,12 @@ namespace GameBSrc
                                 // LINE 772 game.bb
                                 if (floorTimers[i] > 1.6f && pastTimer <= 1.6f)
                                 {
-                                    CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                    await CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
                                     enemy.speed = 0.01f;
                                 }
                                 if (floorTimers[i] > 3.5f && pastTimer <= 3.5f)
                                 {
-                                    miscSource.SetBuffer(fireOnClip);
+                                    miscSource.SetBuffer(await fireOnClip);
                                     miscSource.Play();
                                 }
                                 if (floorTimers[i] > 4.16f && pastTimer <= 4.16f)
@@ -561,7 +562,7 @@ namespace GameBSrc
                                 }
                                 if (floorTimers[i] > 4.83f && pastTimer <= 4.83f)
                                 {
-                                    horrorSource.SetBuffer(horrorClips[2]);
+                                    horrorSource.SetBuffer(await horrorClips[2]);
                                     horrorSource.Play();
                                 }
                                 if (floorTimers[i] > 7.5f && pastTimer <= 7.5f)
@@ -592,13 +593,13 @@ namespace GameBSrc
                                 
                                 if (floorTimers[i] > 1.6f && pastTimer <= 1.6f)
                                 {
-                                    CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                    await CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
                                     enemy.speed = 0.03f;
                                 }
                                 if ((floorTimers[i] > 2.16f && pastTimer <= 2.16f) || (floorTimers[i] > 4.3f && pastTimer <= 4.3f) || (floorTimers[i] > 6.3f && pastTimer <= 6.3f))
                                 {
                                     if (pastTimer <= 2.16f)
-                                        horrorSource.SetBuffer(horrorClips[0]);
+                                        horrorSource.SetBuffer(await horrorClips[0]);
                                     horrorSource.Play();
                                     SetFogDist(20f);
                                     SetAmbient(Brightness);
@@ -641,7 +642,7 @@ namespace GameBSrc
                                 if ((floorTimers[i] > 8.3f && pastTimer <= 8.3f))
                                 {
                                     ClearObject();
-                                    miscSource.SetBuffer(stoneClip);
+                                    miscSource.SetBuffer(await stoneClip);
                                     miscSource.Play();
                                 }
                                 if ((floorTimers[i] > 16.6f && pastTimer <= 16.6f))
@@ -680,7 +681,7 @@ namespace GameBSrc
                                         enemy.animSpeed = 0.05f;
                                         if (floorTimers[i] < 166.66f)
                                         {
-                                            horrorSource.SetBuffer(horrorClips[2]);
+                                            horrorSource.SetBuffer(await horrorClips[2]);
                                             horrorSource.Play();
                                             floorTimers[i] = 166.683f;
                                         }
@@ -701,7 +702,7 @@ namespace GameBSrc
                                 }
                                 if (floorTimers[i] % 11f > 0.25f && pastTimer % 11f <= 0.25f)
                                 {
-                                    soundEmitter.SetBuffer(dontLookClip);
+                                    soundEmitter.SetBuffer(await dontLookClip);
                                     soundEmitter.Position = enemy.Position;
                                     soundEmitter.Play();
                                 }
@@ -743,9 +744,9 @@ namespace GameBSrc
                         {
                             if (Vector3.Distance(player.Position, floorPos) < 1f)
                             {
-                                horrorSource.SetBuffer(horrorClips[1]);
+                                horrorSource.SetBuffer(await horrorClips[1]);
                                 horrorSource.Play();
-                                miscSource.SetBuffer(fireOffClip);
+                                miscSource.SetBuffer(await fireOffClip);
                                 miscSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 2f;
                                 SetAmbient(25);
@@ -759,9 +760,9 @@ namespace GameBSrc
                         {
                             if (Vector3.Distance(player.Position, floorPos) < 3f)
                             {
-                                horrorSource.SetBuffer(horrorClips[1]);
+                                horrorSource.SetBuffer(await horrorClips[1]);
                                 horrorSource.Play();
-                                miscSource.SetBuffer(fireOffClip);
+                                miscSource.SetBuffer(await fireOffClip);
                                 miscSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 2f;
                                 SetAmbient(25);
@@ -773,19 +774,19 @@ namespace GameBSrc
                     {
                         if (floorTimers[currentFloor] <= MinFloorTime)
                         {
-                            CreateObject(currentFloor % 2 == 0 ? endX : endX, floorPos.Y, floorPos.Z);
+                            await CreateObject(currentFloor % 2 == 0 ? endX : endX, floorPos.Y, floorPos.Z);
                             floorTimers[currentFloor] = MinFloorTime * 2f;
                         }
                         else if (floorTimers[currentFloor] <= MinFloorTime * 2f)
                         {
                             if (Vector3.Distance(player.Position, floorPos) < 1f)
                             {
-                                CreateEnemy(startX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                await CreateEnemy(startX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
                                 enemy.speed = 0.01f;
                                 enemy.startAnimTime = 0d;
                                 enemy.endAnimTime = 1d;
                                 enemy.animSpeed = 0d;
-                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.SetBuffer(await horrorClips[Random.Shared.Next(0, 3)]);
                                 horrorSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 3f;
                             }
@@ -796,7 +797,7 @@ namespace GameBSrc
                     {
                         if (floorTimers[currentFloor] + delta > 2.5f)
                         {
-                            Radio.SetBuffer(radioClips[0]);
+                            Radio.SetBuffer(await radioClips[0]);
                             Radio.Play();
                             floorTimers[currentFloor] = 0f;
                         }
@@ -805,17 +806,17 @@ namespace GameBSrc
                     }
                     break;
                     case FloorEntity.FloorAction.Radio2:
-                        Radio.SetBuffer(radioClips[1]);
+                        Radio.SetBuffer(await radioClips[1]);
                         Radio.Play();
                         floorTimers[currentFloor] = 0f;
                         break;
                     case FloorEntity.FloorAction.Radio3:
-                        Radio.SetBuffer(radioClips[2]);
+                        Radio.SetBuffer(await radioClips[2]);
                         Radio.Play();
                         floorTimers[currentFloor] = 0f;
                         break;
                     case FloorEntity.FloorAction.Radio4:
-                        Radio.SetBuffer(radioClips[3]);
+                        Radio.SetBuffer(await radioClips[3]);
                         Radio.Play();
                         floorTimers[currentFloor] = 0f;
                         break;
@@ -825,12 +826,12 @@ namespace GameBSrc
                         {
                             if (Vector3.Distance(player.Position, new Vector3(endX, floorPos.Y, floorPos.Z)) < 1.5f)
                             {
-                                CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                await CreateEnemy(endX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
                                 enemy.speed = 0f;
                                 enemy.startAnimTime = 0d;
                                 enemy.endAnimTime = 1d;
                                 enemy.animSpeed = 0d;
-                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.SetBuffer(await horrorClips[Random.Shared.Next(0, 3)]);
                                 horrorSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 5f;
                             }
@@ -839,12 +840,12 @@ namespace GameBSrc
                         {
                             if (Vector3.Distance(player.Position, new Vector3(floorPos.X, floorPos.Y, floorPos.Z)) < 1.5f)
                             {
-                                CreateEnemy(floorPos.X, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                await CreateEnemy(floorPos.X, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
                                 enemy.speed = 0f;
                                 enemy.startAnimTime = 0d;
                                 enemy.endAnimTime = 1d;
                                 enemy.animSpeed = 0d;
-                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.SetBuffer(await horrorClips[Random.Shared.Next(0, 3)]);
                                 horrorSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 5f;
                             }
@@ -853,12 +854,12 @@ namespace GameBSrc
                         {
                             if (Vector3.Distance(player.Position, new Vector3(startX, floorPos.Y, floorPos.Z)) < 1.5f)
                             {
-                                CreateEnemy(startX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
+                                await CreateEnemy(startX, floorPos.Y - 1f, floorPos.Z, "mental.jpg");
                                 enemy.speed = 0f;
                                 enemy.startAnimTime = 0d;
                                 enemy.endAnimTime = 1d;
                                 enemy.animSpeed = 0d;
-                                horrorSource.SetBuffer(horrorClips[Random.Shared.Next(0, 3)]);
+                                horrorSource.SetBuffer(await horrorClips[Random.Shared.Next(0, 3)]);
                                 horrorSource.Play();
                                 floorTimers[currentFloor] = MinFloorTime * 5f;
                             }
@@ -879,7 +880,7 @@ namespace GameBSrc
                         if (floorTimers[currentFloor] <= MinFloorTime)
                         {
                             floorTimers[currentFloor] = MinFloorTime * 2f;
-                            soundEmitter.SetBuffer(loudStepClip);
+                            soundEmitter.SetBuffer(await loudStepClip);
                         }
                         else if (floorTimers[currentFloor] < 50f)
                         {
@@ -902,7 +903,7 @@ namespace GameBSrc
                         if (floorTimers[currentFloor] <= MinFloorTime)
                         {
                             floorTimers[currentFloor] = MinFloorTime * 2f;
-                            soundEmitter.SetBuffer(loudStepClip);
+                            soundEmitter.SetBuffer(await loudStepClip);
                         }
                         else if (floorTimers[currentFloor] < 50f)
                         {
@@ -926,11 +927,11 @@ namespace GameBSrc
                         {
                             if (currentFloor % 2 == 0)
                             {
-                                CreateEnemy(startX - 1.8f, floorPos.Y - 1f, floorPos.Z - 6f, "173.jpg");
+                                await CreateEnemy(startX - 1.8f, floorPos.Y - 1f, floorPos.Z - 6f, "173.jpg");
                             }
                             else
                             {
-                                CreateEnemy(startX + 1.8f, floorPos.Y - 1f, floorPos.Z + 6f, "173.jpg");
+                                await CreateEnemy(startX + 1.8f, floorPos.Y - 1f, floorPos.Z + 6f, "173.jpg");
                             }
                             enemy.fog = false;
                             enemy.speed = 0f;
@@ -957,16 +958,16 @@ namespace GameBSrc
                 KillViewMatrix(renderer);
         }
 
-        public override void Draw(Renderer renderer, double dt)
+        public override async void Draw(Renderer renderer, double dt)
         {
             frameCount++;
             if (player == null)
             {
-                renderer.Blit(logo);
+                renderer.Blit(await logo);
                 return;
             }
             if (DebugMode)
-                Program.DrawDebugWindow();
+                DebugGlobals.DrawDebugWindow();
             fogUniform.UploadData(renderer, fogData);
             foreach (var item in ResourceManager.AllResources)
             {
@@ -982,17 +983,17 @@ namespace GameBSrc
             horrorSource.Position = renderer.ViewPosition;
         }
 
-        public override void Tick(double dt)
+        public override async void Tick(double dt)
         {
             if (player == null)
             {
                 if (frameCount > 1)
-                    Init();
+                    await Init();
                 return;
             }
             var oldPlayerPos = player.Position;
             base.Tick(dt);
-            TimeScale = Program.IsFocused ? 1f : 0f;
+            TimeScale = MiscGlobals.IsFocused ? 1f : 0f;
             UpdateFloors(dt);
             if (killTimer > 0)
                 Kill();

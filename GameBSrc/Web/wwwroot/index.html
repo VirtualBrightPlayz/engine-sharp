@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Engine Sharp</title>
+    <base href="/" />
+</head>
+
+<body>
+    <canvas width="600" height="400" id="canvas"></canvas>
+
+    <script type='text/javascript'>
+        var canvas = document.getElementById("canvas");
+        var Module = {
+            canvas: canvas
+        };
+
+        window.init = () => {
+            window.requestAnimationFrame(frame);
+            return 0;
+        };
+
+        window.getHttpPrefix = () => {
+            return window.location.protocol + "//" + window.location.host;
+        };
+
+        window.getHttpContent = (path) => {
+            var request = new XMLHttpRequest();
+            request.open("GET", path, false);
+            request.send(null);
+            return request.response;
+        };
+
+        function frame(time) {
+            DotNet.invokeMethod("Web", "Frame", time);
+            window.requestAnimationFrame(frame);
+        }
+    </script>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

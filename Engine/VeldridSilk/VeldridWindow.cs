@@ -1,6 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+#if !WEBGL
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -145,16 +146,21 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
         ) =>
             preferredBackend switch
             {
+            #if !WEBGL
                 GraphicsBackend.Direct3D11 => CreateDefaultD3D11GraphicsDevice(options, window),
                 GraphicsBackend.Vulkan => CreateVulkanGraphicsDevice(options, window),
                 GraphicsBackend.OpenGL => CreateDefaultOpenGlGraphicsDevice(options, window, preferredBackend),
                 GraphicsBackend.Metal => CreateMetalGraphicsDevice(options, window),
+            #endif
                 GraphicsBackend.OpenGLES => CreateDefaultOpenGlGraphicsDevice(options, window, preferredBackend),
                 _ => throw new VeldridException("Invalid GraphicsBackend: " + preferredBackend)
             };
 
         private static unsafe SwapchainSource GetSwapchainSource(INativeWindow view)
         {
+        #if WEBGL
+            return SwapchainSource.CreateWeb();
+        #else
             if (view.WinRT.HasValue)
             {
                 ThrowWinRT();
@@ -210,8 +216,10 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
             return null!;
 
             static void Throw() => throw new PlatformNotSupportedException();
+        #endif
         }
 
+    #if !WEBGL
         private static unsafe VkSurfaceSource GetSurfaceSource(INativeWindow window)
         {
             if (window.X11.HasValue)
@@ -277,6 +285,7 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
 
             return GraphicsDevice.CreateMetal(options, swapchainDesc);
         }
+    #endif
 
         /// <summary>
         /// Gets the default backend given the current runtime information.
@@ -284,6 +293,9 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
         /// <returns>The default backend for this runtime/platform.</returns>
         public static GraphicsBackend GetPlatformDefaultBackend()
         {
+        #if WEBGL
+            return GraphicsBackend.OpenGLES;
+        #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return GraphicsBackend.Direct3D11;
@@ -299,6 +311,7 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
             return GraphicsDevice.IsBackendSupported(GraphicsBackend.Vulkan)
                 ? GraphicsBackend.Vulkan
                 : GraphicsBackend.OpenGL;
+        #endif
         }
         
         private const int GlesMajor = 3;
@@ -407,6 +420,7 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
             opts.API = api;
         }
 
+    #if !WEBGL
         private static GraphicsDevice CreateDefaultD3D11GraphicsDevice
         (
             GraphicsDeviceOptions options,
@@ -425,6 +439,7 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
 
             return GraphicsDevice.CreateD3D11(options, swapchainDesc);
         }
+    #endif
 
         private static unsafe string GetString(byte* stringStart)
         {
@@ -441,3 +456,4 @@ namespace Silk.NET.Windowing.Extensions.Veldrid
             (bool gles) => gles ? (GlesMajor, GlesMinor) : (GlMajor, GlMinor);
     }
 }
+#endif

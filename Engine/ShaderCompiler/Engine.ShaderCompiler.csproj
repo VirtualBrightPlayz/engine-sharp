@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Engine</RootNamespace>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);SHADER_COMPILER</DefineConstants>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- <PackageReference Include="AssimpNet" Version="5.0.0-beta1" /> -->
+    <!-- <PackageReference Include="BepuPhysics" Version="2.5.0-beta.7" /> -->
+    <!-- <PackageReference Include="BepuUtilities" Version="2.5.0-beta.7" /> -->
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.2.0" PrivateAssets="all" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <!-- <PackageReference Include="NAudio.Vorbis" Version="1.5.0" /> -->
+    <!-- <PackageReference Include="Silk.NET.OpenAL" Version="2.16.0" /> -->
+    <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj" />
+    <ProjectReference Include="..\..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
+    <!-- <PackageReference Include="Veldrid" Version="4.8.0" />
+    <PackageReference Include="Veldrid.ImGui" Version="5.72.0" /> -->
+    <!-- <PackageReference Include="Veldrid.RenderDoc" Version="1.0.1" /> -->
+    <!-- <PackageReference Include="Veldrid.StartupUtilities" Version="4.8.0" /> -->
+    <PackageReference Include="Veldrid.SPIRV" Version="1.0.13" />
+    <!-- <PackageReference Include="NAudio" Version="2.1.0" /> -->
+    <!-- <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" /> -->
+    <!-- <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.8" /> -->
+
+    <!-- <Compile Remove=".\**\*" /> -->
+    <!-- <Compile Include="..\Assets\Rendering\GraphicsShader.cs" /> -->
+    <!-- <Compile Include="..\Assets\**\*.cs" /> -->
+    <Compile Include="..\Assets\FileManager.cs" />
+    <Compile Include="..\Assets\Rendering\ShaderProcessor.cs" />
+    <!-- <Compile Update="Engine\Assets\Rendering\ReflectShaders.cs" /> -->
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Update="../Shaders/MainMesh.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="../Shaders/MainMeshAnim.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="../Shaders/ForwardLights.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="../Shaders/Blit.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="../Shaders/cube.gltf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="../Shaders/white.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="../Shaders/bump.bmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

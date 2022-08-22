@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Engine.Assets.Models;
 using Engine.Assets.Textures;
 using Veldrid;
@@ -32,6 +33,7 @@ namespace Engine.Assets.Rendering
         private Dictionary<uint, UniformLayout[]> _uniformLayouts = new Dictionary<uint, UniformLayout[]>();
         private Dictionary<uint, ResourceSet> _resourceSets = new Dictionary<uint, ResourceSet>();
         private Dictionary<uint, CompoundBuffer> _compoundBuffers = new Dictionary<uint, CompoundBuffer>();
+        private Dictionary<uint, ResourceLayout> layouts = new Dictionary<uint, ResourceLayout>();
 
         public Material(string name, GraphicsShader shader)
         {
@@ -89,11 +91,11 @@ namespace Engine.Assets.Rendering
                 // CreatePipeline(Program.MainRenderer, pass);
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
             Material res = new Material(cloneName, Shader);
             res.ReCreate();
-            return res;
+            return Task.FromResult<Resource>(res);
         }
 
         public void ClearUniforms(uint setId)
@@ -184,13 +186,32 @@ namespace Engine.Assets.Rendering
                 }
             }
 
+        #if WEBGL
+            ResourceLayout layout;
+            if (!layouts.ContainsKey(setId))
+            {
+                layout = ResourceManager.GraphicsFactory.CreateResourceLayout(new ResourceLayoutDescription(elements.ToArray()));
+                layouts.Add(setId, layout);
+            }
+            else
+            {
+                layout = layouts[setId];
+            }
+        #endif
+
+        #if !WEBGL
             if (setId < Shader._reflResourceLayouts.Count)
+        #endif
             {
                 if (!_resourceSets.ContainsKey(setId))
                     _resourceSets.Add(setId, null);
                 else if (_resourceSets[setId] != null && !_resourceSets[setId].IsDisposed)
                     _resourceSets[setId].Dispose();
+            #if WEBGL
+                ResourceSetDescription desc = new ResourceSetDescription(layout);
+            #else
                 ResourceSetDescription desc = new ResourceSetDescription(Shader._reflResourceLayouts[(int)setId]);
+            #endif
                 if (_uniformResources.ContainsKey(setId))
                 {
                     List<BindableResource> boundResources = new List<BindableResource>();
@@ -218,11 +239,13 @@ namespace Engine.Assets.Rendering
                 _resourceSets[setId] = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
                 _resourceSets[setId].Name = $"{Name}_{setId}";
             }
+        #if !WEBGL
             else
                 throw new Exception($"Material.SetUniforms: {setId} was not found in the shader's resourceLayouts");
+        #endif
         }
 
-        public void CreatePipeline(Renderer renderer, GraphicsShader.ShaderPass pass, bool dispose = true)
+        public void CreatePipeline(Renderer renderer, ShaderPass pass, bool dispose = true)
         {
             /*if (_pipeline != null && !_pipeline.IsDisposed && dispose)
                 _pipeline.Dispose();*/
@@ -249,9 +272,13 @@ namespace Engine.Assets.Rendering
                 scissorTestEnabled: true);
             pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
+        #if WEBGL
+            pipelineDescription.ResourceLayouts = layouts.OrderBy(x => x.Key).Select(x => x.Value).ToArray();
+        #else
             pipelineDescription.ResourceLayouts = Shader._reflResourceLayouts.ToArray();
+        #endif
 
-            VertexLayoutDescription vertexLayout = new VertexLayoutDescription(Shader._compileResult.Reflection.VertexElements);
+            VertexLayoutDescription vertexLayout = new VertexLayoutDescription(Shader._compileResult.VertexElements);
             /*VertexLayoutDescription vertexLayout = new VertexLayoutDescription(VertexPositionColorUV.SizeInBytes,
                 new VertexElementDescription("Position", VertexElementSemantic.Position, VertexElementFormat.Float3),
                 new VertexElementDescription("Normal", VertexElementSemantic.Normal, VertexElementFormat.Float3),

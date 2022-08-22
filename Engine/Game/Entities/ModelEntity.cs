@@ -19,7 +19,12 @@ namespace Engine.Game.Entities
 
         public ModelEntity(string name, string path, Material material) : base(name)
         {
-            Model = ResourceManager.Clone<Model>($"{name}_{Random.Shared.Next()}", ResourceManager.LoadModel(name, material, path));
+            Create(path, material);
+        }
+
+        private async void Create(string path, Material material)
+        {
+            Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, material, path));
         }
 
         public override void PreDraw(Renderer renderer, double dt)

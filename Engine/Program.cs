@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if LEGACY_START
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,14 +9,14 @@ using Engine.Assets.Models;
 using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using Engine.Game;
-using Engine.VeldridSilk;
 using ImGuiNET;
+using Veldrid;
+using Silk.NET.OpenAL;
 using Silk.NET.Input;
 using Silk.NET.Maths;
-using Silk.NET.OpenAL;
 using Silk.NET.Windowing;
 using Silk.NET.Windowing.Extensions.Veldrid;
-using Veldrid;
+using Engine.VeldridSilk;
 
 namespace Engine
 {
@@ -23,7 +24,12 @@ namespace Engine
     {
         public static GameApp Game { get; private set; }
         public static GraphicsBackend APIBackend { get; private set; }
+    #if WEBGL
+    #elif VIEW
+        public static IView GameWindow { get; private set; }
+    #else
         public static IWindow GameWindow { get; private set; }
+    #endif
         public static GraphicsDevice GameGraphics { get; private set; }
         public static AL GameAudio { get; private set; }
         public static ALContext GameAudioContext { get; private set; }
@@ -48,8 +54,12 @@ namespace Engine
         {
             Game = game;
 
+        #if WEBGL
+            ChangeBackend(GraphicsBackend.OpenGLES, false, true);
+        #else
             ChangeBackend(GraphicsBackend.Vulkan, false, true);
             GameWindow.Initialize();
+        #endif
             MainRenderer = ResourceManager.CreateRenderer(nameof(MainRenderer));
             Renderer.Current = MainRenderer;
             MainRenderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", GameGraphics.MainSwapchain));
@@ -126,15 +136,21 @@ namespace Engine
                 NextFrameBackend = null;
                 if (destoryWindow)
                 {
+                #if VIEW
+                    ViewOptions options = new ViewOptions();
+                    options.FramesPerSecond = 60;
+                #else
                     WindowOptions options = new WindowOptions();
                     options.Title = $"{Game.Name} <{backend}>";
-                    options.API = backend.ToGraphicsAPI();
                     options.WindowState = Silk.NET.Windowing.WindowState.Maximized;
                     options.IsVisible = true;
                     options.Size = Monitor.GetMainMonitor(null).Bounds.Size;
+                    options.FramesPerSecond = Monitor.GetMainMonitor(null).VideoMode.RefreshRate ?? 60;
+                #endif
+                    options.API = backend.ToGraphicsAPI();
                     options.UpdatesPerSecond = 60;
                     options.PreferredDepthBufferBits = 32;
-                    options.FramesPerSecond = Monitor.GetMainMonitor(null).VideoMode.RefreshRate ?? 60;
+
                     if (GameAudioContext == null)
                     {
                         GameAudioContext = ALContext.GetApi(true);
@@ -149,8 +165,13 @@ namespace Engine
                             throw new Exception($"AudioError {err.ToString()}");
                         GameAudio.DistanceModel(Silk.NET.OpenAL.DistanceModel.LinearDistanceClamped);
                     }
+
+                #if VIEW
+                    GameWindow = Window.GetView(options);
+                #else
                     Window.PrioritizeSdl();
                     GameWindow = Window.Create(options);
+                #endif
                     GameWindow.Load += Load;
                     GameWindow.Closing += Unload;
                     GameWindow.Resize += Resize;
@@ -160,7 +181,9 @@ namespace Engine
                 }
                 else
                 {
+                #if !WEBGL && !VIEW
                     GameWindow.Title = $"{Game.Name} <{backend}>";
+                #endif
                 }
             }
         }
@@ -169,12 +192,16 @@ namespace Engine
         {
             GameGraphics = GameWindow.CreateGraphicsDevice(new GraphicsDeviceOptions()
             {
-                // Debug = true,
-                HasMainSwapchain = true,
+            #if WEBGL
+                SingleThreaded = true,
+            #else
                 SwapchainSrgbFormat = false,
-                ResourceBindingModel = ResourceBindingModel.Improved,
                 PreferStandardClipSpaceYDirection = true,
                 PreferDepthRangeZeroToOne = true,
+            #endif
+                // Debug = true,
+                HasMainSwapchain = true,
+                ResourceBindingModel = ResourceBindingModel.Improved,
                 SwapchainDepthFormat = PixelFormat.D32_Float_S8_UInt,
                 // SyncToVerticalBlank = true,
             }, APIBackend);
@@ -319,3 +346,4 @@ namespace Engine
         }
     }
 }
+#endif

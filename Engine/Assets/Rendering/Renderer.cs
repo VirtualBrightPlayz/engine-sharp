@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Engine.Assets.Models;
 using Engine.Assets.Textures;
 using Veldrid;
@@ -26,7 +27,7 @@ namespace Engine.Assets.Rendering
         public Dictionary<GraphicsShader, CompoundBuffer> WorldInfoBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
         public RenderTexture2D InternalRenderTexture { get; private set; }
         private Mesh BlitMesh;
-        private GraphicsShader BlitShader => ResourceManager.LoadShader("Shaders/Blit");
+        private Task<GraphicsShader> BlitShader => ResourceManager.LoadShader("Shaders/Blit");
 
         [StructLayout(LayoutKind.Sequential)]
         public struct BlitVertex : IVertex
@@ -56,7 +57,7 @@ namespace Engine.Assets.Rendering
             // WorldInfoResource.UploadData(ViewPosition);
         }
 
-        public override void ReCreate()
+        public override async void ReCreate()
         {
             if (HasBeenInitialized)
                 return;
@@ -75,7 +76,7 @@ namespace Engine.Assets.Rendering
             }
             _commandList = ResourceManager.GraphicsFactory.CreateCommandList();
             _commandList.Name = Name;
-            BlitMesh = ResourceManager.CreateMesh("BlitMesh", false, ResourceManager.CreateMaterial("BlitMaterial", BlitShader));
+            BlitMesh = await ResourceManager.CreateMesh("BlitMesh", false, await ResourceManager.CreateMaterial("BlitMaterial", await BlitShader));
             BlitVertex[] blitVertices = new BlitVertex[]
             {
                 new BlitVertex(new Vector3(-1f, -1f, 1f), new Vector2(0f, 1f), Vector4.One),
@@ -92,7 +93,7 @@ namespace Engine.Assets.Rendering
             BlitMesh.UploadData(blitVertices);
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
             throw new NotImplementedException();
         }
@@ -145,7 +146,7 @@ namespace Engine.Assets.Rendering
 
         public void Submit()
         {
-            Program.GameGraphics.SubmitCommands(_commandList);
+            RenderingGlobals.GameGraphics.SubmitCommands(_commandList);
         }
 
         public void Blit(Texture2D tex)

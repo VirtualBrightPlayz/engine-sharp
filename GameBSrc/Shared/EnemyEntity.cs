@@ -21,7 +21,12 @@ namespace GameBSrc
 
         public EnemyEntity(string name, string path, Material material) : base(name)
         {
-            Model = ResourceManager.Clone<Model>($"{name}_{Random.Shared.Next()}", ResourceManager.LoadModel(name, material, path, false, true));
+            Create(path, material);
+        }
+
+        private async void Create(string path, Material material)
+        {
+            Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, material, path, false, true));
         }
 
         public override void Draw(Renderer renderer, double dt)

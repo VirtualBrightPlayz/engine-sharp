@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using Silk.NET.OpenAL;
 
 namespace Engine.Assets.Audio
@@ -8,7 +9,7 @@ namespace Engine.Assets.Audio
     {
         public override bool IsValid => _handle.HasValue;
         private uint? _handle;
-        private AL _al => Program.GameAudio;
+        private AL _al => AudioGlobals.GameAudio;
         public AudioClip AudioBuffer { get; private set; }
         public bool IsPlaying
         {
@@ -94,7 +95,7 @@ namespace Engine.Assets.Audio
                 Play();
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
             AudioSource src = new AudioSource(cloneName);
             src.SetBuffer(AudioBuffer);
@@ -108,7 +109,7 @@ namespace Engine.Assets.Audio
             src.Position = Position;
             if (src.IsPlaying)
                 src.Play();
-            return src;
+            return Task.FromResult<Resource>(src);
         }
 
         public void SetBuffer(AudioClip buffer)

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using NAudio.Vorbis;
 using NAudio.Wave;
 using Silk.NET.OpenAL;
@@ -11,17 +12,22 @@ namespace Engine.Assets.Audio
         public override bool IsValid => _handle.HasValue;
         private uint? _handle;
         public uint Handle => _handle.Value;
-        private AL _al => Program.GameAudio;
+        private AL _al => AudioGlobals.GameAudio;
         private byte[] _data;
         private BufferFormat _format;
         private int _sampleRate;
 
         public AudioClip(string path)
         {
+            Create(path);
+        }
+
+        public async void Create(string path)
+        {
             Name = path;
-            if (File.Exists(path))
+            if (await FileManager.Exists(path))
             {
-                var stream = File.OpenRead(path);
+                var stream = await FileManager.LoadStream(path);
                 switch (Path.GetExtension(path).ToLower())
                 {
                     case ".ogg":
@@ -213,7 +219,7 @@ namespace Engine.Assets.Audio
             _al.BufferData(_handle.Value, _format, _data, _sampleRate);
         }
 
-        public override Resource Clone(string cloneName)
+        public override Task<Resource> Clone(string cloneName)
         {
             throw new NotImplementedException();
         }

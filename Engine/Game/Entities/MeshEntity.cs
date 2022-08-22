@@ -12,7 +12,7 @@ namespace Engine.Game.Entities
 
         public MeshEntity(string name, string path, Material material) : base(name)
         {
-            Mesh = ResourceManager.Clone<Mesh>($"{name}_{Random.Shared.Next()}", ResourceManager.CreateMesh(path, false, material));
+            Create(path, material);
             /*List<Triangle> tris = new List<Triangle>();
             for (int i = 0; i < Model.CollisionTriangles.Length - 2; i+=3)
             {
@@ -29,6 +29,11 @@ namespace Engine.Game.Entities
             // bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, shapeIndex.Value, 0.01f));
             // bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateKinematic(Position, new CollidableDescription(shapeIndex.Value, 0.3f), -10f));
             staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));*/
+        }
+
+        private async void Create(string path, Material material)
+        {
+            Mesh = await ResourceManager.Clone<Mesh>($"{Name}_{Random.Shared.Next()}", await ResourceManager.CreateMesh(path, false, material));
         }
 
         public override void PreDraw(Renderer renderer, double dt)
