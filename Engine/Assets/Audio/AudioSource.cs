@@ -135,8 +135,11 @@ namespace Engine.Assets.Audio
                 return Task.CompletedTask;
             base.ReCreate();
         #if WEBGL
-            uint v2 = _handle.Value;
-            AL10.alDeleteSources(1, ref v2);
+            if (_handle.HasValue)
+            {
+                uint v2 = _handle.Value;
+                AL10.alDeleteSources(1, ref v2);
+            }
             AL10.alGenSources(1, out uint v);
             _handle = v;
         #else

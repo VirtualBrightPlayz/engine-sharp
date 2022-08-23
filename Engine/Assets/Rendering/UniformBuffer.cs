@@ -31,7 +31,7 @@ namespace Engine.Assets.Rendering
         {
             Name = name;
             Size = size;
-            ReCreate();
+            // ReCreate();
         }
 
         public override Task ReCreate()

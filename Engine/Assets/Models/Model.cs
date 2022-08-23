@@ -402,20 +402,19 @@ namespace Engine.Assets.Models
             CollisionTriangles = colTris.ToArray();
         }
 
-        public override Task ReCreate()
+        public override async Task ReCreate()
         {
             if (HasBeenInitialized)
-                return Task.CompletedTask;
-            base.ReCreate();
+                return;
+            await base.ReCreate();
             for (int i = 0; i < _meshes.Length; i++)
             {
-                _meshes[i].ReCreate();
+                await _meshes[i].ReCreate();
             }
             foreach (var buf in bonesUniforms)
             {
-                buf.Value.ReCreate();
+                await buf.Value.ReCreate();
             }
-            return Task.CompletedTask;
         }
 
         public override async Task<Resource> Clone(string cloneName)

@@ -123,10 +123,10 @@ void main()
         ResourceManager.Update();
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputSnapshot);
         renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.1f, 1000f);
-        game.PreDraw(renderer, delta);
+        await game.PreDraw(renderer, delta);
         renderer.Begin();
         renderer.Clear();
-        game.Draw(renderer, delta);
+        await game.Draw(renderer, delta);
         RenderingGlobals.GameImGui.Render(RenderingGlobals.GameGraphics, renderer.CommandList);
         renderer.End();
         renderer.Submit();

@@ -33,20 +33,22 @@ namespace Engine.Game
             return Task.CompletedTask;
         }
 
-        public virtual void PreDraw(Renderer renderer, double dt)
+        public virtual Task PreDraw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
                 ent.PreDraw(renderer, dt);
             }
+            return Task.CompletedTask;
         }
 
-        public virtual void Draw(Renderer renderer, double dt)
+        public virtual Task Draw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
                 ent.Draw(renderer, dt);
             }
+            return Task.CompletedTask;
         }
 
         public virtual Task Tick(double dt)

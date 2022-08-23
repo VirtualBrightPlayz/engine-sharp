@@ -417,6 +417,8 @@ namespace GameBSrc
                 floor.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation);
                 floors.Add(floor);
                 Entities.Add(floor);
+                Console.WriteLine(floor.Name);
+                await Task.Delay(100);
             }
         }
 
@@ -491,7 +493,7 @@ namespace GameBSrc
             renderer.ViewMatrix *= Matrix4x4.CreateFromYawPitchRoll(0f, -killTimerSec * (MathF.PI / 180f), -(killTimerSec / 2f) * (MathF.PI / 180f));
         }
 
-        public async void Kill()
+        public async Task Kill()
         {
             TimeScale = 0f;
             if (killTimer == 1)
@@ -508,7 +510,7 @@ namespace GameBSrc
             }
         }
 
-        public async void UpdateFloors(double dt)
+        public async Task UpdateFloors(double dt)
         {
             float delta = (float)dt;
             currentFloor = (int)((-player.Position.Y - 0.5f) / 2f);
@@ -945,11 +947,11 @@ namespace GameBSrc
             prevFrameFloor = currentFloor;
         }
 
-        public override void PreDraw(Renderer renderer, double dt)
+        public override async Task PreDraw(Renderer renderer, double dt)
         {
             if (player == null)
                 return;
-            base.PreDraw(renderer, dt);
+            await base.PreDraw(renderer, dt);
             Music.Position = renderer.ViewPosition;
             Radio.Position = renderer.ViewPosition;
             miscSource.Position = renderer.ViewPosition;
@@ -958,7 +960,7 @@ namespace GameBSrc
                 KillViewMatrix(renderer);
         }
 
-        public override async void Draw(Renderer renderer, double dt)
+        public override async Task Draw(Renderer renderer, double dt)
         {
             frameCount++;
             if (player == null)
@@ -976,7 +978,7 @@ namespace GameBSrc
                     mat.SetUniforms(FogSetId, fogBuffer);
                 }
             }
-            base.Draw(renderer, dt);
+            await base.Draw(renderer, dt);
             Music.Position = renderer.ViewPosition;
             Radio.Position = renderer.ViewPosition;
             miscSource.Position = renderer.ViewPosition;
@@ -994,9 +996,9 @@ namespace GameBSrc
             var oldPlayerPos = player.Position;
             await base.Tick(dt);
             TimeScale = MiscGlobals.IsFocused ? 1f : 0f;
-            UpdateFloors(dt);
+            await UpdateFloors(dt);
             if (killTimer > 0)
-                Kill();
+                await Kill();
         }
 
         public override void Dispose()
