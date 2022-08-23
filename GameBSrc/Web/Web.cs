@@ -105,7 +105,7 @@ void main()
         AudioGlobals.InitGameAudio();
         MiscGlobals.InitGameMisc();
         game = new GameBSrc.BGame();
-        game.Setup();
+        await game.Setup();
         ResourceManager.Update();
         runtime.InvokeVoid("init");
         return 0;
@@ -117,7 +117,7 @@ void main()
     }
 
     [JSInvokable]
-    public static void Frame(double time)
+    public static async Task Frame(double time)
     {
         double delta = time - lastTime;
         ResourceManager.Update();
@@ -132,8 +132,9 @@ void main()
         renderer.Submit();
         RenderingGlobals.GameGraphics.SwapBuffers();
         MiscGlobals.GameInputSnapshot.Update();
-        game.Tick(delta);
+        await game.Tick(delta);
         lastTime = time;
+        runtime.InvokeVoid("init");
     }
 
     public static unsafe int Main2(string[] args)

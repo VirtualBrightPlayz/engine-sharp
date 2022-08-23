@@ -3,7 +3,11 @@ using System.IO;
 using System.Threading.Tasks;
 using NAudio.Vorbis;
 using NAudio.Wave;
+#if WEBGL
+using OpenAL;
+#else
 using Silk.NET.OpenAL;
+#endif
 
 namespace Engine.Assets.Audio
 {
@@ -12,9 +16,13 @@ namespace Engine.Assets.Audio
         public override bool IsValid => _handle.HasValue;
         private uint? _handle;
         public uint Handle => _handle.Value;
-        private AL _al => AudioGlobals.GameAudio;
         private byte[] _data;
+    #if WEBGL
+        private int _format;
+    #else
+        private AL _al => AudioGlobals.GameAudio;
         private BufferFormat _format;
+    #endif
         private int _sampleRate;
 
         public AudioClip(string path)
@@ -25,8 +33,6 @@ namespace Engine.Assets.Audio
         public async void Create(string path)
         {
             Name = path;
-            if (_al == null)
-                return;
             if (await FileManager.Exists(path))
             {
                 var stream = await FileManager.LoadStream(path);
@@ -56,17 +62,25 @@ namespace Engine.Assets.Audio
             }
             else
             {
+            #if WEBGL
+                AL10.alGenBuffers(1, out uint v);
+                _handle = v;
+            #else
                 _handle = _al.GenBuffer();
                 _al.BufferData(_handle.Value, BufferFormat.Mono8, new byte[0], 0);
+            #endif
             }
         }
 
+    #if WEBGL
+    #else
         public AudioClip(string name, byte[] data, BufferFormat format, int freq)
         {
             Name = name;
             _handle = _al.GenBuffer();
             _al.BufferData(_handle.Value, format, data, freq);
         }
+    #endif
 
         public static byte[] MixStereo32ToMono32(byte[] input)
         {
@@ -133,6 +147,60 @@ namespace Engine.Assets.Audio
             return output;
         }
 
+    #if WEBGL
+        public static int GetFormat(int BitsPerSample, int Channels)
+        {
+            int format = AL10.AL_FORMAT_MONO8;
+            if (BitsPerSample == 8)
+            {
+                if (Channels == 1)
+                    format = AL10.AL_FORMAT_MONO8;
+                else if (Channels == 2)
+                    format = AL10.AL_FORMAT_STEREO8;
+                else
+                    throw new NotSupportedException($"{Channels} not supported. Must be 1 or 2");
+            }
+            else if (BitsPerSample == 16)
+            {
+                if (Channels == 1)
+                    format = AL10.AL_FORMAT_MONO16;
+                else if (Channels == 2)
+                    format = AL10.AL_FORMAT_STEREO16;
+                else
+                    throw new NotSupportedException($"{Channels} not supported. Must be 1 or 2");
+            }
+            else
+                throw new NotSupportedException($"{BitsPerSample} not supported. Must be 8 or 16");
+            return format;
+        }
+    #else
+        public static BufferFormat GetFormat(int BitsPerSample, int Channels)
+        {
+            BufferFormat format = BufferFormat.Mono8;
+            if (BitsPerSample == 8)
+            {
+                if (Channels == 1)
+                    format = BufferFormat.Mono8;
+                else if (Channels == 2)
+                    format = BufferFormat.Stereo8;
+                else
+                    throw new NotSupportedException($"{Channels} not supported. Must be 1 or 2");
+            }
+            else if (BitsPerSample == 16)
+            {
+                if (Channels == 1)
+                    format = BufferFormat.Mono16;
+                else if (Channels == 2)
+                    format = BufferFormat.Stereo16;
+                else
+                    throw new NotSupportedException($"{Channels} not supported. Must be 1 or 2");
+            }
+            else
+                throw new NotSupportedException($"{BitsPerSample} not supported. Must be 8 or 16");
+            return format;
+        }
+    #endif
+
         private void LoadFromStream(ISampleProvider file, long length)
         {
             byte[] buffer = new byte[length];
@@ -143,33 +211,18 @@ namespace Engine.Assets.Audio
             Array.Copy(buffer, buffer2, len);
             buffer = buffer2;
 
-            BufferFormat format = BufferFormat.Mono8;
-            if (provider.WaveFormat.BitsPerSample == 8)
-            {
-                if (provider.WaveFormat.Channels == 1)
-                    format = BufferFormat.Mono8;
-                else if (provider.WaveFormat.Channels == 2)
-                    format = BufferFormat.Stereo8;
-                else
-                    throw new NotSupportedException($"{provider.WaveFormat.Channels} not supported. Must be 1 or 2");
-            }
-            else if (provider.WaveFormat.BitsPerSample == 16)
-            {
-                if (provider.WaveFormat.Channels == 1)
-                    format = BufferFormat.Mono16;
-                else if (provider.WaveFormat.Channels == 2)
-                    format = BufferFormat.Stereo16;
-                else
-                    throw new NotSupportedException($"{provider.WaveFormat.Channels} not supported. Must be 1 or 2");
-            }
-            else
-                throw new NotSupportedException($"{provider.WaveFormat.BitsPerSample} not supported. Must be 8 or 16");
-
             _data = buffer;
-            _format = format;
+        #if WEBGL
+            var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
+            AL10.alGenBuffers(1, out uint v);
+            _handle = v;
+            AL10.alBufferData(_handle.Value, format, buffer, buffer.Length, provider.WaveFormat.SampleRate);
+        #else
+            var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             _sampleRate = provider.WaveFormat.SampleRate;
             _handle = _al.GenBuffer();
             _al.BufferData(_handle.Value, format, buffer, provider.WaveFormat.SampleRate);
+        #endif
         }
 
         private void LoadFromStream(WaveStream file)
@@ -181,34 +234,19 @@ namespace Engine.Assets.Audio
             byte[] buffer2 = new byte[len];
             Array.Copy(buffer, buffer2, len);
             buffer = buffer2;
-
-            BufferFormat format = BufferFormat.Mono8;
-            if (provider.WaveFormat.BitsPerSample == 8)
-            {
-                if (provider.WaveFormat.Channels == 1)
-                    format = BufferFormat.Mono8;
-                else if (provider.WaveFormat.Channels == 2)
-                    format = BufferFormat.Stereo8;
-                else
-                    throw new NotSupportedException($"{provider.WaveFormat.Channels} not supported. Must be 1 or 2");
-            }
-            else if (provider.WaveFormat.BitsPerSample == 16)
-            {
-                if (provider.WaveFormat.Channels == 1)
-                    format = BufferFormat.Mono16;
-                else if (provider.WaveFormat.Channels == 2)
-                    format = BufferFormat.Stereo16;
-                else
-                    throw new NotSupportedException($"{provider.WaveFormat.Channels} not supported. Must be 1 or 2");
-            }
-            else
-                throw new NotSupportedException($"{provider.WaveFormat.BitsPerSample} not supported. Must be 8 or 16");
             
             _data = buffer;
-            _format = format;
+        #if WEBGL
+            var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
+            AL10.alGenBuffers(1, out uint v);
+            _handle = v;
+            AL10.alBufferData(_handle.Value, format, buffer, buffer.Length, provider.WaveFormat.SampleRate);
+        #else
+            var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             _sampleRate = provider.WaveFormat.SampleRate;
             _handle = _al.GenBuffer();
             _al.BufferData(_handle.Value, format, buffer, provider.WaveFormat.SampleRate);
+        #endif
         }
 
         public override Task ReCreate()
@@ -216,9 +254,16 @@ namespace Engine.Assets.Audio
             if (HasBeenInitialized)
                 return Task.CompletedTask;
             base.ReCreate();
+        #if WEBGL
+            uint v = _handle.Value;
+            AL10.alDeleteBuffers(1, ref v);
+            AL10.alGenBuffers(1, out uint v2);
+            _handle = v2;
+        #else
             _al.DeleteBuffer(_handle.Value);
             _handle = _al.GenBuffer();
             _al.BufferData(_handle.Value, _format, _data, _sampleRate);
+        #endif
             return Task.CompletedTask;
         }
 
@@ -229,7 +274,12 @@ namespace Engine.Assets.Audio
 
         public override void Dispose()
         {
+        #if WEBGL
+            uint v = _handle.Value;
+            AL10.alDeleteBuffers(1, ref v);
+        #else
             _al.DeleteBuffer(_handle.Value);
+        #endif
         }
     }
 }

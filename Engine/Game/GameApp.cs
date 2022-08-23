@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BepuPhysics;
 using BepuUtilities;
 using BepuUtilities.Memory;
@@ -23,12 +24,13 @@ namespace Engine.Game
             Current = this;
         }
 
-        public virtual void Setup()
+        public virtual Task Setup()
         {
             BufferPool = new BufferPool();
             var targetThreadCount = Math.Max(1, Environment.ProcessorCount > 4 ? Environment.ProcessorCount - 2 : Environment.ProcessorCount - 1);
             Simulation = Simulation.Create(BufferPool, new Physics.NarrowPhaseCallbacks(), new Physics.PoseIntegratorCallbacks(new System.Numerics.Vector3(0, -10, 0)), new SolveDescription(8, 1));
             dispatcher = new ThreadDispatcher(targetThreadCount);
+            return Task.CompletedTask;
         }
 
         public virtual void PreDraw(Renderer renderer, double dt)
@@ -47,7 +49,7 @@ namespace Engine.Game
             }
         }
 
-        public virtual void Tick(double dt)
+        public virtual Task Tick(double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
@@ -55,6 +57,7 @@ namespace Engine.Game
             }
             if (TimeScale > 0f)
                 Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, dispatcher);
+            return Task.CompletedTask;
         }
 
         public virtual void Dispose()

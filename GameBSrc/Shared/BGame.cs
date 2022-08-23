@@ -76,9 +76,9 @@ namespace GameBSrc
             Data = new GameData("GameB");
         }
 
-        public override void Setup()
+        public override async Task Setup()
         {
-            base.Setup();
+            await base.Setup();
         }
 
         public async Task Init()
@@ -983,7 +983,7 @@ namespace GameBSrc
             horrorSource.Position = renderer.ViewPosition;
         }
 
-        public override async void Tick(double dt)
+        public override async Task Tick(double dt)
         {
             if (player == null)
             {
@@ -992,7 +992,7 @@ namespace GameBSrc
                 return;
             }
             var oldPlayerPos = player.Position;
-            base.Tick(dt);
+            await base.Tick(dt);
             TimeScale = MiscGlobals.IsFocused ? 1f : 0f;
             UpdateFloors(dt);
             if (killTimer > 0)

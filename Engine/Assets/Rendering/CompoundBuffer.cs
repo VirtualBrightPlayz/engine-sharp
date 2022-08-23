@@ -19,6 +19,7 @@ namespace Engine.Assets.Rendering
             InternalShader = shader;
             LayoutIndex = layoutIndex;
             Bindables = bindables;
+            ReCreate();
         }
 
         public bool Contains(GraphicsShader shader, uint layoutIndex, params IMaterialBindable[] bindables)

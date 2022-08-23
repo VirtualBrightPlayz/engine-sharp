@@ -65,11 +65,11 @@ namespace Engine.Assets.Rendering
             if (_commandList != null && !_commandList.IsDisposed)
                 _commandList.Dispose();
             if (ViewMatrixResource != null)
-                ViewMatrixResource.ReCreate();
+                await ViewMatrixResource.ReCreate();
             if (ProjMatrixResource != null)
-                ProjMatrixResource.ReCreate();
+                await ProjMatrixResource.ReCreate();
             if (WorldInfoResource != null)
-                WorldInfoResource.ReCreate();
+                await WorldInfoResource.ReCreate();
             foreach (var item in MatrixBuffers)
             {
                 await item.Value.ReCreate();

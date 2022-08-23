@@ -110,6 +110,9 @@ namespace Engine.Assets
             lock (_poolLock)
             {
                 StagedResources.Add(resource);
+                #if WEBGL
+                Update();
+                #endif
             }
         }
 

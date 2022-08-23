@@ -119,7 +119,16 @@ namespace GameBSrc
             {
                 BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
             }
-            AudioGlobals.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
+            AudioGlobals.Position = Position;
+            float[] orientation = new float[6];
+            orientation[0] = viewDirection.X;
+            orientation[1] = viewDirection.Y;
+            orientation[2] = viewDirection.Z;
+            orientation[3] = LocalUp.X;
+            orientation[4] = LocalUp.Y;
+            orientation[5] = LocalUp.Z;
+            AudioGlobals.OrientationRaw = orientation;
+            /*AudioGlobals.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
             float[] orientation = new float[6];
             orientation[0] = viewDirection.X;
             orientation[1] = viewDirection.Y;
@@ -130,7 +139,7 @@ namespace GameBSrc
             fixed (float* d = &orientation[0])
             {
                 AudioGlobals.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerFloatArray.Orientation, d);
-            }
+            }*/
         }
 
         public override void Dispose()

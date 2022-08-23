@@ -8,7 +8,7 @@
     <!-- <DebuggerSupport>true</DebuggerSupport> -->
     <!-- <CopyOutputSymbolsToPublishDirectory>true</CopyOutputSymbolsToPublishDirectory> -->
     <DefineConstants>$(DefineConstants);WEBGL</DefineConstants>
-    <EmccFlags>-s FULL_ES2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2</EmccFlags>
+    <EmccFlags>-s FULL_ES2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -lopenal</EmccFlags>
     <!-- <EmccExtraLDFlags>-s WARN_ON_UNDEFINED_SYMBOLS=0</EmccExtraLDFlags> -->
     <!-- <PublishTrimmed>false</PublishTrimmed> -->
     <!-- <MonoRuntimeDebuggerEnabled Condition="'$(Configuration)'=='Debug'">true</MonoRuntimeDebuggerEnabled> -->
@@ -48,7 +48,7 @@
 
   <ItemGroup>
     <NativeFileReference Include="libEGL.c" ScanForPInvokes="true" />
-    <NativeFileReference Include="openal32.c" ScanForPInvokes="true" />
+    <NativeFileReference Include="soft_oal.c" ScanForPInvokes="true" />
     <NativeFileReference Include="..\..\cimgui\cimgui.cpp;..\..\cimgui\imgui\imgui.cpp;..\..\cimgui\imgui\imgui_draw.cpp;..\..\cimgui\imgui\imgui_demo.cpp;..\..\cimgui\imgui\imgui_widgets.cpp;..\..\cimgui\imgui\imgui_tables.cpp" />
   </ItemGroup>
 

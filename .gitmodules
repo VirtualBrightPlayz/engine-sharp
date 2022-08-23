@@ -4,3 +4,6 @@
 [submodule "cimgui"]
 	path = cimgui
 	url = https://github.com/cimgui/cimgui.git
+[submodule "OpenAL-CS"]
+	path = OpenAL-CS
+	url = https://github.com/flibitijibibo/OpenAL-CS.git
