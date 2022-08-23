@@ -102,26 +102,27 @@ namespace Engine.Assets.Models
             IsBigMesh = isBigMesh;
         }
 
-        public override void ReCreate()
+        public override async Task ReCreate()
         {
             if (HasBeenInitialized)
                 return;
-            base.ReCreate();
+            await base.ReCreate();
             if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
                 _vertexBuffer.Dispose();
             if (_indexBuffer != null && !_indexBuffer.IsDisposed)
                 _indexBuffer.Dispose();
             if (InternalMaterial != null)
-                InternalMaterial.ReCreate();
+                await InternalMaterial.ReCreate();
             if (InternalWorldUniform != null)
-                InternalWorldUniform.ReCreate();
+                await InternalWorldUniform.ReCreate();
             if (InternalWorldBuffer != null)
-                InternalWorldBuffer.ReCreate();
+                await InternalWorldBuffer.ReCreate();
             UploadDataSkipChecks();
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        public override async Task<Resource> Clone(string cloneName)
         {
+            throw new NotImplementedException();
             Mesh m = new Mesh(cloneName, IsBigMesh, InternalMaterial);
             m.Vertices = Vertices.ToList();
             m.Normals = Normals.ToList();
@@ -130,8 +131,8 @@ namespace Engine.Assets.Models
             m.BoneWeights = BoneWeights.ToList();
             m.BoneIndices = BoneIndices.ToList();
             m.Colors = Colors.ToList();
-            m.ReCreate();
-            return Task.FromResult<Resource>(m);
+            await m.ReCreate();
+            return m;
         }
 
         public static uint GetFormatSize(VertexElementFormat format)
@@ -209,6 +210,8 @@ namespace Engine.Assets.Models
 
         private unsafe void UploadDataSkipChecks()
         {
+            if (_vertexList.Count == 0)
+                return;
             if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
                 _vertexBuffer.Dispose();
             if (_indexBuffer != null && !_indexBuffer.IsDisposed)

@@ -10,12 +10,12 @@ namespace Engine.Assets.Audio
         private static unsafe Device* GameAudioDevice;
         private static unsafe Context* GameAudioCtx;
 
-        public static void InitGameAudio()
+        public static void InitGameAudio(bool soft = true)
         {
             if (GameAudioContext == null)
             {
-                GameAudioContext = ALContext.GetApi(true);
-                GameAudio = AL.GetApi(true);
+                GameAudioContext = ALContext.GetApi(soft);
+                GameAudio = AL.GetApi(soft);
                 GameAudioDevice = GameAudioContext.OpenDevice("");
                 if (GameAudioDevice == null)
                     throw new Exception("GameAudioDevice was null");

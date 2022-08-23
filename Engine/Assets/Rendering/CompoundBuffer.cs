@@ -19,7 +19,6 @@ namespace Engine.Assets.Rendering
             InternalShader = shader;
             LayoutIndex = layoutIndex;
             Bindables = bindables;
-            ReCreate();
         }
 
         public bool Contains(GraphicsShader shader, uint layoutIndex, params IMaterialBindable[] bindables)
@@ -27,17 +26,17 @@ namespace Engine.Assets.Rendering
             return InternalShader == shader && LayoutIndex == layoutIndex /*&& Bindables.All(x => Array.IndexOf(bindables, x) != -1)*/;
         }
 
-        public override void ReCreate()
+        public override async Task ReCreate()
         {
             // if (HasBeenInitialized)
             //     return;
             // base.ReCreate();
             if (InternalResourceSet != null && !InternalResourceSet.IsDisposed)
                 InternalResourceSet.Dispose();
-            InternalShader.ReCreate();
+            await InternalShader.ReCreate();
             foreach (var item in Bindables)
             {
-                item.ReCreate();
+                await item.ReCreate();
             }
             ResourceSetDescription desc = new ResourceSetDescription(InternalShader._reflResourceLayouts[(int)LayoutIndex], Bindables.SelectMany(x => x.Bindables).ToArray());
             InternalResourceSet = ResourceManager.GraphicsFactory.CreateResourceSet(desc);

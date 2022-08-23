@@ -47,23 +47,24 @@ namespace Engine.Assets.Textures
             Width = width;
             Height = height;
             IsRaw = false;
-            ReCreate();
+            // ReCreate();
         }
 
-        public override void ReCreate()
+        public override Task ReCreate()
         {
             // if (HasBeenInitialized)
             //     return;
             base.ReCreate();
             if (IsRaw)
                 // throw new NotSupportedException($"Can't clone raw framebuffers!");
-                return;
+                return Task.CompletedTask;
             TextureDescription colorDesc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled | TextureUsage.RenderTarget);
             ColorTex = ResourceManager.GraphicsFactory.CreateTexture(colorDesc);
             ColorTex.Name = Name;
             FramebufferDescription fbDesc = new FramebufferDescription(null, ColorTex);
             InternalFramebuffer = ResourceManager.GraphicsFactory.CreateFramebuffer(fbDesc);
             UpdateSamplerInfo(Info);
+            return Task.CompletedTask;
         }
 
         public override Task<Resource> Clone(string cloneName)

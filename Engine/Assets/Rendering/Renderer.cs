@@ -47,7 +47,7 @@ namespace Engine.Assets.Rendering
         public Renderer(string name)
         {
             Name = name;
-            ReCreate();
+            // ReCreate();
             ViewMatrix = Matrix4x4.Identity;
             ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
             // ViewMatrixResource.UploadData(ViewMatrix);
@@ -57,11 +57,11 @@ namespace Engine.Assets.Rendering
             // WorldInfoResource.UploadData(ViewPosition);
         }
 
-        public override async void ReCreate()
+        public override async Task ReCreate()
         {
             if (HasBeenInitialized)
                 return;
-            base.ReCreate();
+            await base.ReCreate();
             if (_commandList != null && !_commandList.IsDisposed)
                 _commandList.Dispose();
             if (ViewMatrixResource != null)
@@ -72,7 +72,7 @@ namespace Engine.Assets.Rendering
                 WorldInfoResource.ReCreate();
             foreach (var item in MatrixBuffers)
             {
-                item.Value.ReCreate();
+                await item.Value.ReCreate();
             }
             _commandList = ResourceManager.GraphicsFactory.CreateCommandList();
             _commandList.Name = Name;

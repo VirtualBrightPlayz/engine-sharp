@@ -31,10 +31,10 @@ namespace Engine.Assets.Rendering
         {
             Name = name;
             Size = size;
-            ReCreate();
+            // ReCreate();
         }
 
-        public override void ReCreate()
+        public override Task ReCreate()
         {
             // if (HasBeenInitialized)
                 // return;
@@ -43,6 +43,7 @@ namespace Engine.Assets.Rendering
                 InternalBuffer.Dispose();
             InternalBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription(Size, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
             InternalBuffer.Name = Name;
+            return Task.CompletedTask;
         }
 
         public override Task<Resource> Clone(string cloneName)

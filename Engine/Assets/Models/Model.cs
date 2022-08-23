@@ -402,10 +402,10 @@ namespace Engine.Assets.Models
             CollisionTriangles = colTris.ToArray();
         }
 
-        public override void ReCreate()
+        public override Task ReCreate()
         {
             if (HasBeenInitialized)
-                return;
+                return Task.CompletedTask;
             base.ReCreate();
             for (int i = 0; i < _meshes.Length; i++)
             {
@@ -415,6 +415,7 @@ namespace Engine.Assets.Models
             {
                 buf.Value.ReCreate();
             }
+            return Task.CompletedTask;
         }
 
         public override async Task<Resource> Clone(string cloneName)

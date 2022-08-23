@@ -73,10 +73,10 @@ namespace Engine.Assets.Audio
             Name = name;
         }
 
-        public override void ReCreate()
+        public override Task ReCreate()
         {
             if (HasBeenInitialized)
-                return;
+                return Task.CompletedTask;
             base.ReCreate();
             _al.DeleteSource(_handle.Value);
             _handle = _al.GenSource();
@@ -93,6 +93,7 @@ namespace Engine.Assets.Audio
             Position = Position;
             if (IsPlaying)
                 Play();
+            return Task.CompletedTask;
         }
 
         public override Task<Resource> Clone(string cloneName)

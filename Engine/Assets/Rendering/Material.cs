@@ -39,14 +39,14 @@ namespace Engine.Assets.Rendering
         {
             Name = name;
             Shader = shader;
-            ReCreate();
+            // ReCreate();
         }
 
-        public override void ReCreate()
+        public override async Task ReCreate()
         {
             if (HasBeenInitialized)
                 return;
-            base.ReCreate();
+            await base.ReCreate();
             foreach (var item in _pipelines)
             {
                 foreach (var pipeline in item.Value)
@@ -60,7 +60,7 @@ namespace Engine.Assets.Rendering
             {
                 foreach (var item in res.Value)
                 {
-                    item.ReCreate();
+                    await item.ReCreate();
                 }
             }
             foreach (var uniform in _uniformLayouts)
@@ -68,12 +68,12 @@ namespace Engine.Assets.Rendering
                 foreach (var item in uniform.Value)
                 {
                     if (item.resource != null)
-                        item.resource.ReCreate();
+                        await item.resource.ReCreate();
                 }
             }
             foreach (var cbuffer in _compoundBuffers)
             {
-                cbuffer.Value.ReCreate();
+                await cbuffer.Value.ReCreate();
                 SetUniforms(cbuffer.Key, cbuffer.Value);
             }
             foreach (var res in _resourceSets)
@@ -82,7 +82,7 @@ namespace Engine.Assets.Rendering
                     res.Value.Dispose();
             }
             _resourceSets.Clear();
-            Shader.ReCreate();
+            await Shader.ReCreate();
             foreach (var uniform in _uniformLayouts)
             {
                 SetUniforms(uniform.Key, true, uniform.Value);
@@ -91,11 +91,11 @@ namespace Engine.Assets.Rendering
                 // CreatePipeline(Program.MainRenderer, pass);
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        public override async Task<Resource> Clone(string cloneName)
         {
             Material res = new Material(cloneName, Shader);
-            res.ReCreate();
-            return Task.FromResult<Resource>(res);
+            await res.ReCreate();
+            return res;
         }
 
         public void ClearUniforms(uint setId)

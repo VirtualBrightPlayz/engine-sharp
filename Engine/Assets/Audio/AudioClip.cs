@@ -25,6 +25,8 @@ namespace Engine.Assets.Audio
         public async void Create(string path)
         {
             Name = path;
+            if (_al == null)
+                return;
             if (await FileManager.Exists(path))
             {
                 var stream = await FileManager.LoadStream(path);
@@ -209,14 +211,15 @@ namespace Engine.Assets.Audio
             _al.BufferData(_handle.Value, format, buffer, provider.WaveFormat.SampleRate);
         }
 
-        public override void ReCreate()
+        public override Task ReCreate()
         {
             if (HasBeenInitialized)
-                return;
+                return Task.CompletedTask;
             base.ReCreate();
             _al.DeleteBuffer(_handle.Value);
             _handle = _al.GenBuffer();
             _al.BufferData(_handle.Value, _format, _data, _sampleRate);
+            return Task.CompletedTask;
         }
 
         public override Task<Resource> Clone(string cloneName)

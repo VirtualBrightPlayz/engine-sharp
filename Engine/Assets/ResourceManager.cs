@@ -31,7 +31,7 @@ namespace Engine.Assets
             }
         }
 
-        public static void ReCreateAll()
+        public static async Task ReCreateAll()
         {
             foreach (var item in AllResources)
             {
@@ -46,7 +46,7 @@ namespace Engine.Assets
             Fonts.Clear();
             foreach (var item in AllResources)
             {
-                item.ReCreate();
+                await item.ReCreate();
             }
         }
 
@@ -66,7 +66,7 @@ namespace Engine.Assets
             if (cl != null)
                 return cl;
             cl = await asset.Clone(name) as T;
-            Add(cl);
+            await Add(cl);
             return cl;
         }
 
@@ -104,8 +104,9 @@ namespace Engine.Assets
             return font;
         }
 
-        public static void Add(Resource resource)
+        public static async Task Add(Resource resource)
         {
+            await resource.ReCreate();
             lock (_poolLock)
             {
                 StagedResources.Add(resource);
@@ -123,7 +124,7 @@ namespace Engine.Assets
             if (tex != null)
                 return tex;
             tex = new Texture2D(name, path);
-            Add(tex);
+            await Add(tex);
             return tex;
         }
 
@@ -133,7 +134,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new AudioClip(path);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -143,7 +144,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new GraphicsShader(path);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -153,7 +154,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new Model(path, path, material, true, false);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -163,7 +164,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new Model(path, path, material, true, false);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -173,7 +174,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new Model(path, path, material, shouldLoadMats, animated);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -183,7 +184,7 @@ namespace Engine.Assets
             if (buf != null && buf.Size == size)
                 return buf;
             buf = new UniformBuffer(name, size);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -193,7 +194,7 @@ namespace Engine.Assets
             if (buf != null && buf.Contains(shader, index, bindables))
                 return buf;
             buf = new CompoundBuffer(name, shader, index, bindables);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -203,7 +204,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new Material(name, shader);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -213,7 +214,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new Renderer(name);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 
@@ -223,7 +224,7 @@ namespace Engine.Assets
             if (buf != null)
                 return buf;
             buf = new Mesh(name, isBig, material);
-            Add(buf);
+            await Add(buf);
             return buf;
         }
 

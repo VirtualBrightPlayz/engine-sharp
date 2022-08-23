@@ -102,12 +102,12 @@ void main()
         renderer = await ResourceManager.CreateRenderer("MainRenderer");
         Renderer.Current = renderer;
         renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain));
-        // AudioGlobals.InitGameAudio();
+        AudioGlobals.InitGameAudio();
         MiscGlobals.InitGameMisc();
         game = new GameBSrc.BGame();
         game.Setup();
         ResourceManager.Update();
-        // runtime.InvokeVoid("init");
+        runtime.InvokeVoid("init");
         return 0;
     }
 

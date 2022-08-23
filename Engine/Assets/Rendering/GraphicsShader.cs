@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Engine.Assets.Models;
 using Engine.Assets.Textures;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Veldrid;
 using Veldrid.SPIRV;
 
@@ -33,14 +35,13 @@ namespace Engine.Assets.Rendering
         {
             Name = name;
             _path = path;
-            ReCreate();
         }
 
-        public override async void ReCreate()
+        public override async Task ReCreate()
         {
             if (HasBeenInitialized)
                 return;
-            base.ReCreate();
+            await base.ReCreate();
             foreach (var res in _reflResourceLayouts)
             {
                 if (res != null && !res.IsDisposed)
@@ -58,6 +59,27 @@ namespace Engine.Assets.Rendering
                 }
             }
             _shaders.Clear();
+        #if WEBGL
+            string manifest = await FileManager.LoadString($"{_path}.glsl.json");
+            Passes = JsonConvert.DeserializeObject<List<ShaderPass>>(manifest);
+            foreach (var pass in Passes)
+            {
+                string passManifest = await FileManager.LoadString($"{_path}.glsl.{pass.PassName}.json");
+                object result = JsonConvert.DeserializeObject(passManifest);
+                JObject lin = JObject.FromObject(result);
+                ShaderDescription vertShader = new ShaderDescription(ShaderStages.Vertex, Encoding.ASCII.GetBytes(lin["VertexShader"].ToObject<string>()), "main");
+                ShaderDescription fragShader = new ShaderDescription(ShaderStages.Fragment, Encoding.ASCII.GetBytes(lin["FragmentShader"].ToObject<string>()), "main");
+                Shader[] shaders = new Shader[2];
+                shaders[0] = ResourceManager.GraphicsFactory.CreateShader(vertShader);
+                shaders[1] = ResourceManager.GraphicsFactory.CreateShader(fragShader);
+                _shaders.Add(pass.PassName, shaders);
+                _compileResult = lin["Reflection"].ToObject<SpirvReflection>();
+                string json = lin["Reflection"].ToString(Formatting.None);
+                using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                _compileResult = SpirvReflection.LoadFromJson(ms);
+            }
+            // _compileResult = SpirvReflection.LoadFromJson(await FileManager.LoadStream(_path + ".glsl.main.json"));
+        #else
             if (await FileManager.Exists($"{_path}.glsl"))
             {
                 string shaderCode = await FileManager.LoadStringASCII($"{_path}.glsl");
@@ -70,6 +92,7 @@ namespace Engine.Assets.Rendering
                 string fragCode = await FileManager.LoadStringASCII($"{_path}.frag");
                 CreateShaders(vertCode, fragCode, "main", _path);
             }
+        #endif
             _reflResourceLayouts.Clear();
             for (int i = 0; i < _compileResult.ResourceLayouts.Length; i++)
             {

@@ -94,14 +94,14 @@ namespace Engine.Assets.Textures
         {
             Name = name;
             _path = path;
-            ReCreate();
+            // ReCreate();
         }
 
-        public override async void ReCreate()
+        public override async Task ReCreate()
         {
             if (HasBeenInitialized)
                 return;
-            base.ReCreate();
+            await base.ReCreate();
             if (Tex != null && !Tex.IsDisposed)
                 Tex.Dispose();
             if (_texData == null)
@@ -126,12 +126,12 @@ namespace Engine.Assets.Textures
 
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        public override async Task<Resource> Clone(string cloneName)
         {
             // base.ReCreate();
             Texture2D tex = new Texture2D(cloneName, _path);
-            tex.ReCreate();
-            return Task.FromResult<Resource>(tex);
+            await tex.ReCreate();
+            return tex;
         }
 
         public void UpdateSamplerInfo(SamplerInfo info)

@@ -10,10 +10,11 @@ namespace Engine.Assets
         public bool HasBeenInitialized { get; set; } = false;
         public abstract void Dispose();
         public abstract Task<Resource> Clone(string cloneName);
-        public virtual void ReCreate()
+        public virtual Task ReCreate()
         {
             Console.WriteLine($"ReCreate {Name} ({GetType().Name})");
             HasBeenInitialized = true;
+            return Task.CompletedTask;
         }
     }
 }

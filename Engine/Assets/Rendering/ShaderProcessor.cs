@@ -176,6 +176,7 @@ namespace Engine.Assets.Rendering
             const string pragmaDraw = "#draw ";
             const string pragmaPass = "#pass ";
             const string pragmaUniform = "#uniform ";
+            const string pragmaTextureUniform = "#texture2d ";
             // const string version = "#version 450";
             string filename = $"\"{file}\"";
             string[] lines = shaderCode.ReplaceLineEndings().Split(Environment.NewLine);
@@ -396,6 +397,23 @@ namespace Engine.Assets.Rendering
                 #endif
                     uniformInputs++;
                 }
+                /*else if (line.ToLower().StartsWith(pragmaTextureUniform))
+                {
+                    string fragmentInput = line.Substring(pragmaTextureUniform.Length - 1).Trim();
+                    string[] settings = fragmentInput.Split(' ');
+                #if WEBGL
+                    // vertexShaderOutput.Add($"#line {curLine} {filename}");
+                    vertexShaderOutput.Add($"uniform {string.Join(' ', settings[0..^2])};");
+                    // fragmentShaderOutput.Add($"#line {curLine} {filename}");
+                    fragmentShaderOutput.Add($"uniform {string.Join(' ', settings[0..^2])};");
+                #else
+                    vertexShaderOutput.Add($"#line {curLine} {filename}");
+                    vertexShaderOutput.Add($"layout(set = {settings[^2]}, binding = {settings[^1]}) uniform {string.Join(' ', settings[0..^2])}");
+                    fragmentShaderOutput.Add($"#line {curLine} {filename}");
+                    fragmentShaderOutput.Add($"layout(set = {settings[^2]}, binding = {settings[^1]}) uniform {string.Join(' ', settings[0..^2])}");
+                #endif
+                    uniformInputs++;
+                }*/
                 else if (!line.StartsWith("#"))
                 {
                     line = lines[i];

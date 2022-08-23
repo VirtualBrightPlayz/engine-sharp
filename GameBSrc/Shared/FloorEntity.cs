@@ -63,6 +63,7 @@ namespace GameBSrc
         {
             floorTextureRenderer = await ResourceManager.CreateRenderer($"Floor_{FloorNumber}");
             floorTexture = new RenderTexture2D($"Floor_{FloorNumber}", TexSize, TexSize);
+            await floorTexture.ReCreate();
             floorTextureUIRenderer = new ImGuiRenderer(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
             // RenderFloorTexture();
             cubeMat = await ResourceManager.CreateMaterial($"{MarkerName}_{FloorNumber}", await BGame.Instance.Shader);
