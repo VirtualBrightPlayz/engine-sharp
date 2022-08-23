@@ -7,3 +7,9 @@
 [submodule "OpenAL-CS"]
 	path = OpenAL-CS
 	url = https://github.com/flibitijibibo/OpenAL-CS.git
+[submodule "assimp"]
+	path = assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "ImGui.NET"]
+	path = ImGui.NET
+	url = git@github.com:VirtualBrightPlayz/ImGui.NET.git

@@ -13,9 +13,12 @@
     <PackageReference Include="BepuUtilities" Version="2.5.0-beta.7" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0026" />
+    <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0026" />
     <ProjectReference Include="..\..\OpenAL-CS\OpenAL-CS.Core.csproj" />
     <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj" />
     <ProjectReference Include="..\..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
+    <ProjectReference Include="..\..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
     <!-- <PackageReference Include="Veldrid" Version="4.8.0" />
     <PackageReference Include="Veldrid.ImGui" Version="5.72.0" /> -->
     <PackageReference Include="Veldrid.RenderDoc" Version="1.0.1" />

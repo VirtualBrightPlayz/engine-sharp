@@ -21,7 +21,7 @@ namespace Engine.Assets
         {
             while (isBusy)
             {
-                await Task.Yield();
+                // await Task.Yield();
             }
         #if WEBGL && !SHADER_COMPILER
             // isBusy = true;

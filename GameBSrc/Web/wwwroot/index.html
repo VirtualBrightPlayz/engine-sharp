@@ -10,10 +10,13 @@
 <body>
     <canvas width="600" height="400" id="canvas"></canvas>
 
-    <script type='text/javascript'>
+    <script type="text/javascript">
         var canvas = document.getElementById("canvas");
         var Module = {
-            canvas: canvas
+            canvas: canvas,
+            onRuntimeInitialized: () => {
+                console.log("onRuntimeInitialized");
+            },
         };
 
         window.init = () => {
@@ -33,11 +36,27 @@
         };
 
         function frame(time) {
-            DotNet.invokeMethodAsync("Web", "Frame", time);
-            // window.requestAnimationFrame(frame);
+            DotNet.invokeMethodAsync("Web", "Frame", time).then(code => {
+                console.log("Frame finished.");
+                window.requestAnimationFrame(frame);
+            }).catch(err => {
+                console.error(err);
+            });
         }
+
+        function runEngine() {
+            console.log("Init...");
+            DotNet.invokeMethodAsync("Web", "Init").then(code => {
+                console.log("Init finished.");
+            });
+        }
+        document.addEventListener("DOMContentLoaded", function() {
+            Blazor.start();
+        });
     </script>
 
-    <script src="_framework/blazor.webassembly.js"></script>
+    <button onclick="runEngine();">Start</button>
+
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
 </body>
 </html>

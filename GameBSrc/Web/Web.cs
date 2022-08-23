@@ -94,6 +94,13 @@ void main()
 
     public static async Task<int> Main(string[] args)
     {
+        await Task.Delay(-1);
+        return 0;
+    }
+
+    [JSInvokable]
+    public static async Task<int> Init()
+    {
         Console.WriteLine("Starting...");
         runtime = new WebRuntime();
         // FileManager.HttpCallback = HttpLoad;
@@ -102,6 +109,7 @@ void main()
         renderer = await ResourceManager.CreateRenderer("MainRenderer");
         Renderer.Current = renderer;
         renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain));
+        await renderer.InternalRenderTexture.ReCreate();
         AudioGlobals.InitGameAudio();
         MiscGlobals.InitGameMisc();
         game = new GameBSrc.BGame();
@@ -117,24 +125,27 @@ void main()
     }
 
     [JSInvokable]
-    public static async Task Frame(double time)
+    public static async Task<int> Frame(double time)
     {
         double delta = time - lastTime;
         ResourceManager.Update();
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputSnapshot);
         renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.1f, 1000f);
-        await game.PreDraw(renderer, delta);
+        // await game.PreDraw(renderer, delta);
         renderer.Begin();
         renderer.Clear();
-        await game.Draw(renderer, delta);
+        // await game.Draw(renderer, delta);
+        DebugGlobals.DrawDebugWindow();
+        ImGuiNET.ImGui.EndFrame();
         RenderingGlobals.GameImGui.Render(RenderingGlobals.GameGraphics, renderer.CommandList);
         renderer.End();
         renderer.Submit();
         RenderingGlobals.GameGraphics.SwapBuffers();
-        MiscGlobals.GameInputSnapshot.Update();
-        await game.Tick(delta);
+        // MiscGlobals.GameInputSnapshot.Update();
+        // await game.Tick(delta);
         lastTime = time;
-        runtime.InvokeVoid("init");
+        // runtime.InvokeVoid("init");
+        return 0;
     }
 
     public static unsafe int Main2(string[] args)

@@ -56,10 +56,10 @@ namespace GameBSrc
         public FloorEntity(int number, string path, Material material) : base($"Floor_{number}", path, material)
         {
             FloorNumber = number;
-            Create();
+            // Create();
         }
 
-        private async void Create()
+        public override async Task Create()
         {
             floorTextureRenderer = await ResourceManager.CreateRenderer($"Floor_{FloorNumber}");
             floorTexture = new RenderTexture2D($"Floor_{FloorNumber}", TexSize, TexSize);
@@ -70,6 +70,7 @@ namespace GameBSrc
             cubeBuffer = await ResourceManager.CreateCompoundBuffer($"{DiffusePath}_{FloorNumber}", cubeMat.Shader, UniformConsts.DiffuseTextureSet, floorTexture, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             cubeMat.SetUniforms(UniformConsts.DiffuseTextureSet, cubeBuffer);
             Cube = new ModelEntity($"{MarkerName}_{FloorNumber}", CubePath, cubeMat);
+            await Cube.Create();
             Cube.Model.CompoundBuffers.Add(cubeBuffer);
             Cube.Scale = Vector3.One * 0.25f;
             if (FloorNumber % 2 == 0)
@@ -78,6 +79,7 @@ namespace GameBSrc
                 Cube.Position = new Vector3(7.4f+0.6f+0.24f, -FloorNumber*2f-0.6f, 7f-1.5f);
             Cube.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
             BGame.Instance.Entities.Add(Cube);
+            await base.Create();
         }
 
         public async void RenderFloorTexture()
@@ -92,9 +94,11 @@ namespace GameBSrc
             if (!hasRendered)
                 floorTextureUIRenderer.RecreateFontDeviceTexture();
             UIExt.TextLeft(UIExt.Pretext(floorTextureUIRenderer), TexSize / 4f, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
+            ImGui.EndFrame();
             floorTextureUIRenderer.Render(RenderingGlobals.GameGraphics, floorTextureRenderer.CommandList);
             floorTextureRenderer.End();
             floorTextureRenderer.Submit();
+            // floorTextureUIRenderer.Update(0f, MiscGlobals.GameInputSnapshot);
         }
 
         public override void MarkTransformDirty(TransformDirtyFlags flags)

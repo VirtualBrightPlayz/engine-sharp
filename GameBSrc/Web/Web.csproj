@@ -8,9 +8,12 @@
     <!-- <DebuggerSupport>true</DebuggerSupport> -->
     <!-- <CopyOutputSymbolsToPublishDirectory>true</CopyOutputSymbolsToPublishDirectory> -->
     <DefineConstants>$(DefineConstants);WEBGL</DefineConstants>
-    <EmccFlags>-s FULL_ES2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -lopenal</EmccFlags>
+    <EmccFlags>-s FULL_ES2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -lopenal -s ASSERTIONS=0 -g3</EmccFlags>
+    <!-- <EmccFlags>$(EmccFlags) -s EXPORTED_RUNTIME_METHODS=cwrap,@cimgui_exports.txt</EmccFlags> -->
     <!-- <EmccExtraLDFlags>-s WARN_ON_UNDEFINED_SYMBOLS=0</EmccExtraLDFlags> -->
-    <!-- <PublishTrimmed>false</PublishTrimmed> -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <WasmNativeStrip>false</WasmNativeStrip>
+    <!-- <WasmExceptionHandling>true</WasmExceptionHandling> -->
     <!-- <MonoRuntimeDebuggerEnabled Condition="'$(Configuration)'=='Debug'">true</MonoRuntimeDebuggerEnabled> -->
     <!-- <BuildDependsOn>Shaders;HI;$(BuildDependsOn)</BuildDependsOn> -->
   </PropertyGroup>
@@ -22,19 +25,25 @@
 
   <!-- <UsingTask TaskName="Engine.Assets.Rendering.ReflectShaders" AssemblyFile="..\..\Engine\ShaderCompiler\bin\$(Configuration)\$(TargetFramework)\Engine.ShaderCompiler.dll" /> -->
 
-  <Target Name="Shaders" AfterTargets="AfterBuild">
-    <!-- <MSBuild Projects="..\..\Engine\ShaderCompiler\Engine.ShaderCompiler.csproj" /> -->
+  <!-- <Target Name="Shaders" AfterTargets="AfterBuild"> -->
+  <Target Name="Shaders">
     <Exec Command="dotnet build" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\cube.gltf" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
     <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\Blit.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
     <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMesh.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
     <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMeshAnim.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
     <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMeshFog.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
     <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMeshAnimFog.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
-    <!-- <ReflectShaders Shaders="wwwroot\Shaders\Blit.glsl" /> -->
-    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMesh.glsl" /> -->
-    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMeshAnim.glsl" /> -->
-    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMeshFog.glsl" /> -->
-    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMeshAnimFog.glsl" /> -->
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map0.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map1.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map2.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map3.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map4.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map5.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\map6.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\maze.x" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\GameB\GFX\mental.b3d" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
   </Target>
 
   <PropertyGroup>
@@ -44,12 +53,20 @@
     <WasmBuildNative>true</WasmBuildNative>
     <!-- <RunAOTCompilation>true</RunAOTCompilation>
     <AOTMode>LLVMOnly</AOTMode> -->
+    <AssimpSources>
+      ..\..\assimp\code\**\*.c;
+      ..\..\assimp\code\**\*.cpp;
+    </AssimpSources>
   </PropertyGroup>
 
   <ItemGroup>
     <NativeFileReference Include="libEGL.c" ScanForPInvokes="true" />
     <NativeFileReference Include="soft_oal.c" ScanForPInvokes="true" />
-    <NativeFileReference Include="..\..\cimgui\cimgui.cpp;..\..\cimgui\imgui\imgui.cpp;..\..\cimgui\imgui\imgui_draw.cpp;..\..\cimgui\imgui\imgui_demo.cpp;..\..\cimgui\imgui\imgui_widgets.cpp;..\..\cimgui\imgui\imgui_tables.cpp" />
+    <NativeFileReference Include="@(AssimpSources)" ScanForPInvokes="true" />
+    <NativeFileReference Include="..\..\cimgui\cimgui.cpp;..\..\cimgui\imgui\imgui.cpp;..\..\cimgui\imgui\imgui_draw.cpp;..\..\cimgui\imgui\imgui_demo.cpp;..\..\cimgui\imgui\imgui_widgets.cpp;..\..\cimgui\imgui\imgui_tables.cpp" ScanForPInvokes="true" />
+    <!-- <NativeFileReference Include="..\..\cimgui\cimgui.cpp;..\..\cimgui\imgui\imgui.cpp;..\..\cimgui\imgui\imgui_draw.cpp;..\..\cimgui\imgui\imgui_demo.cpp;..\..\cimgui\imgui\imgui_widgets.cpp" ScanForPInvokes="true" /> -->
+    <!-- <NativeFileReference Include="..\..\cimgui\cimgui.cpp" ScanForPInvokes="true" /> -->
+    <!-- <NativeFileReference Include="cimgui.cpp" ScanForPInvokes="true" /> -->
   </ItemGroup>
 
   <ItemGroup>
@@ -63,8 +80,8 @@
     <!-- <PackageReference Include="Uno.Wasm.Bootstrap.DevServer" Version="2.1.0" PrivateAssets="all" /> -->
     <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj" />
     <ProjectReference Include="..\..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
+    <ProjectReference Include="..\..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
     <!-- <ProjectReference Include="..\..\Engine\ShaderCompiler\Engine.ShaderCompiler.csproj" /> -->
-    <!-- <ProjectReference Include="..\..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" /> -->
   </ItemGroup>
 
   <PropertyGroup>

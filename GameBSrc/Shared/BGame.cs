@@ -76,9 +76,9 @@ namespace GameBSrc
             Data = new GameData("GameB");
         }
 
-        public override async Task Setup()
+        public override Task Setup()
         {
-            await base.Setup();
+            return base.Setup();
         }
 
         public async Task Init()
@@ -215,6 +215,7 @@ namespace GameBSrc
             CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(doorPath, await Shader, UniformConsts.DiffuseTextureSet, await ResourceManager.LoadTexture(doorPath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             doorMat.SetUniforms(UniformConsts.DiffuseTextureSet, buffer);
             var door = new ModelEntity("Door", cubePath, doorMat);
+            await door.Create();
             // door.Model.CompoundBuffers.Clear();
             door.Model.CompoundBuffers.Add(buffer);
             door.Position = new Vector3(-3.5f, -1f, 0.5f);
@@ -401,9 +402,10 @@ namespace GameBSrc
             floorActions[temp] = FloorEntity.FloorAction.Darkness;
             floorTimers[temp] = MinFloorTime;
 
-            for (int i = 0; i < floorActions.Length; i++)
+            for (int i = 0; i < Math.Min(floorActions.Length, 2); i++)
             {
                 var floor = new FloorEntity(i+1, Path.Combine(Data.GFXDir, GetFloor(rng, i, floorActions[i])), await ResourceManager.CreateMaterial("map0", await Shader));
+                await floor.Create();
                 if (i % 2 == 0)
                 {
                     floor.Position = new Vector3(0f, -i*2f, 0f);
@@ -417,8 +419,8 @@ namespace GameBSrc
                 floor.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation);
                 floors.Add(floor);
                 Entities.Add(floor);
-                Console.WriteLine(floor.Name);
-                await Task.Delay(100);
+                // Console.WriteLine(floor.Name);
+                // await Task.Delay(100);
             }
         }
 
@@ -430,6 +432,7 @@ namespace GameBSrc
             Texture2D diffuse = await ResourceManager.LoadTexture(diffusePath);
             CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, await Shader, UniformConsts.DiffuseTextureSet, diffuse, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             currentObject = new StaticModelEntity("CurrentObject", "Shaders/cube.gltf", material);
+            await (currentObject as StaticModelEntity).Create();
             currentObject.Position = new Vector3(x, y, z);
             currentObject.Scale = new Vector3(0.5f, 1f, 0.5f);
             currentObject.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);

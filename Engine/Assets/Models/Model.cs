@@ -14,6 +14,19 @@ namespace Engine.Assets.Models
 {
     public class Model : Resource
     {
+        [StructLayout(LayoutKind.Sequential)]
+        public struct GLTF_VERTEX
+        {
+            public Vector3 POSITION;
+            public Vector3 NORMAL;
+            public Vector4 TANGENT;
+            public Vector4 COLOR_0;
+            public Vector2 TEXCOORD_0;
+            public Vector2 TEXCOORD_1;
+            public UInt4 JOINTS_0;
+            public Vector4 WEIGHTS_0;
+        }
+
         public const string ShaderPath = "Shaders/MainMesh";
         public const uint ShaderWorldInfoSetId = 3;
         public const uint ShaderForwardSetId = 4;
@@ -81,14 +94,123 @@ namespace Engine.Assets.Models
             _shouldLoadMats = loadMaterials;
             _shouldAnimate = animate;
             InternalMaterials = new List<Rendering.Material>();
-            Load(path, material, loadMaterials, animate);
+            // Load(path, material, loadMaterials, animate);
         }
 
-        private async void Load(string path, Rendering.Material material, bool loadMaterials, bool animate)
+        private async Task Load(string path, Rendering.Material material, bool loadMaterials, bool animate)
         {
             LightUniform = await ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
-            AssimpLoadMeshes(path, material, animate);
+        #if !WEBGL
+            if (path.ToLower().EndsWith(".glb"))
+        #endif
+                await GLTFLoadMeshes(path);
+        #if !WEBGL
+            else
+                AssimpLoadMeshes(path, material, animate);
+        #endif
             LightBuffer = await ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath), ShaderForwardSetId, LightUniform);
+        }
+
+        private async Task GLTFLoadMeshes(string path)
+        {
+        #if WEBGL
+            var root = SharpGLTF.Schema2.ModelRoot.ReadGLB(await FileManager.LoadStream(path + ".glb"), new SharpGLTF.Schema2.ReadSettings()
+            {
+                Validation = SharpGLTF.Validation.ValidationMode.Skip,
+            });
+        #else
+            var root = SharpGLTF.Schema2.ModelRoot.ReadGLB(await FileManager.LoadStream(path), new SharpGLTF.Schema2.ReadSettings()
+            {
+                Validation = SharpGLTF.Validation.ValidationMode.Skip,
+            });
+        #endif
+            int vertexCount = 0;
+            List<Vector3> colPos = new List<Vector3>();
+            List<uint> colTris = new List<uint>();
+            var meshes = new List<Mesh>();
+            await GLTFProcessNode(root.UseScene(0), colPos, colTris, meshes, vertexCount);
+            _meshes = meshes.ToArray();
+            CollisionPositions = colPos.ToArray();
+            CollisionTriangles = colTris.ToArray();
+        }
+
+        private async Task<int> GLTFProcessNode(SharpGLTF.Schema2.IVisualNodeContainer vNode, List<Vector3> colPos, List<uint> colTris, List<Mesh> meshes, int vertexCount)
+        {
+            foreach (var child in vNode.VisualChildren)
+            {
+                vertexCount = await GLTFProcessNode(child, colPos, colTris, meshes, vertexCount);
+            }
+            if (vNode is SharpGLTF.Schema2.Node node && node.Mesh != null)
+            {
+                foreach (var mesh in node.Mesh.Primitives)
+                {
+                    var tris = mesh.GetIndices();
+                    var pos = mesh.GetVertices(nameof(GLTF_VERTEX.POSITION)).AsVector3Array().ToArray();
+                    var norm = mesh.GetVertices(nameof(GLTF_VERTEX.NORMAL)).AsVector3Array().ToArray();
+                    var tang = mesh.GetVertices(nameof(GLTF_VERTEX.TANGENT)).AsVector4Array().ToArray();
+                    var col = mesh.GetVertices(nameof(GLTF_VERTEX.COLOR_0)).AsColorArray().ToArray();
+                    var uv0 = mesh.GetVertices(nameof(GLTF_VERTEX.TEXCOORD_0)).AsVector2Array().ToArray();
+                    var uv1 = mesh.GetVertices(nameof(GLTF_VERTEX.TEXCOORD_1)).AsVector2Array().ToArray();
+                    var bInds = mesh.GetVertices(nameof(GLTF_VERTEX.JOINTS_0)).AsVector4Array().ToArray();
+                    var bWeights = mesh.GetVertices(nameof(GLTF_VERTEX.WEIGHTS_0)).AsVector4Array().ToArray();
+                    InternalMaterials.Add(_ogMaterial ?? await ResourceManager.CreateMaterial($"{Name}_{InternalMaterials.Count}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath)));
+                    Rendering.Material material = InternalMaterials[^1];
+                    var diff = mesh.Material.FindChannel("Diffuse");
+                    if (diff.HasValue)
+                    {
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        var diffusePath = "Shaders/white.bmp"; // TODO
+                        CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, InternalMaterials[^1].Shader, UniformConsts.DiffuseTextureSet, await ResourceManager.LoadTexture(diffusePath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
+                        CompoundBuffers.Add(buffer);
+                        InternalMaterials[^1].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[^1]);
+                    }
+
+                    List<ModelVertexLayout> vertices = new List<ModelVertexLayout>();
+                    List<AnimModelVertexLayout> animVertices = new List<AnimModelVertexLayout>();
+                    for (int j = 0; j < pos.Length; j++)
+                    {
+                        var rot = System.Numerics.Quaternion.CreateFromAxisAngle(norm[j], 90f * (MathF.PI / 180f));
+                        var tan = new Vector3(tang[j].X, tang[j].Y, tang[j].Z);
+                        BepuUtilities.QuaternionEx.Transform(tan, rot, out var bitan);
+                        vertices.Add(new ModelVertexLayout()
+                        {
+                            Position = pos[j],
+                            Normal = norm[j],
+                            UV0 = uv0[j],
+                            UV1 = uv1[j],
+                            Color = col[j],
+                            Tangent = tan,
+                            BiTangent = bitan,
+                        });
+                        animVertices.Add(new AnimModelVertexLayout()
+                        {
+                            Position = pos[j],
+                            Normal = norm[j],
+                            UV0 = uv0[j],
+                            UV1 = uv1[j],
+                            Color = col[j],
+                            Tangent = tan,
+                            BiTangent = bitan,
+                            BoneWeights = bWeights[j],
+                            BoneIndices = new UInt4(bInds[j]),
+                        });
+                    }
+                    var newmesh = await ResourceManager.CreateMesh($"Mesh_{node.Name}", false, material);
+                    meshes.Add(newmesh);
+                    newmesh.Indices = tris.ToList();
+                    if (_shouldAnimate)
+                        newmesh.UploadData(animVertices.ToArray());
+                    else
+                        newmesh.UploadData(vertices.ToArray());
+                    colPos.AddRange(pos);
+                    colTris.AddRange(tris.Select(x => (uint)(x + vertexCount)).ToArray());
+                    vertexCount += pos.Length;
+                }
+            }
+            return vertexCount;
         }
 
         private System.Numerics.Matrix4x4[] AssimpAnimate(double time, int i)
@@ -407,6 +529,7 @@ namespace Engine.Assets.Models
             if (HasBeenInitialized)
                 return;
             await base.ReCreate();
+            await Load(_path, _ogMaterial, _shouldLoadMats, _shouldAnimate);
             for (int i = 0; i < _meshes.Length; i++)
             {
                 await _meshes[i].ReCreate();

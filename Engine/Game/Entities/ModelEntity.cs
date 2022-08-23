@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using Engine.Assets;
@@ -16,15 +17,19 @@ namespace Engine.Game.Entities
     public class ModelEntity : Entity
     {
         public Model Model { get; private set; }
+        private readonly string _path;
+        private readonly Material _material;
 
         public ModelEntity(string name, string path, Material material) : base(name)
         {
-            Create(path, material);
+            _path = path;
+            _material = material;
+            // Create(path, material);
         }
 
-        private async void Create(string path, Material material)
+        public virtual async Task Create()
         {
-            Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, material, path));
+            Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
         }
 
         public override void PreDraw(Renderer renderer, double dt)

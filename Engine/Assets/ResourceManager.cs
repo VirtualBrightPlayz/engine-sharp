@@ -38,7 +38,6 @@ namespace Engine.Assets
                 item.HasBeenInitialized = false;
             }
             ImGuiIOPtr io = ImGui.GetIO();
-            // io.Fonts.ClearFonts();
             foreach (var item in Fonts)
             {
                 item.Value.Destroy();
@@ -72,11 +71,11 @@ namespace Engine.Assets
 
         public static async Task<T> CheckAndReturn<T>(string name) where T : Resource
         {
-            while (isBusy)
+            /*while (isBusy)
             {
                 await Task.Yield();
-            }
-            lock (_poolLock)
+            }*/
+            // lock (_poolLock)
             {
                 if (AllResources.Any(x => x.Name == name && x is T))
                 {
@@ -107,7 +106,7 @@ namespace Engine.Assets
         public static async Task Add(Resource resource)
         {
             await resource.ReCreate();
-            lock (_poolLock)
+            // lock (_poolLock)
             {
                 StagedResources.Add(resource);
                 #if WEBGL
