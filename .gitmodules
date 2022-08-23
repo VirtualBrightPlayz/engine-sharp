@@ -1,0 +1,6 @@
+[submodule "veldrid"]
+	path = veldrid
+	url = git@github.com:VirtualBrightPlayz/veldrid.git
+[submodule "cimgui"]
+	path = cimgui
+	url = https://github.com/cimgui/cimgui.git

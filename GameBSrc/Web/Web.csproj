@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly" InitialTargets="Shaders">
+<!-- <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly" InitialTargets="Shaders"> -->
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <!-- <OutputType>Exe</OutputType> -->
+    <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- <DebuggerSupport>true</DebuggerSupport> -->
@@ -19,14 +20,21 @@
     <Compile Include="..\Shared\**\*.cs" />
   </ItemGroup>
 
-  <UsingTask TaskName="Engine.Assets.Rendering.ReflectShaders" AssemblyFile="..\..\Engine\ShaderCompiler\bin\$(Configuration)\$(TargetFramework)\Engine.ShaderCompiler.dll" />
+  <!-- <UsingTask TaskName="Engine.Assets.Rendering.ReflectShaders" AssemblyFile="..\..\Engine\ShaderCompiler\bin\$(Configuration)\$(TargetFramework)\Engine.ShaderCompiler.dll" /> -->
 
-  <Target Name="Shaders">
-    <ReflectShaders Shaders="wwwroot\Shaders\Blit.glsl" />
-    <ReflectShaders Shaders="wwwroot\Shaders\MainMesh.glsl" />
-    <ReflectShaders Shaders="wwwroot\Shaders\MainMeshAnim.glsl" />
-    <ReflectShaders Shaders="wwwroot\Shaders\MainMeshFog.glsl" />
-    <ReflectShaders Shaders="wwwroot\Shaders\MainMeshAnimFog.glsl" />
+  <Target Name="Shaders" AfterTargets="AfterBuild">
+    <!-- <MSBuild Projects="..\..\Engine\ShaderCompiler\Engine.ShaderCompiler.csproj" /> -->
+    <Exec Command="dotnet build" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\Blit.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMesh.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMeshAnim.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMeshFog.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <Exec Command="dotnet run $(MSBuildThisFileDirectory)\wwwroot\Shaders\MainMeshAnimFog.glsl" WorkingDirectory="..\..\Engine\ShaderCompiler" ConsoleToMsBuild="true" />
+    <!-- <ReflectShaders Shaders="wwwroot\Shaders\Blit.glsl" /> -->
+    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMesh.glsl" /> -->
+    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMeshAnim.glsl" /> -->
+    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMeshFog.glsl" /> -->
+    <!-- <ReflectShaders Shaders="wwwroot\Shaders\MainMeshAnimFog.glsl" /> -->
   </Target>
 
   <PropertyGroup>
@@ -55,6 +63,7 @@
     <!-- <PackageReference Include="Uno.Wasm.Bootstrap.DevServer" Version="2.1.0" PrivateAssets="all" /> -->
     <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj" />
     <ProjectReference Include="..\..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
+    <!-- <ProjectReference Include="..\..\Engine\ShaderCompiler\Engine.ShaderCompiler.csproj" /> -->
     <!-- <ProjectReference Include="..\..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" /> -->
   </ItemGroup>
 
