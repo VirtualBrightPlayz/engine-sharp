@@ -54,8 +54,9 @@ namespace GameBSrc
         public Task<Texture2D> logo => ResourceManager.LoadTexture(Path.Combine(BGame.Instance.Data.GFXDir, "scp.jpg"));
         public string MusicClipPath => Path.Combine(Data.SFXDir, "music.ogg");
         public List<StaticModelEntity> floors = new List<StaticModelEntity>();
-        public Task<GraphicsShader> Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
-        public Task<GraphicsShader> AnimShader => ResourceManager.LoadShader("Shaders/MainMeshAnimFog");
+        // public Task<GraphicsShader> Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
+        public Task<GraphicsShader> Shader => ResourceManager.LoadShader("Shaders/MainMesh");
+        public Task<GraphicsShader> AnimShader => ResourceManager.LoadShader("Shaders/MainMeshAnim");
         public int radioState = 0;
         public int currentFloor = 0;
         public int killTimer = 0;
@@ -85,7 +86,11 @@ namespace GameBSrc
         public async Task Init()
         {
             fogUniform = await ResourceManager.CreateUniformBuffer("WorldFogInfo", (uint)4 * 4);
-            fogBuffer = await ResourceManager.CreateCompoundBuffer("WorldFogInfo", await Shader, FogSetId, fogUniform);
+            // fogBuffer = await ResourceManager.CreateCompoundBuffer("WorldFogInfo", await Shader, FogSetId, fogUniform);
+            if ((await Shader).Name == (await AnimShader).Name)
+            {
+                throw new Exception("Oops");
+            }
             SetAmbient(Brightness);
             fogData = new Vector4(0f, 0f, 0f, 2.5f);
             musicClip = await ResourceManager.LoadAudioClip(MusicClipPath);
@@ -217,7 +222,7 @@ namespace GameBSrc
             doorMat.SetUniforms(UniformConsts.DiffuseTextureSet, buffer);
             var door = new ModelEntity("Door", cubePath, doorMat);
             await door.Create();
-            // door.Model.CompoundBuffers.Clear();
+            door.Model.CompoundBuffers.Clear();
             door.Model.CompoundBuffers.Add(buffer);
             door.Position = new Vector3(-3.5f, -1f, 0.5f);
             door.Scale = new Vector3(0.5f, 1f, 0.5f);
@@ -289,6 +294,7 @@ namespace GameBSrc
             floorTimers[temp] = MinFloorTime;
 
             temp = rng.Next(33, 37);
+            temp = 1;
             floorActions[temp] = FloorEntity.FloorAction.Act_173;
             floorTimers[temp] = MinFloorTime;
 
@@ -403,7 +409,7 @@ namespace GameBSrc
             floorActions[temp] = FloorEntity.FloorAction.Darkness;
             floorTimers[temp] = MinFloorTime;
 
-            for (int i = 0; i < floorActions.Length; i++)
+            for (int i = 0; i < Math.Min(2, floorActions.Length); i++)
             {
                 var floor = new FloorEntity(i+1, Path.Combine(Data.GFXDir, GetFloor(rng, i, floorActions[i])), await ResourceManager.CreateMaterial("map0", await Shader));
                 await floor.Create(true);
@@ -457,8 +463,7 @@ namespace GameBSrc
             CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer($"{diffusePath}_Anim", await AnimShader, UniformConsts.DiffuseTextureSet, diffuse, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             enemy = new EnemyEntity("Enemy", Path.Combine(Data.GFXDir, "mental.b3d"), material);
             enemy.buffer = buffer;
-            // enemy.Model.CompoundBuffers.Clear();
-            enemy.Model.CompoundBuffers.Add(buffer);
+            await enemy.Create();
             enemy.Position = new Vector3(x, y, z);
             enemy.Scale = Vector3.One * 0.17f;
             enemy.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
@@ -975,12 +980,13 @@ namespace GameBSrc
             fogUniform.UploadData(renderer, fogData);
             foreach (var item in ResourceManager.AllResources)
             {
-                if (item is Material mat && mat.Shader.HasSet(FogSetId))
+                if (item is Material mat)
                 {
-                    if (mat.Shader.GetSetName(FogSetId) == "WorldInfo1")
-                        mat.SetUniforms(FogSetId, fogBuffer);
-                    else
-                        Console.WriteLine(mat.Shader.GetSetName(FogSetId));
+                    /*if (mat.Shader.HasSet(FogSetId) && mat.Shader == await Shader)
+                    {
+                        if (mat.Shader.GetSetName(FogSetId) == "WorldInfo1")
+                            mat.SetUniforms(FogSetId, fogBuffer);
+                    }*/
                 }
             }
             await base.Draw(renderer, dt);

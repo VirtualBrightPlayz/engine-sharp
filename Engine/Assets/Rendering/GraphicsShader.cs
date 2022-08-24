@@ -103,6 +103,7 @@ namespace Engine.Assets.Rendering
 
         public override Task<Resource> Clone(string cloneName)
         {
+            throw new Exception("Can't clone shaders");
             GraphicsShader res = new GraphicsShader(cloneName, _path);
             return Task.FromResult<Resource>(res);
         }

@@ -18,14 +18,14 @@ namespace Engine.Assets.Models
     public struct UInt4
     {
         public uint X, Y, Z, W;
-        public UInt4(Vector4 value)
+        /*public UInt4(Vector4 value)
         {
             X = (uint)value.X;
             Y = (uint)value.Y;
             Z = (uint)value.Z;
             W = (uint)value.W;
-        }
-        public Vector4 ToVec4() => new Vector4(X, Y, Z, W);
+        }*/
+        // public Vector4 ToVec4() => new Vector4(X, Y, Z, W);
     }
 
     [StructLayout(LayoutKind.Sequential)]

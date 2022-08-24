@@ -202,12 +202,12 @@ public static class ShaderCompiler
 
         // create a vertex buffer and fill it
         var view = root.CreateBufferView(16 * values.Count, 0, BufferMode.ARRAY_BUFFER);
-        var array = new Vector4Array(view.Content, encoding: EncodingType.UNSIGNED_SHORT);
+        var array = new Vector4Array(view.Content, encoding: EncodingType.UNSIGNED_INT);
         array.Fill(values.Select(x => x.ToVec4()));
 
         var accessor = root.CreateAccessor();
 
-        accessor.SetVertexData(view, 0, values.Count, DimensionType.VEC4, EncodingType.UNSIGNED_SHORT, false);
+        accessor.SetVertexData(view, 0, values.Count, DimensionType.VEC4, EncodingType.UNSIGNED_INT, false);
 
         primitive.SetVertexAccessor(attribute, accessor);
 
@@ -376,7 +376,7 @@ public static class ShaderCompiler
 
     private static void CreateShaders(string vertCode, string fragCode, string pass, string path)
     {
-        var compileResult = SpirvCompilation.CompileVertexFragment(Encoding.ASCII.GetBytes(vertCode), Encoding.ASCII.GetBytes(fragCode), CrossCompileTarget.ESSL);
+        var compileResult = SpirvCompilation.CompileVertexFragment(Encoding.ASCII.GetBytes(vertCode), Encoding.ASCII.GetBytes(fragCode), CrossCompileTarget.ESSL, new CrossCompileOptions(true, false, false));
         Console.WriteLine($"Compiling {path}.{pass}.json");
         File.WriteAllText($"{path}.{pass}.json", JsonConvert.SerializeObject(compileResult));
     }

@@ -127,6 +127,10 @@ namespace Engine.Assets.Rendering
                 _compoundBuffers[setId] = buffer;
             else
                 _compoundBuffers.Add(setId, buffer);
+            if (setId >= Shader._reflResourceLayouts.Count)
+            {
+                throw new Exception($"Material.SetUniforms: {setId} was not found in the shader's resourceLayouts");
+            }
         }
 
         public void SetUniforms(uint setId, bool force, params UniformLayout[] uniforms)
@@ -321,16 +325,27 @@ namespace Engine.Assets.Rendering
                     CreatePipeline(renderer, Shader.Passes.First(x => x.PassName == passName));
                 pipeline = _pipelines[passName][renderer];
             }
+            if (pipeline == null)
+            {
+                throw new Exception($"{Name} Missing a pipeline");
+            }
             renderer.CommandList.SetPipeline(pipeline);
+            uint maxId = 0;
             foreach (var resSet in _resourceSets.OrderBy(x => x.Key))
             {
-                // Console.WriteLine(resSet.Key);
+                if (!resSet.Value.IsDisposed)
+                    maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value);
             }
             foreach (var resSet in _compoundBuffers.OrderBy(x => x.Key))
             {
-                // Console.WriteLine(resSet.Key);
+                if (!resSet.Value.InternalResourceSet.IsDisposed)
+                    maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value.InternalResourceSet);
+            }
+            if (maxId != Shader._reflResourceLayouts.Count)
+            {
+                // throw new Exception($"{Name} Missing a resource set, found {maxId}, {Shader._reflResourceLayouts.Count} required");
             }
         }
 

@@ -28,6 +28,7 @@ namespace Engine.Assets.Rendering
         public RenderTexture2D InternalRenderTexture { get; private set; }
         private Mesh BlitMesh;
         private Task<GraphicsShader> BlitShader => ResourceManager.LoadShader("Shaders/Blit");
+        public bool IsDrawing { get; private set; } = false;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct BlitVertex : IVertex
@@ -100,6 +101,7 @@ namespace Engine.Assets.Rendering
 
         public void Begin()
         {
+            IsDrawing = true;
             _commandList.Begin();
             _commandList.SetFramebuffer(InternalRenderTexture.InternalFramebuffer ?? InternalRenderTexture.InternalSwapchain.Framebuffer);
             // _commandList.SetFramebuffer(Program.GameGraphics.SwapchainFramebuffer);
@@ -148,6 +150,7 @@ namespace Engine.Assets.Rendering
         public void End()
         {
             _commandList.End();
+            IsDrawing = false;
         }
 
         public void Submit()

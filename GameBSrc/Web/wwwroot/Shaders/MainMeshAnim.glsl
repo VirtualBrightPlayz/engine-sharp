@@ -76,7 +76,7 @@ layout(set = 3, binding = 0) uniform WorldInfo0
 
 layout(set = 5, binding = 0) uniform BonesMatrix
 {
-    mat4 Bones[64];
+    mat4 Bones[1];
 };
 
 #if vertex
@@ -155,7 +155,7 @@ void main()
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
     vec4 lighting = ApplyLighting();
     vec4 finalLighting = lighting;
-    FragColor = diffuseColor * vec4(finalLighting.rgb, 1) * fsin_Color;// * lightmapColor * fsin_Color;
+    FragColor = diffuseColor * vec4(finalLighting.rgb, 1) * lightmapColor * fsin_Color;
     FragColor.a = lighting.a;
 }
 #endif

@@ -133,7 +133,7 @@ namespace GameBSrc
             await base.Tick(dt);
             UpdateLookRotation();
             UpdateMovement(dt);
-            if (MathF.Abs(Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear.Y) > 5f / dt)
+            if (MathF.Abs(Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear.Y) > 4f) // TODO: fix this
             {
                 BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
             }

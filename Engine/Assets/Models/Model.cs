@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Assimp;
 using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
+using SharpGLTF.Memory;
 using Veldrid;
 
 namespace Engine.Assets.Models
@@ -27,10 +28,11 @@ namespace Engine.Assets.Models
             public Vector4 WEIGHTS_0;
         }
 
-        public const string ShaderPath = "Shaders/MainMesh";
+        public const string ShaderPath = "Shaders/Invalid";
         public const uint ShaderWorldInfoSetId = 3;
         public const uint ShaderForwardSetId = 4;
         public const uint ShaderBonesSetId = 5;
+        public const uint BonesMatrixCount = 1;
         public override bool IsValid => false;
         private Mesh[] _meshes { get; set; }
         public Mesh[] Meshes => _meshes;
@@ -94,21 +96,23 @@ namespace Engine.Assets.Models
             _shouldLoadMats = loadMaterials;
             _shouldAnimate = animate;
             InternalMaterials = new List<Rendering.Material>();
-            // Load(path, material, loadMaterials, animate);
         }
 
-        private async Task Load(string path, Rendering.Material material, bool loadMaterials, bool animate)
+        private async Task Load()
         {
-            LightUniform = await ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
         #if !WEBGL
             if (path.ToLower().EndsWith(".glb"))
         #endif
-                await GLTFLoadMeshes(path);
+                await GLTFLoadMeshes(_path);
         #if !WEBGL
             else
                 AssimpLoadMeshes(path, material, animate);
         #endif
-            LightBuffer = await ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath), ShaderForwardSetId, LightUniform);
+            LightUniform = await ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
+            if (_shouldLoadMats)
+                LightBuffer = await ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath), ShaderForwardSetId, LightUniform);
+            else
+                LightBuffer = await ResourceManager.CreateCompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial.Shader, ShaderForwardSetId, LightUniform);
         }
 
         private async Task GLTFLoadMeshes(string path)
@@ -140,19 +144,25 @@ namespace Engine.Assets.Models
             {
                 foreach (var mesh in node.Mesh.Primitives)
                 {
+                    if (mesh.DrawPrimitiveType != SharpGLTF.Schema2.PrimitiveType.TRIANGLES)
+                    {
+                        throw new Exception($"{mesh.DrawPrimitiveType} not supported.");
+                    }
                     var tris = mesh.GetIndices();
-                    var pos = mesh.GetVertices(nameof(GLTF_VERTEX.POSITION)).AsVector3Array().Select(x => Vector3.Transform(x, node.WorldMatrix)).ToArray();
+                    var pos = mesh.GetVertices(nameof(GLTF_VERTEX.POSITION)).AsVector3Array()/*.Select(x => Vector3.Transform(x, node.WorldMatrix))*/.ToArray();
                     var norm = mesh.GetVertices(nameof(GLTF_VERTEX.NORMAL)).AsVector3Array().ToArray();
                     var tang = mesh.GetVertices(nameof(GLTF_VERTEX.TANGENT)).AsVector4Array().ToArray();
                     var col = mesh.GetVertices(nameof(GLTF_VERTEX.COLOR_0)).AsColorArray().ToArray();
                     var uv0 = mesh.GetVertices(nameof(GLTF_VERTEX.TEXCOORD_0)).AsVector2Array().ToArray();
                     var uv1 = mesh.GetVertices(nameof(GLTF_VERTEX.TEXCOORD_1)).AsVector2Array().ToArray();
-                    var bInds = mesh.GetVertices(nameof(GLTF_VERTEX.JOINTS_0)).AsVector4Array().ToArray();
+                    // var bInds = mesh.GetVertices(nameof(GLTF_VERTEX.JOINTS_0)).AsVector4Array().ToArray();
+                    var bInds2 = mesh.GetVertices(nameof(GLTF_VERTEX.JOINTS_0));
+                    var bInds = new Vector4Array(bInds2.Data, encoding: SharpGLTF.Schema2.EncodingType.UNSIGNED_INT);
                     var bWeights = mesh.GetVertices(nameof(GLTF_VERTEX.WEIGHTS_0)).AsVector4Array().ToArray();
                     if (_shouldLoadMats)
                         InternalMaterials.Add(await ResourceManager.CreateMaterial($"{Name}_{InternalMaterials.Count}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath)));
                     else
-                        InternalMaterials.Add(_ogMaterial ?? await ResourceManager.CreateMaterial($"{Name}_{InternalMaterials.Count}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath)));
+                        InternalMaterials.Add(_ogMaterial);
                     Rendering.Material material = InternalMaterials[^1];
                     var diff = mesh.Material.FindChannel("BaseColor");
                     if (diff.HasValue && _shouldLoadMats)
@@ -162,12 +172,12 @@ namespace Engine.Assets.Models
                         CompoundBuffers.Add(buffer);
                         material.SetUniforms(UniformConsts.DiffuseTextureSet, buffer);
                     }
-                    else
+                    else if (_shouldLoadMats)
                     {
-                        /*var diffusePath = "Shaders/white.bmp"; // TODO
+                        var diffusePath = "Shaders/white.bmp"; // TODO
                         CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, InternalMaterials[^1].Shader, UniformConsts.DiffuseTextureSet, await ResourceManager.LoadTexture(diffusePath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
                         CompoundBuffers.Add(buffer);
-                        InternalMaterials[^1].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[^1]);*/
+                        InternalMaterials[^1].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[^1]);
                     }
 
                     List<ModelVertexLayout> vertices = new List<ModelVertexLayout>();
@@ -197,7 +207,13 @@ namespace Engine.Assets.Models
                             Tangent = tan,
                             BiTangent = bitan,
                             BoneWeights = bWeights[j],
-                            BoneIndices = new UInt4(bInds[j]),
+                            BoneIndices = new UInt4()
+                            {
+                                X = (uint)bInds[j].X,
+                                Y = (uint)bInds[j].Y,
+                                Z = (uint)bInds[j].Z,
+                                W = (uint)bInds[j].W,
+                            },
                         });
                     }
                     var newmesh = await ResourceManager.CreateMesh($"Mesh_{node.Name}_{Random.Shared.Next()}", false, material);
@@ -210,8 +226,20 @@ namespace Engine.Assets.Models
 
                     if (_shouldAnimate)
                     {
-                        // bonesUniforms[i] = await ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}", (uint)16 * 4 * 64);
-                        // bonesBuffers[i] = await ResourceManager.CreateCompoundBuffer($"{Name}_BonesBuffer_{i}", mesh.InternalMaterial.Shader, ShaderBonesSetId, bonesUniforms[i]);
+                        int i = meshes.Count - 1;
+                        int siz = 0;
+                        unsafe
+                        {
+                            siz = sizeof(System.Numerics.Matrix4x4);
+                        }
+                        // Console.WriteLine($"siz {siz}");
+                        bonesUniforms[i] = await ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}_{Random.Shared.Next()}", (uint)siz * BonesMatrixCount);
+                        if (Renderer.Current != null && Renderer.Current.IsDrawing)
+                            bonesUniforms[i].UploadData(Renderer.Current, new System.Numerics.Matrix4x4[BonesMatrixCount]);
+                        else
+                            bonesUniforms[i].UploadData(new System.Numerics.Matrix4x4[BonesMatrixCount]);
+                        bonesBuffers[i] = await ResourceManager.CreateCompoundBuffer($"{Name}_BonesBuffer_{i}_{Random.Shared.Next()}", material.Shader, ShaderBonesSetId, bonesUniforms[i]);
+                        material.SetUniforms(ShaderBonesSetId, bonesBuffers[i]);
                     }
                     
                     colPos.AddRange(pos);
@@ -228,7 +256,7 @@ namespace Engine.Assets.Models
 
         private System.Numerics.Matrix4x4[] AssimpAnimate(double time, int i)
         {
-            var buf = new System.Numerics.Matrix4x4[64];
+            var buf = new System.Numerics.Matrix4x4[BonesMatrixCount];
             for (int j = 0; j < buf.Length; j++)
             {
                 buf[j] = System.Numerics.Matrix4x4.Identity;
@@ -488,7 +516,7 @@ namespace Engine.Assets.Models
                 }
                 if (_shouldAnimate)
                 {
-                    bonesUniforms[i] = await ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}", (uint)16 * 4 * 64);
+                    bonesUniforms[i] = await ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}", (uint)16 * 4 * BonesMatrixCount);
                     bonesBuffers[i] = await ResourceManager.CreateCompoundBuffer($"{Name}_BonesBuffer_{i}", mesh.InternalMaterial.Shader, ShaderBonesSetId, bonesUniforms[i]);
                 }
                 for (int j = 0; j < positions.Count; j++)
@@ -542,10 +570,10 @@ namespace Engine.Assets.Models
             if (HasBeenInitialized)
                 return;
             await base.ReCreate();
-            await Load(_path, _ogMaterial, _shouldLoadMats, _shouldAnimate);
+            await Load();
             for (int i = 0; i < _meshes.Length; i++)
             {
-                // await _meshes[i].ReCreate();
+                await _meshes[i].ReCreate();
             }
             foreach (var buf in bonesUniforms)
             {

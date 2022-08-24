@@ -19,23 +19,31 @@ namespace GameBSrc
         public CompoundBuffer buffer;
         public bool fog = true;
         public Vector3 Center => Position + Vector3.UnitY;
+        private readonly string path;
+        private Material material;
 
         public EnemyEntity(string name, string path, Material material) : base(name)
         {
-            Create(path, material);
+            this.path = path;
+            this.material = material;
+            // Create(path, material);
         }
 
-        private async void Create(string path, Material material)
+        public async Task Create()
         {
-            Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, material, path, false, true));
+            var mat = await ResourceManager.Clone<Material>($"{Name}_Material", material);
+            // Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, material, path, false, true));
+            Model = await ResourceManager.LoadModel(Name, mat, path, false, true);
+            Model.CompoundBuffers.Clear();
+            Model.CompoundBuffers.Add(buffer);
         }
 
         public override async Task Draw(Renderer renderer, double dt)
         {
-            if (!fog)
+            /*if (!fog)
             {
                 BGame.Instance.fogUniform.UploadData(renderer, new Vector4(0f, 0f, 0f, 100f));
-            }
+            }*/
             if (Model.AnimationTime < startAnimTime)
             {
                 Model.AnimationTime = startAnimTime;
@@ -45,12 +53,12 @@ namespace GameBSrc
             {
                 Model.AnimationTime -= endAnimTime - startAnimTime;
             }
-            await Model.SetWorldMatrixDraw(renderer, WorldMatrix);
             await base.Draw(renderer, dt);
-            if (!fog)
+            await Model.SetWorldMatrixDraw(renderer, WorldMatrix);
+            /*if (!fog)
             {
                 BGame.Instance.fogUniform.UploadData(renderer, BGame.Instance.fogData);
-            }
+            }*/
         }
 
         public override async Task Tick(double dt)
