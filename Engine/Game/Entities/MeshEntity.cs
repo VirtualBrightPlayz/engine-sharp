@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Engine.Assets;
 using Engine.Assets.Models;
 using Engine.Assets.Rendering;
@@ -36,16 +37,16 @@ namespace Engine.Game.Entities
             Mesh = await ResourceManager.Clone<Mesh>($"{Name}_{Random.Shared.Next()}", await ResourceManager.CreateMesh(path, false, material));
         }
 
-        public override void PreDraw(Renderer renderer, double dt)
+        public override async Task PreDraw(Renderer renderer, double dt)
         {
-            base.PreDraw(renderer, dt);
-            Mesh.SetWorldMatrix(renderer, WorldMatrix);
-            Mesh.PreDraw(renderer);
+            await base.PreDraw(renderer, dt);
+            await Mesh.PreDraw(renderer);
         }
 
-        public override void Draw(Renderer renderer, double dt)
+        public override async Task Draw(Renderer renderer, double dt)
         {
-            base.Draw(renderer, dt);
+            await base.Draw(renderer, dt);
+            Mesh.SetWorldMatrix(renderer, WorldMatrix);
             Mesh.Draw(renderer);
         }
     }

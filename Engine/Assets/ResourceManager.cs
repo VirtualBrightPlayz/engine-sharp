@@ -130,6 +130,16 @@ namespace Engine.Assets
             return tex;
         }
 
+        public static async Task<Texture2D> LoadTexture(string name, byte[] data)
+        {
+            Texture2D tex = await CheckAndReturn<Texture2D>(name);
+            if (tex != null)
+                return tex;
+            tex = new Texture2D(name, data);
+            await Add(tex);
+            return tex;
+        }
+
         public static async Task<AudioClip> LoadAudioClip(string path)
         {
             AudioClip buf = await CheckAndReturn<AudioClip>(path);

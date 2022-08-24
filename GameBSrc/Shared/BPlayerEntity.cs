@@ -55,12 +55,12 @@ namespace GameBSrc
             shape = new Capsule(0.25f, 1.25f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             var inertia = shape.ComputeInertia(0.1f);
-            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Continuous()), shape.Radius * 0.02f));
+            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Discrete), shape.Radius * 0.02f));
         }
 
-        public override void PreDraw(Renderer renderer, double dt)
+        public override async Task PreDraw(Renderer renderer, double dt)
         {
-            base.PreDraw(renderer, dt);
+            await base.PreDraw(renderer, dt);
             UpdateLook();
             QuaternionEx.Transform(Vector3.UnitX, Rotation, out var localUnitX);
             viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob + localUnitX * leftRightBob;
@@ -68,36 +68,41 @@ namespace GameBSrc
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             footstepSource.Position = viewPos;
             renderer.ViewPosition = viewPos;
+            UpdateAudioPos();
         }
 
-        public override void Draw(Renderer renderer, double dt)
+        public override async Task Draw(Renderer renderer, double dt)
         {
-            base.Draw(renderer, dt);
+            await base.Draw(renderer, dt);
+            UpdateAudioPos();
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
-            if (BGame.Instance.DebugMode && ImGui.Begin("Test"))
+            if (BGame.Instance.DebugMode)
             {
-                ImGui.Text("Test Window");
-                ImGui.Text($"Position {Position.ToString()}");
-                ImGui.Text($"Velocity {body.Velocity.Linear.ToString()}");
-                ImGui.Text($"Current Floor: {BGame.Instance.currentFloor} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor]}");
-                ImGui.Text($"Next Floor: {BGame.Instance.currentFloor+1} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor+1]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor+1]}");
-                if (BGame.Instance.enemy != null)
+                if (ImGui.Begin("Test"))
                 {
-                    ImGui.Text($"Can See Enemy {CanSee(BGame.Instance.enemy.Center)}");
-                }
-                ImGui.InputFloat("ViewBobSpeed", ref viewBobSpeed);
-                ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
-                ImGui.InputFloat("FootstepInterval", ref footstepInterval);
-                ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
-                ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
-                ImGui.DragFloat4("FogData", ref BGame.Instance.fogData);
-                ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
-                ImGui.InputFloat("Acceleration", ref acceleration);
-                ImGui.InputFloat("DeAcceleration", ref deAcceleration);
-                ImGui.InputFloat("Speed", ref speed);
-                if (ImGui.Button("Kill"))
-                {
-                    BGame.Instance.killTimer = 1;
+                    ImGui.Text("Test Window");
+                    ImGui.Text($"Position {Position.ToString()}");
+                    ImGui.Text($"Velocity {body.Velocity.Linear.ToString()}");
+                    // ImGui.Text($"Current Floor: {BGame.Instance.currentFloor} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor]}");
+                    // ImGui.Text($"Next Floor: {BGame.Instance.currentFloor+1} Action {BGame.Instance.floorActions[BGame.Instance.currentFloor+1]} Timer {BGame.Instance.floorTimers[BGame.Instance.currentFloor+1]}");
+                    if (BGame.Instance.enemy != null)
+                    {
+                        ImGui.Text($"Can See Enemy {CanSee(BGame.Instance.enemy.Center)}");
+                    }
+                    ImGui.InputFloat("ViewBobSpeed", ref viewBobSpeed);
+                    ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
+                    ImGui.InputFloat("FootstepInterval", ref footstepInterval);
+                    ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
+                    ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
+                    ImGui.DragFloat4("FogData", ref BGame.Instance.fogData);
+                    ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
+                    ImGui.InputFloat("Acceleration", ref acceleration);
+                    ImGui.InputFloat("DeAcceleration", ref deAcceleration);
+                    ImGui.InputFloat("Speed", ref speed);
+                    if (ImGui.Button("Kill"))
+                    {
+                        BGame.Instance.killTimer = 1;
+                    }
                 }
                 ImGui.End();
             }
@@ -110,16 +115,9 @@ namespace GameBSrc
             return pos.X <= 1 && pos.X >= -1 && pos.Y <= 1 && pos.Y >= -1 && pos.Z > 0f;
         }
 
-        public override unsafe void Tick(double dt)
+        public void UpdateAudioPos()
         {
-            base.Tick(dt);
-            UpdateLookRotation();
-            UpdateMovement(dt);
-            if (MathF.Abs(Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear.Y) > 4f)
-            {
-                BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
-            }
-            AudioGlobals.Position = Position;
+            AudioGlobals.Position = viewPos;
             float[] orientation = new float[6];
             orientation[0] = viewDirection.X;
             orientation[1] = viewDirection.Y;
@@ -128,6 +126,18 @@ namespace GameBSrc
             orientation[4] = LocalUp.Y;
             orientation[5] = LocalUp.Z;
             AudioGlobals.OrientationRaw = orientation;
+        }
+
+        public override async Task Tick(double dt)
+        {
+            await base.Tick(dt);
+            UpdateLookRotation();
+            UpdateMovement(dt);
+            if (MathF.Abs(Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear.Y) > 5f / dt)
+            {
+                BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
+            }
+            UpdateAudioPos();
             /*AudioGlobals.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
             float[] orientation = new float[6];
             orientation[0] = viewDirection.X;

@@ -33,33 +33,30 @@ namespace Engine.Game
             return Task.CompletedTask;
         }
 
-        public virtual Task PreDraw(Renderer renderer, double dt)
+        public virtual async Task PreDraw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                ent.PreDraw(renderer, dt);
+                await ent.PreDraw(renderer, dt);
             }
-            return Task.CompletedTask;
         }
 
-        public virtual Task Draw(Renderer renderer, double dt)
+        public virtual async Task Draw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                ent.Draw(renderer, dt);
+                await ent.Draw(renderer, dt);
             }
-            return Task.CompletedTask;
         }
 
-        public virtual Task Tick(double dt)
+        public virtual async Task Tick(double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                ent.Tick(dt);
+                await ent.Tick(dt);
             }
             if (TimeScale > 0f)
                 Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, dispatcher);
-            return Task.CompletedTask;
         }
 
         public virtual void Dispose()

@@ -112,6 +112,11 @@ namespace Engine.Assets.Rendering
             return _reflResourceLayouts.Count > index;
         }
 
+        public string GetSetName(uint index)
+        {
+            return _compileResult.ResourceLayouts[(int)index].Elements[0].Name;
+        }
+
         private async void CreateShaders(string vertCode, string fragCode, string pass, string pa)
         {
         #if WEBGL

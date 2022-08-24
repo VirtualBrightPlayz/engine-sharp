@@ -21,9 +21,18 @@ namespace Engine.Assets.Rendering
             GameGraphics = GraphicsDevice.CreateOpenGLES(new GraphicsDeviceOptions()
             {
                 SingleThreaded = true,
+                PreferDepthRangeZeroToOne = true,
+                PreferStandardClipSpaceYDirection = true,
             }, desc);
         #endif
             GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+        }
+
+        public static void Resize(uint w, uint h)
+        {
+            ViewSize = new Vector2(w, h);
+            GameGraphics.ResizeMainWindow((uint)w, (uint)h);
+            GameImGui.WindowResized((int)w, (int)h);
         }
 
         public static void DisposeGameGraphics()

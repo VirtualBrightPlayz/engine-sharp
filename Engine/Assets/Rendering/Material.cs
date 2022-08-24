@@ -186,7 +186,7 @@ namespace Engine.Assets.Rendering
                 }
             }
 
-        #if WEBGL
+        #if WEBGL && false
             ResourceLayout layout;
             if (!layouts.ContainsKey(setId))
             {
@@ -199,7 +199,7 @@ namespace Engine.Assets.Rendering
             }
         #endif
 
-        #if !WEBGL
+        #if !WEBGL || true
             if (setId < Shader._reflResourceLayouts.Count)
         #endif
             {
@@ -207,7 +207,7 @@ namespace Engine.Assets.Rendering
                     _resourceSets.Add(setId, null);
                 else if (_resourceSets[setId] != null && !_resourceSets[setId].IsDisposed)
                     _resourceSets[setId].Dispose();
-            #if WEBGL
+            #if WEBGL && false
                 ResourceSetDescription desc = new ResourceSetDescription(layout);
             #else
                 ResourceSetDescription desc = new ResourceSetDescription(Shader._reflResourceLayouts[(int)setId]);
@@ -239,7 +239,7 @@ namespace Engine.Assets.Rendering
                 _resourceSets[setId] = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
                 _resourceSets[setId].Name = $"{Name}_{setId}";
             }
-        #if !WEBGL
+        #if !WEBGL || true
             else
                 throw new Exception($"Material.SetUniforms: {setId} was not found in the shader's resourceLayouts");
         #endif
@@ -272,7 +272,7 @@ namespace Engine.Assets.Rendering
                 scissorTestEnabled: true);
             pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
-        #if WEBGL
+        #if WEBGL && false
             pipelineDescription.ResourceLayouts = layouts.OrderBy(x => x.Key).Select(x => x.Value).ToArray();
         #else
             pipelineDescription.ResourceLayouts = Shader._reflResourceLayouts.ToArray();
@@ -324,10 +324,12 @@ namespace Engine.Assets.Rendering
             renderer.CommandList.SetPipeline(pipeline);
             foreach (var resSet in _resourceSets.OrderBy(x => x.Key))
             {
+                // Console.WriteLine(resSet.Key);
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value);
             }
             foreach (var resSet in _compoundBuffers.OrderBy(x => x.Key))
             {
+                // Console.WriteLine(resSet.Key);
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value.InternalResourceSet);
             }
         }

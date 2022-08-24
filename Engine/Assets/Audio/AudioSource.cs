@@ -25,6 +25,7 @@ namespace Engine.Assets.Audio
                     return false;
             #if WEBGL
                 AL10.alGetSourcei(_handle.Value, AL10.AL_SOURCE_STATE, out int val);
+                AudioGlobals.CheckALError("Is playing");
                 return val == AL10.AL_PLAYING;
             #else
                 _al.GetSourceProperty(_handle.Value, GetSourceInteger.SourceState, out int val);
@@ -35,8 +36,8 @@ namespace Engine.Assets.Audio
         public float MaxDistance
         {
             #if WEBGL
-            get { AL10.alGetSourcef(_handle.Value, AL10.AL_MAX_DISTANCE, out var value); return value; }
-            set => AL10.alSourcef(_handle.Value, AL10.AL_MAX_DISTANCE, value);
+            get { AL10.alGetSourcef(_handle.Value, AL10.AL_MAX_DISTANCE, out var value); AudioGlobals.CheckALError("get maxdist"); return value; }
+            set { AL10.alSourcef(_handle.Value, AL10.AL_MAX_DISTANCE, value); AudioGlobals.CheckALError("set maxdist"); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceFloat.MaxDistance, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceFloat.MaxDistance, value);
@@ -45,8 +46,8 @@ namespace Engine.Assets.Audio
         public float ReferenceDistance
         {
             #if WEBGL
-            get { AL10.alGetSourcef(_handle.Value, AL10.AL_REFERENCE_DISTANCE, out var value); return value; }
-            set => AL10.alSourcef(_handle.Value, AL10.AL_REFERENCE_DISTANCE, value);
+            get { AL10.alGetSourcef(_handle.Value, AL10.AL_REFERENCE_DISTANCE, out var value); AudioGlobals.CheckALError(); return value; }
+            set { AL10.alSourcef(_handle.Value, AL10.AL_REFERENCE_DISTANCE, value); AudioGlobals.CheckALError(); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceFloat.ReferenceDistance, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceFloat.ReferenceDistance, value);
@@ -55,8 +56,8 @@ namespace Engine.Assets.Audio
         public Vector3 Position
         {
             #if WEBGL
-            get { AL10.alGetSource3f(_handle.Value, AL10.AL_POSITION, out var x, out var y, out var z); return new Vector3(x, y, z); }
-            set => AL10.alSource3f(_handle.Value, AL10.AL_POSITION, value.X, value.Y, value.Z);
+            get { AL10.alGetSource3f(_handle.Value, AL10.AL_POSITION, out var x, out var y, out var z); AudioGlobals.CheckALError(); return new Vector3(x, y, z); }
+            set { AL10.alSource3f(_handle.Value, AL10.AL_POSITION, value.X, value.Y, value.Z); AudioGlobals.CheckALError(); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceVector3.Position, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceVector3.Position, value);
@@ -65,8 +66,8 @@ namespace Engine.Assets.Audio
         public bool Looping
         {
             #if WEBGL
-            get { AL10.alGetSourcei(_handle.Value, AL10.AL_LOOPING, out var value); return value == 1 ? true : false; }
-            set => AL10.alSourcei(_handle.Value, AL10.AL_LOOPING, value ? 1 : 0);
+            get { AL10.alGetSourcei(_handle.Value, AL10.AL_LOOPING, out var value); AudioGlobals.CheckALError(); return value == 1 ? true : false; }
+            set { AL10.alSourcei(_handle.Value, AL10.AL_LOOPING, value ? 1 : 0); AudioGlobals.CheckALError(); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceBoolean.Looping, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceBoolean.Looping, value);
@@ -75,8 +76,8 @@ namespace Engine.Assets.Audio
         public float Gain
         {
             #if WEBGL
-            get { AL10.alGetSourcef(_handle.Value, AL10.AL_GAIN, out var value); return value; }
-            set => AL10.alSourcef(_handle.Value, AL10.AL_GAIN, value);
+            get { AL10.alGetSourcef(_handle.Value, AL10.AL_GAIN, out var value); AudioGlobals.CheckALError(); return value; }
+            set { AL10.alSourcef(_handle.Value, AL10.AL_GAIN, value); AudioGlobals.CheckALError(); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceFloat.Gain, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceFloat.Gain, value);
@@ -85,8 +86,8 @@ namespace Engine.Assets.Audio
         public float MinGain
         {
             #if WEBGL
-            get { AL10.alGetSourcef(_handle.Value, AL10.AL_MIN_GAIN, out var value); return value; }
-            set => AL10.alSourcef(_handle.Value, AL10.AL_MIN_GAIN, value);
+            get { AL10.alGetSourcef(_handle.Value, AL10.AL_MIN_GAIN, out var value); AudioGlobals.CheckALError("get min gain"); return value; }
+            set { AL10.alSourcef(_handle.Value, AL10.AL_MIN_GAIN, value); AudioGlobals.CheckALError("set min gain"); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceFloat.MinGain, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceFloat.MinGain, value);
@@ -95,8 +96,8 @@ namespace Engine.Assets.Audio
         public float MaxGain
         {
             #if WEBGL
-            get { AL10.alGetSourcef(_handle.Value, AL10.AL_MAX_GAIN, out var value); return value; }
-            set => AL10.alSourcef(_handle.Value, AL10.AL_MAX_GAIN, value);
+            get { AL10.alGetSourcef(_handle.Value, AL10.AL_MAX_GAIN, out var value); AudioGlobals.CheckALError("get max gain"); return value; }
+            set { AL10.alSourcef(_handle.Value, AL10.AL_MAX_GAIN, value); AudioGlobals.CheckALError("set max gain"); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceFloat.MaxGain, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceFloat.MaxGain, value);
@@ -105,8 +106,8 @@ namespace Engine.Assets.Audio
         public float RolloffFactor
         {
             #if WEBGL
-            get { AL10.alGetSourcef(_handle.Value, AL10.AL_ROLLOFF_FACTOR, out var value); return value; }
-            set => AL10.alSourcef(_handle.Value, AL10.AL_ROLLOFF_FACTOR, value);
+            get { AL10.alGetSourcef(_handle.Value, AL10.AL_ROLLOFF_FACTOR, out var value); AudioGlobals.CheckALError("get rolloff"); return value; }
+            set { AL10.alSourcef(_handle.Value, AL10.AL_ROLLOFF_FACTOR, value); AudioGlobals.CheckALError("set rolloff"); }
             #else
             get { _al.GetSourceProperty(_handle.Value, SourceFloat.RolloffFactor, out var value); return value; }
             set => _al.SetSourceProperty(_handle.Value, SourceFloat.RolloffFactor, value);
@@ -117,6 +118,7 @@ namespace Engine.Assets.Audio
         {
         #if WEBGL
             AL10.alGenSources(1, out uint v);
+            AudioGlobals.CheckALError("gen sources");
             _handle = v;
         #else
             _handle = _al.GenSource();
@@ -129,24 +131,27 @@ namespace Engine.Assets.Audio
             Name = name;
         }
 
-        public override Task ReCreate()
+        public override async Task ReCreate()
         {
+            return;
             if (HasBeenInitialized)
-                return Task.CompletedTask;
-            base.ReCreate();
+                return;
+            await base.ReCreate();
         #if WEBGL
             if (_handle.HasValue)
             {
                 uint v2 = _handle.Value;
                 AL10.alDeleteSources(1, ref v2);
+                AudioGlobals.CheckALError();
             }
             AL10.alGenSources(1, out uint v);
+            AudioGlobals.CheckALError();
             _handle = v;
         #else
             _al.DeleteSource(_handle.Value);
             _handle = _al.GenSource();
         #endif
-            AudioBuffer.ReCreate();
+            await AudioBuffer.ReCreate();
             SetBuffer(AudioBuffer);
             SetDefaultParameters();
             RolloffFactor = RolloffFactor;
@@ -159,7 +164,7 @@ namespace Engine.Assets.Audio
             Position = Position;
             if (IsPlaying)
                 Play();
-            return Task.CompletedTask;
+            return;
         }
 
         public override Task<Resource> Clone(string cloneName)
@@ -185,6 +190,7 @@ namespace Engine.Assets.Audio
             Stop();
         #if WEBGL
             AL10.alSourcei(_handle.Value, AL10.AL_BUFFER, (int)buffer.Handle);
+            AudioGlobals.CheckALError();
         #else
             _al.SetSourceProperty(_handle.Value, SourceInteger.Buffer, buffer.Handle);
         #endif
@@ -205,6 +211,7 @@ namespace Engine.Assets.Audio
         {
         #if WEBGL
             AL10.alSourceStop(_handle.Value);
+            AudioGlobals.CheckALError();
         #else
             _al.SourceStop(_handle.Value);
         #endif
@@ -214,6 +221,7 @@ namespace Engine.Assets.Audio
         {
         #if WEBGL
             AL10.alSourcePlay(_handle.Value);
+            AudioGlobals.CheckALError();
         #else
             _al.SourcePlay(_handle.Value);
         #endif
@@ -224,6 +232,7 @@ namespace Engine.Assets.Audio
         #if WEBGL
             uint v = _handle.Value;
             AL10.alDeleteSources(1, ref v);
+            AudioGlobals.CheckALError();
         #else
             _al.DeleteSource(_handle.Value);
         #endif

@@ -72,7 +72,7 @@ layout(set = 3, binding = 0) uniform WorldInfo0
     vec4 ViewPosition;
 };
 
-layout(set = 6, binding = 0) uniform WorldInfo1
+layout(set = 5, binding = 0) uniform WorldInfo1
 {
     vec4 FogInfo;
 };
@@ -162,6 +162,6 @@ void main()
     FragColor = diffuseColor * vec4(finalLighting.rgb, 1) * fsin_Color * lightmapColor;
 
     FragColor.rgb = FragColor.rgb + (FogInfo.rgb - FragColor.rgb) * fog;
-    FragColor.a = lighting.a;
+    FragColor.a = lighting.a * $FwdAdd$ + $FwdBase$;
 }
 #endif

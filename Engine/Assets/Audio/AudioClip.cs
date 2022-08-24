@@ -27,12 +27,21 @@ namespace Engine.Assets.Audio
 
         public AudioClip(string path)
         {
-            Create(path);
+            Name = path;
+            // Create(path);
         }
 
-        public async void Create(string path)
+        public async Task Create(string path)
         {
-            Name = path;
+        #if WEBGL
+            if (_handle.HasValue)
+            {
+                uint v2 = _handle.Value;
+                AL10.alDeleteBuffers(1, ref v2);
+                AudioGlobals.CheckALError("delete buffers");
+            }
+        #else
+        #endif
             if (await FileManager.Exists(path))
             {
                 var stream = await FileManager.LoadStream(path);
@@ -64,8 +73,11 @@ namespace Engine.Assets.Audio
             {
             #if WEBGL
                 AL10.alGenBuffers(1, out uint v);
+                AudioGlobals.CheckALError("gen buffers (empty)");
                 _handle = v;
+                throw new Exception($"Unable to find/load {path}");
             #else
+                // TODO: delete existing buffer
                 _handle = _al.GenBuffer();
                 _al.BufferData(_handle.Value, BufferFormat.Mono8, new byte[0], 0);
             #endif
@@ -213,10 +225,12 @@ namespace Engine.Assets.Audio
 
             _data = buffer;
         #if WEBGL
-            var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
+            _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             AL10.alGenBuffers(1, out uint v);
+            AudioGlobals.CheckALError("genBuffer ogg");
             _handle = v;
-            AL10.alBufferData(_handle.Value, format, buffer, buffer.Length, provider.WaveFormat.SampleRate);
+            AL10.alBufferData(_handle.Value, _format, buffer, buffer.Length, provider.WaveFormat.SampleRate);
+            AudioGlobals.CheckALError("buffer data ogg");
         #else
             var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             _sampleRate = provider.WaveFormat.SampleRate;
@@ -239,8 +253,10 @@ namespace Engine.Assets.Audio
         #if WEBGL
             var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             AL10.alGenBuffers(1, out uint v);
+            AudioGlobals.CheckALError("genBuffer misc");
             _handle = v;
             AL10.alBufferData(_handle.Value, format, buffer, buffer.Length, provider.WaveFormat.SampleRate);
+            AudioGlobals.CheckALError("buffer data misc");
         #else
             var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             _sampleRate = provider.WaveFormat.SampleRate;
@@ -249,25 +265,13 @@ namespace Engine.Assets.Audio
         #endif
         }
 
-        public override Task ReCreate()
+        public override async Task ReCreate()
         {
             if (HasBeenInitialized)
-                return Task.CompletedTask;
-            base.ReCreate();
-        #if WEBGL
-            if (_handle.HasValue)
-            {
-                uint v = _handle.Value;
-                AL10.alDeleteBuffers(1, ref v);
-            }
-            AL10.alGenBuffers(1, out uint v2);
-            _handle = v2;
-        #else
-            _al.DeleteBuffer(_handle.Value);
-            _handle = _al.GenBuffer();
-            _al.BufferData(_handle.Value, _format, _data, _sampleRate);
-        #endif
-            return Task.CompletedTask;
+                return;
+            await base.ReCreate();
+            await Create(Name);
+            return;
         }
 
         public override Task<Resource> Clone(string cloneName)
@@ -280,6 +284,7 @@ namespace Engine.Assets.Audio
         #if WEBGL
             uint v = _handle.Value;
             AL10.alDeleteBuffers(1, ref v);
+            AudioGlobals.CheckALError();
         #else
             _al.DeleteBuffer(_handle.Value);
         #endif

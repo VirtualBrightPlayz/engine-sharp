@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 
@@ -38,9 +39,9 @@ namespace Engine.Game.Entities
             }
         }
 
-        public override void Tick(double dt)
+        public override async Task Tick(double dt)
         {
-            base.Tick(dt);
+            await base.Tick(dt);
             if (bodyHandle.HasValue)
             {
                 Position = Game.Simulation.Bodies[bodyHandle.Value].Pose.Position;

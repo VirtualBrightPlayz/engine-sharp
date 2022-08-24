@@ -67,8 +67,8 @@ namespace Engine.Assets
                         RenderingGlobals.RenderDocInstance.LaunchReplayUI();
                     }
                 }
-                ImGui.End();
             }
+            ImGui.End();
         }
     }
 }

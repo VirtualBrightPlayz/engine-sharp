@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using BepuUtilities;
 using Engine.Assets;
 using Engine.Assets.Models;
@@ -29,7 +30,7 @@ namespace GameBSrc
             Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, material, path, false, true));
         }
 
-        public override void Draw(Renderer renderer, double dt)
+        public override async Task Draw(Renderer renderer, double dt)
         {
             if (!fog)
             {
@@ -44,15 +45,15 @@ namespace GameBSrc
             {
                 Model.AnimationTime -= endAnimTime - startAnimTime;
             }
-            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
-            base.Draw(renderer, dt);
+            await Model.SetWorldMatrixDraw(renderer, WorldMatrix);
+            await base.Draw(renderer, dt);
             if (!fog)
             {
                 BGame.Instance.fogUniform.UploadData(renderer, BGame.Instance.fogData);
             }
         }
 
-        public override void Tick(double dt)
+        public override async Task Tick(double dt)
         {
             var pos = BGame.Instance.player.Position;
             pos = Position - pos;
@@ -63,7 +64,7 @@ namespace GameBSrc
             QuaternionEx.Transform(-Vector3.UnitZ, Rotation, out var forward);
             Position += forward * speed * 60f * (float)dt;
             MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation);
-            base.Tick(dt);
+            await base.Tick(dt);
         }
     }
 }

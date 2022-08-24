@@ -54,13 +54,13 @@ public static class ShaderCompiler
             else
             {
                 Console.WriteLine($"Compiling {shader}.glb");
-                var scene = ctx.ImportFile(shader, PostProcessSteps.Triangulate);
+                var scene = ctx.ImportFile(shader, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs);
                 var root = ModelRoot.CreateModel();
                 var glScene = root.UseScene("default");
                 // var anim = root.CreateAnimation();
                 SharpGLTF.Schema2.Animation anim = null;
                 var lookup = new Dictionary<string, SharpGLTF.Schema2.Node>();
-                ProcessNode(scene.RootNode, ref anim, scene, ref root, null, ref lookup);
+                ProcessNode(scene.RootNode, ref anim, scene, ref root, null, ref lookup, Path.GetDirectoryName(shader));
                 root.SaveGLB($"{shader}.glb", new WriteSettings()
                 {
                     Validation = SharpGLTF.Validation.ValidationMode.Skip,
@@ -69,12 +69,24 @@ public static class ShaderCompiler
         }
     }
 
-    private static (SharpGLTF.Schema2.Mesh, Skin) ProcessMesh(Assimp.Mesh aiMesh, Assimp.Scene aiScene, ref ModelRoot root)
+    private static (SharpGLTF.Schema2.Mesh, Skin) ProcessMesh(Assimp.Mesh aiMesh, Assimp.Scene aiScene, ref ModelRoot root, string dir)
     {
         var aiMaterial = aiScene.Materials[aiMesh.MaterialIndex];
         var material = root.CreateMaterial(aiMaterial.Name);
-        if (aiMaterial.GetMaterialTexture(TextureType.Diffuse, 0, out var slot) && File.Exists(slot.FilePath))
-            material = material.WithChannelTexture("Diffuse", 0, slot.FilePath);
+
+        if (aiMaterial.GetMaterialTexture(TextureType.BaseColor, 0, out var slot))
+        {
+            string path = Path.Combine(dir, slot.FilePath);
+            if (File.Exists(path))
+                material = material.WithPBRMetallicRoughness().WithChannelTexture("BaseColor", 0, path);
+        }
+        if (aiMaterial.GetMaterialTexture(TextureType.Diffuse, 0, out var slot2))
+        {
+            string path = Path.Combine(dir, slot2.FilePath);
+            if (File.Exists(path))
+                material = material.WithPBRMetallicRoughness().WithChannelTexture("BaseColor", 0, path);
+        }
+            // material = material.WithChannelTexture("Diffuse", 0, slot.FilePath);
 
         Vector4[] bWeights = new Vector4[aiMesh.VertexCount];
         UInt4[] bInds = new UInt4[aiMesh.VertexCount];
@@ -256,7 +268,7 @@ public static class ShaderCompiler
         return new Vector4(vector3D.X, vector3D.Y, vector3D.Z, 1f);
     }
 
-    private static SharpGLTF.Schema2.Node ProcessNode(Assimp.Node aiNode, ref SharpGLTF.Schema2.Animation anim, Assimp.Scene aiScene, ref ModelRoot root, SharpGLTF.Schema2.Node parent, ref Dictionary<string, SharpGLTF.Schema2.Node> lookup)
+    private static SharpGLTF.Schema2.Node ProcessNode(Assimp.Node aiNode, ref SharpGLTF.Schema2.Animation anim, Assimp.Scene aiScene, ref ModelRoot root, SharpGLTF.Schema2.Node parent, ref Dictionary<string, SharpGLTF.Schema2.Node> lookup, string dir)
     {
         SharpGLTF.Schema2.Node n = null;
         if (parent == null)
@@ -267,7 +279,7 @@ public static class ShaderCompiler
         lookup.TryAdd(aiNode.Name, n);
         for (int i = 0; i < aiNode.ChildCount; i++)
         {
-            var n2 = ProcessNode(aiNode.Children[i], ref anim, aiScene, ref root, n, ref lookup);
+            var n2 = ProcessNode(aiNode.Children[i], ref anim, aiScene, ref root, n, ref lookup, dir);
         }
         if (aiScene.HasAnimations)
         {
@@ -300,7 +312,7 @@ public static class ShaderCompiler
         {
             if (aiScene.Meshes[aiNode.MeshIndices[0]].HasBones)
             {
-                (mesh, skin) = ProcessMesh(aiScene.Meshes[aiNode.MeshIndices[0]], aiScene, ref root);
+                (mesh, skin) = ProcessMesh(aiScene.Meshes[aiNode.MeshIndices[0]], aiScene, ref root, dir);
                 var ns = SharpGLTF.Schema2.Node.Flatten(n).ToList();
                 var lst2 = new List<(SharpGLTF.Schema2.Node, System.Numerics.Matrix4x4)>();
                 var lst = new List<SharpGLTF.Schema2.Node>();
@@ -326,7 +338,7 @@ public static class ShaderCompiler
             {
                 for (int i = 0; i < aiNode.MeshCount; i++)
                 {
-                    (mesh, skin) = ProcessMesh(aiScene.Meshes[aiNode.MeshIndices[i]], aiScene, ref root);
+                    (mesh, skin) = ProcessMesh(aiScene.Meshes[aiNode.MeshIndices[i]], aiScene, ref root, dir);
                     n.CreateNode().WithMesh(mesh);
                 }
             }

@@ -76,6 +76,7 @@ namespace Engine.Assets.Textures
         public static Task<Texture2D> DefaultWhite => ResourceManager.LoadTexture("Shaders/white.bmp");
         public static Task<Texture2D> DefaultNormal => ResourceManager.LoadTexture("Shaders/bump.bmp");
         private string _path;
+        private byte[] _streamData;
         private Rgba32[] _texData;
         public uint Width { get; private set; }
         public uint Height { get; private set; }
@@ -88,6 +89,13 @@ namespace Engine.Assets.Textures
 
         public Texture2D(string path) : this(path, path)
         {
+        }
+
+        public Texture2D(string name, byte[] image)
+        {
+            Name = name;
+            _path = name;
+            _streamData = image; // TODO: maybe copy the array?
         }
 
         public Texture2D(string name, string path)
@@ -106,11 +114,23 @@ namespace Engine.Assets.Textures
                 Tex.Dispose();
             if (_texData == null)
             {
-                using Image<Rgba32> img = Image.Load<Rgba32>(await FileManager.LoadStream(_path));
-                Width = (uint)img.Width;
-                Height = (uint)img.Height;
-                _texData = new Rgba32[img.Width * img.Height];
-                img.CopyPixelDataTo(_texData);
+                if (_streamData == null)
+                {
+                    using Image<Rgba32> img = Image.Load<Rgba32>(await FileManager.LoadStream(_path));
+                    Width = (uint)img.Width;
+                    Height = (uint)img.Height;
+                    _texData = new Rgba32[img.Width * img.Height];
+                    img.CopyPixelDataTo(_texData);
+                }
+                else
+                {
+                    using var stream = new MemoryStream(_streamData);
+                    using Image<Rgba32> img = Image.Load<Rgba32>(stream);
+                    Width = (uint)img.Width;
+                    Height = (uint)img.Height;
+                    _texData = new Rgba32[img.Width * img.Height];
+                    img.CopyPixelDataTo(_texData);
+                }
             }
             TextureDescription desc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled);
             Tex = ResourceManager.GraphicsFactory.CreateTexture(desc);

@@ -13,13 +13,13 @@ namespace Engine.Assets.Audio
     #if WEBGL
         public static Vector3 Position
         {
-            get { AL10.alGetListener3f(AL10.AL_POSITION, out var x, out var y, out var z); return new Vector3(x, y, z); }
-            set => AL10.alListener3f(AL10.AL_POSITION, value.X, value.Y, value.Z);
+            get { AL10.alGetListener3f(AL10.AL_POSITION, out var x, out var y, out var z); CheckALError(); return new Vector3(x, y, z); }
+            set { AL10.alListener3f(AL10.AL_POSITION, value.X, value.Y, value.Z); CheckALError(); }
         }
         public static float[] OrientationRaw
         {
-            get { float[] vals = new float[6]; AL10.alGetListenerfv(AL10.AL_ORIENTATION, vals); return vals; }
-            set => AL10.alListenerfv(AL10.AL_ORIENTATION, value);
+            get { float[] vals = new float[6]; AL10.alGetListenerfv(AL10.AL_ORIENTATION, vals); CheckALError(); return vals; }
+            set { AL10.alListenerfv(AL10.AL_ORIENTATION, value); CheckALError(); }
         }
         /*public static Vector3[] Orientation
         {
@@ -29,6 +29,16 @@ namespace Engine.Assets.Audio
         private static IntPtr GameAudioDevice;
         private static IntPtr GameAudioCtx;
 
+        public static void CheckALError(string id = "")
+        {
+            int err = AL10.alGetError();
+            if (err != AL10.AL_NO_ERROR)
+            {
+                Console.WriteLine($"AL AudioError: 0x{err.ToString("X4")} at {id}");
+                throw new InvalidOperationException($"AL AudioError: 0x{err.ToString("X4")} at {id}");
+            }
+        }
+
         public static void InitGameAudio(bool soft = true)
         {
             GameAudioDevice = ALC10.alcOpenDevice(null);
@@ -37,11 +47,8 @@ namespace Engine.Assets.Audio
             {
                 throw new Exception("ALC AudioError");
             }
-            int err = ALC10.alcGetError(GameAudioDevice);
-            if (err != ALC10.ALC_NO_ERROR)
-            {
-                throw new Exception($"ALC AudioError: {err}");
-            }
+            CheckALError("Init");
+            // AL10.alDistanceModel(AL11.AL_LINEAR_DISTANCE_CLAMPED);
         }
 
         public static void DisposeGameAudio()

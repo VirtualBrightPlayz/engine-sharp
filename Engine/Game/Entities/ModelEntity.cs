@@ -32,15 +32,10 @@ namespace Engine.Game.Entities
             Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
         }
 
-        public override void PreDraw(Renderer renderer, double dt)
+        public override async Task Draw(Renderer renderer, double dt)
         {
-            base.PreDraw(renderer, dt);
-        }
-
-        public override void Draw(Renderer renderer, double dt)
-        {
-            base.Draw(renderer, dt);
-            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
+            await base.Draw(renderer, dt);
+            await Model.SetWorldMatrixDraw(renderer, WorldMatrix);
         }
     }
 }

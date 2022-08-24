@@ -136,16 +136,12 @@ namespace Engine.Assets.Models
 
         private async Task<int> GLTFProcessNode(SharpGLTF.Schema2.IVisualNodeContainer vNode, List<Vector3> colPos, List<uint> colTris, List<Mesh> meshes, int vertexCount)
         {
-            foreach (var child in vNode.VisualChildren)
-            {
-                vertexCount = await GLTFProcessNode(child, colPos, colTris, meshes, vertexCount);
-            }
             if (vNode is SharpGLTF.Schema2.Node node && node.Mesh != null)
             {
                 foreach (var mesh in node.Mesh.Primitives)
                 {
                     var tris = mesh.GetIndices();
-                    var pos = mesh.GetVertices(nameof(GLTF_VERTEX.POSITION)).AsVector3Array().ToArray();
+                    var pos = mesh.GetVertices(nameof(GLTF_VERTEX.POSITION)).AsVector3Array().Select(x => Vector3.Transform(x, node.WorldMatrix)).ToArray();
                     var norm = mesh.GetVertices(nameof(GLTF_VERTEX.NORMAL)).AsVector3Array().ToArray();
                     var tang = mesh.GetVertices(nameof(GLTF_VERTEX.TANGENT)).AsVector4Array().ToArray();
                     var col = mesh.GetVertices(nameof(GLTF_VERTEX.COLOR_0)).AsColorArray().ToArray();
@@ -153,19 +149,25 @@ namespace Engine.Assets.Models
                     var uv1 = mesh.GetVertices(nameof(GLTF_VERTEX.TEXCOORD_1)).AsVector2Array().ToArray();
                     var bInds = mesh.GetVertices(nameof(GLTF_VERTEX.JOINTS_0)).AsVector4Array().ToArray();
                     var bWeights = mesh.GetVertices(nameof(GLTF_VERTEX.WEIGHTS_0)).AsVector4Array().ToArray();
-                    InternalMaterials.Add(_ogMaterial ?? await ResourceManager.CreateMaterial($"{Name}_{InternalMaterials.Count}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath)));
+                    if (_shouldLoadMats)
+                        InternalMaterials.Add(await ResourceManager.CreateMaterial($"{Name}_{InternalMaterials.Count}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath)));
+                    else
+                        InternalMaterials.Add(_ogMaterial ?? await ResourceManager.CreateMaterial($"{Name}_{InternalMaterials.Count}", _ogMaterial?.Shader ?? await ResourceManager.LoadShader(ShaderPath)));
                     Rendering.Material material = InternalMaterials[^1];
-                    var diff = mesh.Material.FindChannel("Diffuse");
-                    if (diff.HasValue)
+                    var diff = mesh.Material.FindChannel("BaseColor");
+                    if (diff.HasValue && _shouldLoadMats)
                     {
-                        throw new NotImplementedException();
+                        string diffusePath = diff.Value.Texture.PrimaryImage.Content.SourcePath;
+                        CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer($"{_path}_{vertexCount}_{diff.Value.Texture.PrimaryImage.Name}", material.Shader, UniformConsts.DiffuseTextureSet, string.IsNullOrWhiteSpace(diffusePath) ? await ResourceManager.LoadTexture($"{_path}_{vertexCount}_{diff.Value.Texture.PrimaryImage.Name}", diff.Value.Texture.PrimaryImage.Content.Content.ToArray()) : await ResourceManager.LoadTexture(diffusePath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
+                        CompoundBuffers.Add(buffer);
+                        material.SetUniforms(UniformConsts.DiffuseTextureSet, buffer);
                     }
                     else
                     {
-                        var diffusePath = "Shaders/white.bmp"; // TODO
+                        /*var diffusePath = "Shaders/white.bmp"; // TODO
                         CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, InternalMaterials[^1].Shader, UniformConsts.DiffuseTextureSet, await ResourceManager.LoadTexture(diffusePath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
                         CompoundBuffers.Add(buffer);
-                        InternalMaterials[^1].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[^1]);
+                        InternalMaterials[^1].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[^1]);*/
                     }
 
                     List<ModelVertexLayout> vertices = new List<ModelVertexLayout>();
@@ -198,17 +200,28 @@ namespace Engine.Assets.Models
                             BoneIndices = new UInt4(bInds[j]),
                         });
                     }
-                    var newmesh = await ResourceManager.CreateMesh($"Mesh_{node.Name}", false, material);
+                    var newmesh = await ResourceManager.CreateMesh($"Mesh_{node.Name}_{Random.Shared.Next()}", false, material);
                     meshes.Add(newmesh);
                     newmesh.Indices = tris.ToList();
                     if (_shouldAnimate)
                         newmesh.UploadData(animVertices.ToArray());
                     else
                         newmesh.UploadData(vertices.ToArray());
+
+                    if (_shouldAnimate)
+                    {
+                        // bonesUniforms[i] = await ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}", (uint)16 * 4 * 64);
+                        // bonesBuffers[i] = await ResourceManager.CreateCompoundBuffer($"{Name}_BonesBuffer_{i}", mesh.InternalMaterial.Shader, ShaderBonesSetId, bonesUniforms[i]);
+                    }
+                    
                     colPos.AddRange(pos);
                     colTris.AddRange(tris.Select(x => (uint)(x + vertexCount)).ToArray());
                     vertexCount += pos.Length;
                 }
+            }
+            foreach (var child in vNode.VisualChildren)
+            {
+                vertexCount = await GLTFProcessNode(child, colPos, colTris, meshes, vertexCount);
             }
             return vertexCount;
         }
@@ -532,7 +545,7 @@ namespace Engine.Assets.Models
             await Load(_path, _ogMaterial, _shouldLoadMats, _shouldAnimate);
             for (int i = 0; i < _meshes.Length; i++)
             {
-                await _meshes[i].ReCreate();
+                // await _meshes[i].ReCreate();
             }
             foreach (var buf in bonesUniforms)
             {
@@ -546,7 +559,7 @@ namespace Engine.Assets.Models
             return m;
         }
 
-        public void SetWorldMatrixDraw(Renderer renderer, System.Numerics.Matrix4x4 WorldMatrix)
+        public async Task SetWorldMatrixDraw(Renderer renderer, System.Numerics.Matrix4x4 WorldMatrix)
         {
             for (int i = 0; i < _meshes.Length; i++)
             {
@@ -557,12 +570,14 @@ namespace Engine.Assets.Models
                     _meshes[i].InternalMaterial.SetUniforms(ShaderBonesSetId, bonesBuffers[i]);
                 }
                 _meshes[i].SetWorldMatrix(renderer, WorldMatrix);
-                if (CompoundBuffers.Count > 0 && CompoundBuffers.Count == _meshes.Length)
+                if (CompoundBuffers.Count == _meshes.Length)
                     _meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
+                else
+                    Console.WriteLine($"{Name} has missing CompoundBuffers, {CompoundBuffers.Count} found, {_meshes.Length} required.");
                 _meshes[i].InternalMaterial.SetUniforms(ShaderForwardSetId, LightBuffer);
-                renderer.SetupStandardWorldInfoUniforms(_meshes[i].InternalMaterial, ShaderWorldInfoSetId);
-                renderer.SetupStandardMatrixUniforms(_meshes[i].InternalMaterial);
-                _meshes[i].PreDraw(renderer);
+                await renderer.SetupStandardWorldInfoUniforms(_meshes[i].InternalMaterial, ShaderWorldInfoSetId);
+                await renderer.SetupStandardMatrixUniforms(_meshes[i].InternalMaterial);
+                await _meshes[i].PreDraw(renderer);
 
                 ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
                 if (sortedLights.Length == 0)

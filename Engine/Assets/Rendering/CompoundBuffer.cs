@@ -31,7 +31,7 @@ namespace Engine.Assets.Rendering
         {
             // if (HasBeenInitialized)
             //     return;
-            // base.ReCreate();
+            await base.ReCreate();
             if (InternalResourceSet != null && !InternalResourceSet.IsDisposed)
                 InternalResourceSet.Dispose();
             await InternalShader.ReCreate();

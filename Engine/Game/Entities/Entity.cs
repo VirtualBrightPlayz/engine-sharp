@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using BepuUtilities;
 using Engine.Assets.Rendering;
 
@@ -36,16 +37,19 @@ namespace Engine.Game.Entities
         {
         }
 
-        public virtual void PreDraw(Renderer renderer, double dt)
+        public virtual Task PreDraw(Renderer renderer, double dt)
         {
+            return Task.CompletedTask;
         }
 
-        public virtual void Draw(Renderer renderer, double dt)
+        public virtual Task Draw(Renderer renderer, double dt)
         {
+            return Task.CompletedTask;
         }
 
-        public virtual void Tick(double dt)
+        public virtual Task Tick(double dt)
         {
+            return Task.CompletedTask;
         }
 
         public virtual void Dispose()

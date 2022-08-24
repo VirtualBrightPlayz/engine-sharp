@@ -353,9 +353,9 @@ namespace Engine.Assets.Models
             InternalMaterial.SetUniforms(UniformConsts.WorldMatrixBufferSet, InternalWorldBuffer);
         }
 
-        public void PreDraw(Renderer renderer)
+        public async Task PreDraw(Renderer renderer)
         {
-            renderer.SetupStandardMatrixUniforms(InternalMaterial);
+            await renderer.SetupStandardMatrixUniforms(InternalMaterial);
             InternalMaterial.PreDraw(renderer);
         }
 

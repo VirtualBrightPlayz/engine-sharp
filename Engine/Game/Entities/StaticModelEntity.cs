@@ -28,9 +28,10 @@ namespace Engine.Game.Entities
             // Create(path, material);
         }
 
-        public virtual async Task Create()
+        public virtual async Task Create(bool createStatic)
         {
-            Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
+            // Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
+            Model = await ResourceManager.LoadModel(Name, _material, _path);
             List<Triangle> tris = new List<Triangle>();
             for (int i = 0; i < Model.CollisionTriangles.Length - 2; i+=3)
             {
@@ -47,7 +48,8 @@ namespace Engine.Game.Entities
             }
             shape = new BepuPhysics.Collidables.Mesh(triBuf, Scale, Game.BufferPool);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
-            staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
+            if (createStatic)
+                staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
         }
 
         public override void MarkTransformDirty(TransformDirtyFlags flags)
@@ -62,15 +64,10 @@ namespace Engine.Game.Entities
             base.MarkTransformDirty(flags);
         }
 
-        public override void PreDraw(Renderer renderer, double dt)
+        public override async Task Draw(Renderer renderer, double dt)
         {
-            base.PreDraw(renderer, dt);
-        }
-
-        public override void Draw(Renderer renderer, double dt)
-        {
-            base.Draw(renderer, dt);
-            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
+            await base.Draw(renderer, dt);
+            await Model.SetWorldMatrixDraw(renderer, WorldMatrix);
         }
     }
 }

@@ -2,13 +2,13 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> -->
     <title>Engine Sharp</title>
     <base href="/" />
 </head>
 
-<body>
-    <canvas width="600" height="400" id="canvas"></canvas>
+<body style="background-color: black; margin: 0; height: 100%; padding: 0;">
+    <canvas width="600" height="400" style="margin: 0; padding: 0; position: absolute; width: 100%; height: 100%;" id="canvas" onclick="runEngine();"></canvas>
 
     <script type="text/javascript">
         var canvas = document.getElementById("canvas");
@@ -24,6 +24,13 @@
             return 0;
         };
 
+        window.lockMouse = (val) => {
+            if (val)
+                canvas.requestPointerLock();
+            else
+                document.exitPointerLock();
+        };
+
         window.getHttpPrefix = () => {
             return window.location.protocol + "//" + window.location.host;
         };
@@ -37,25 +44,76 @@
 
         function frame(time) {
             DotNet.invokeMethodAsync("Web", "Frame", time).then(code => {
-                console.log("Frame finished.");
-                window.requestAnimationFrame(frame);
             }).catch(err => {
                 console.error(err);
+                alert("Engine crashed. See the console for details.");
             });
         }
 
+        function lockChangeAlert() {
+            if (document.pointerLockElement !== canvas) {
+                DotNet.invokeMethod("Engine.WebGL", "OnMouseUnlocked");
+            }
+        }
+
+        var isRun = false;
         function runEngine() {
+            if (isRun)
+                return;
+            isRun = true;
             console.log("Init...");
+            document.addEventListener('pointerlockchange', lockChangeAlert, false);
             DotNet.invokeMethodAsync("Web", "Init").then(code => {
-                console.log("Init finished.");
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                DotNet.invokeMethod("Web", "OnWindowResize", window.innerWidth, window.innerHeight);
+            }).catch(err => {
+                console.error(err);
+                alert("Engine crashed. See the console for details.");
             });
         }
+
         document.addEventListener("DOMContentLoaded", function() {
             Blazor.start();
         });
+
+        canvas.addEventListener("mousedown", ev => {
+            DotNet.invokeMethod("Engine.WebGL", "OnMouseDown", ev.buttons);
+            ev.preventDefault();
+        });
+
+        canvas.addEventListener("mouseup", ev => {
+            DotNet.invokeMethod("Engine.WebGL", "OnMouseUp", ev.buttons);
+            ev.preventDefault();
+        });
+
+        canvas.addEventListener("contextmenu", ev => {
+            ev.preventDefault();
+        });
+
+        window.addEventListener("resize", ev => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            DotNet.invokeMethod("Web", "OnWindowResize", window.innerWidth, window.innerHeight);
+        });
+
+        canvas.addEventListener("mousemove", ev => {
+            DotNet.invokeMethod("Engine.WebGL", "OnMousePosition", ev.offsetX, ev.offsetY);
+            DotNet.invokeMethod("Engine.WebGL", "OnMouseMove", -ev.movementX, -ev.movementY);
+        });
+
+        document.addEventListener("keydown", ev => {
+            DotNet.invokeMethod("Engine.WebGL", "OnKeyDown", ev.key);
+            ev.preventDefault();
+        });
+
+        document.addEventListener("keyup", ev => {
+            DotNet.invokeMethod("Engine.WebGL", "OnKeyUp", ev.key);
+            ev.preventDefault();
+        });
     </script>
 
-    <button onclick="runEngine();">Start</button>
+    <!-- <button onclick="runEngine();">Start</button> -->
 
     <script src="_framework/blazor.webassembly.js" autostart="false"></script>
 </body>

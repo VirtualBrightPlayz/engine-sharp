@@ -20,7 +20,8 @@ namespace GameBSrc
 {
     public class BGame : GameApp
     {
-        public const uint FogSetId = 6;
+        public const uint FogSetId = 5;
+        public const float MaxAudioDist = 1000f;
         public static BGame Instance => Current as BGame;
         public override string Name => "SCP-087-B CSharp";
         public GameData Data { get; private set; }
@@ -91,9 +92,9 @@ namespace GameBSrc
             Music = new AudioSource("Music");
             Music.SetBuffer(musicClip);
             Music.Looping = true;
-            Music.MaxDistance = float.PositiveInfinity;
+            Music.MaxDistance = MaxAudioDist;
             Music.RolloffFactor = 0f;
-            Music.ReferenceDistance = 0f;
+            Music.ReferenceDistance = MaxAudioDist;
             Music.MinGain = 1f;
             Music.MaxGain = 1f;
             Music.Play();
@@ -101,9 +102,9 @@ namespace GameBSrc
             Radio = new AudioSource("Radio");
             Radio.SetBuffer(await radioClips[0]);
             Radio.Looping = false;
-            Radio.MaxDistance = float.PositiveInfinity;
+            Radio.MaxDistance = MaxAudioDist;
             Radio.RolloffFactor = 0f;
-            Radio.ReferenceDistance = 0f;
+            Radio.ReferenceDistance = MaxAudioDist;
             Radio.MinGain = 1f;
             Radio.MaxGain = 1f;
             Radio.Stop();
@@ -111,9 +112,9 @@ namespace GameBSrc
             miscSource = new AudioSource("Misc");
             miscSource.SetBuffer(await fireOnClip);
             miscSource.Looping = false;
-            miscSource.MaxDistance = float.PositiveInfinity;
+            miscSource.MaxDistance = MaxAudioDist;
             miscSource.RolloffFactor = 0f;
-            miscSource.ReferenceDistance = 0f;
+            miscSource.ReferenceDistance = MaxAudioDist;
             miscSource.MinGain = 1f;
             miscSource.MaxGain = 1f;
             miscSource.Stop();
@@ -121,9 +122,9 @@ namespace GameBSrc
             horrorSource = new AudioSource("Horror");
             horrorSource.SetBuffer(await horrorClips[0]);
             horrorSource.Looping = false;
-            horrorSource.MaxDistance = float.PositiveInfinity;
+            horrorSource.MaxDistance = MaxAudioDist;
             horrorSource.RolloffFactor = 0f;
-            horrorSource.ReferenceDistance = 0f;
+            horrorSource.ReferenceDistance = MaxAudioDist;
             horrorSource.MinGain = 1f;
             horrorSource.MaxGain = 1f;
             horrorSource.Stop();
@@ -131,9 +132,9 @@ namespace GameBSrc
             soundEmitter = new AudioSource("SoundEmitter");
             soundEmitter.SetBuffer(await loudStepClip);
             soundEmitter.Looping = false;
-            soundEmitter.MaxDistance = float.PositiveInfinity;
+            soundEmitter.MaxDistance = MaxAudioDist;
             soundEmitter.RolloffFactor = 0f;
-            soundEmitter.ReferenceDistance = 0f;
+            soundEmitter.ReferenceDistance = MaxAudioDist;
             soundEmitter.MinGain = 1f;
             soundEmitter.MaxGain = 1f;
             soundEmitter.Stop();
@@ -402,10 +403,10 @@ namespace GameBSrc
             floorActions[temp] = FloorEntity.FloorAction.Darkness;
             floorTimers[temp] = MinFloorTime;
 
-            for (int i = 0; i < Math.Min(floorActions.Length, 2); i++)
+            for (int i = 0; i < floorActions.Length; i++)
             {
                 var floor = new FloorEntity(i+1, Path.Combine(Data.GFXDir, GetFloor(rng, i, floorActions[i])), await ResourceManager.CreateMaterial("map0", await Shader));
-                await floor.Create();
+                await floor.Create(true);
                 if (i % 2 == 0)
                 {
                     floor.Position = new Vector3(0f, -i*2f, 0f);
@@ -419,8 +420,6 @@ namespace GameBSrc
                 floor.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation);
                 floors.Add(floor);
                 Entities.Add(floor);
-                // Console.WriteLine(floor.Name);
-                // await Task.Delay(100);
             }
         }
 
@@ -432,7 +431,7 @@ namespace GameBSrc
             Texture2D diffuse = await ResourceManager.LoadTexture(diffusePath);
             CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, await Shader, UniformConsts.DiffuseTextureSet, diffuse, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             currentObject = new StaticModelEntity("CurrentObject", "Shaders/cube.gltf", material);
-            await (currentObject as StaticModelEntity).Create();
+            await (currentObject as StaticModelEntity).Create(true);
             currentObject.Position = new Vector3(x, y, z);
             currentObject.Scale = new Vector3(0.5f, 1f, 0.5f);
             currentObject.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
@@ -978,7 +977,10 @@ namespace GameBSrc
             {
                 if (item is Material mat && mat.Shader.HasSet(FogSetId))
                 {
-                    mat.SetUniforms(FogSetId, fogBuffer);
+                    if (mat.Shader.GetSetName(FogSetId) == "WorldInfo1")
+                        mat.SetUniforms(FogSetId, fogBuffer);
+                    else
+                        Console.WriteLine(mat.Shader.GetSetName(FogSetId));
                 }
             }
             await base.Draw(renderer, dt);
@@ -992,7 +994,7 @@ namespace GameBSrc
         {
             if (player == null)
             {
-                if (frameCount > 1)
+                if (frameCount > 1 && (Music == null))
                     await Init();
                 return;
             }

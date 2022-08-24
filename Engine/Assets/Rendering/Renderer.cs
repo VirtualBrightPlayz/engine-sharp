@@ -108,17 +108,23 @@ namespace Engine.Assets.Rendering
             WorldInfoResource.UploadData(this, ViewPosition);
         }
 
-        public void SetupStandardMatrixUniforms(Material material)
+        public async Task SetupStandardMatrixUniforms(Material material)
         {
             if (!MatrixBuffers.ContainsKey(material.Shader))
+            {
                 MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewProjectionMatrixBufferSet, ViewMatrixResource, ProjMatrixResource);
+                await MatrixBuffers[material.Shader].ReCreate();
+            }
             material.SetUniforms(UniformConsts.ViewProjectionMatrixBufferSet, MatrixBuffers[material.Shader]);
         }
 
-        public void SetupStandardWorldInfoUniforms(Material material, uint setId)
+        public async Task SetupStandardWorldInfoUniforms(Material material, uint setId)
         {
             if (!WorldInfoBuffers.ContainsKey(material.Shader))
+            {
                 WorldInfoBuffers[material.Shader] = new CompoundBuffer("WorldInfoBuffer", material.Shader, setId, WorldInfoResource);
+                await WorldInfoBuffers[material.Shader].ReCreate();
+            }
             material.SetUniforms(setId, WorldInfoBuffers[material.Shader]);
         }
 

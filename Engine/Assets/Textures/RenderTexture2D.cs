@@ -21,7 +21,11 @@ namespace Engine.Assets.Textures
         public uint Width { get; private set; }
         public uint Height { get; private set; }
 
-        public BindableResource[] Bindables => new BindableResource[] { ColorTex, InternalSampler };
+        public BindableResource[] Bindables => new BindableResource[]
+        {
+            ColorTex,
+            InternalSampler,
+        };
 
         public RenderTexture2D(string name, Framebuffer framebuffer)
         {
@@ -50,21 +54,21 @@ namespace Engine.Assets.Textures
             // ReCreate();
         }
 
-        public override Task ReCreate()
+        public override async Task ReCreate()
         {
             // if (HasBeenInitialized)
             //     return;
-            base.ReCreate();
+            await base.ReCreate();
             if (IsRaw)
                 // throw new NotSupportedException($"Can't clone raw framebuffers!");
-                return Task.CompletedTask;
+                return;
             TextureDescription colorDesc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled | TextureUsage.RenderTarget);
             ColorTex = ResourceManager.GraphicsFactory.CreateTexture(colorDesc);
             ColorTex.Name = Name;
             FramebufferDescription fbDesc = new FramebufferDescription(null, ColorTex);
             InternalFramebuffer = ResourceManager.GraphicsFactory.CreateFramebuffer(fbDesc);
             UpdateSamplerInfo(Info);
-            return Task.CompletedTask;
+            return;
         }
 
         public override Task<Resource> Clone(string cloneName)

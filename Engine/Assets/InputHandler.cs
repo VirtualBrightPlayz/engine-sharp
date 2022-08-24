@@ -4,6 +4,9 @@ using System.Linq;
 using System.Numerics;
 // using Silk.NET.Input;
 using Veldrid;
+#if WEBGL
+using Microsoft.JSInterop;
+#endif
 
 namespace Engine.Assets
 {
@@ -46,6 +49,9 @@ namespace Engine.Assets
                     // TODO:
                     _mouseLocked = value;
                     // Program.GameInputContext.Mice[0].Cursor.CursorMode = value ? CursorMode.Hidden : CursorMode.Normal;
+                #if WEBGL
+                    MiscGlobals.WebRuntime.InvokeVoid("lockMouse", value);
+                #endif
                 }
             }
         }

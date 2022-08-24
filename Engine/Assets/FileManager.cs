@@ -27,7 +27,10 @@ namespace Engine.Assets
             // isBusy = true;
             Console.WriteLine(HttpPrefix + "/" + path);
             using var client = new HttpClient();
-            var stream = await client.GetStreamAsync(HttpPrefix + "/" + path);
+            using var msg = new HttpRequestMessage(HttpMethod.Get, HttpPrefix + "/" + path);
+            msg.SetBrowserRequestCache(BrowserRequestCache.NoCache);
+            var stream = await (await client.SendAsync(msg)).Content.ReadAsStreamAsync();
+            // var stream = await client.GetStreamAsync(HttpPrefix + "/" + path);
             isBusy = false;
             return stream;
         #else

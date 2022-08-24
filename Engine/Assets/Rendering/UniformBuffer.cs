@@ -34,16 +34,15 @@ namespace Engine.Assets.Rendering
             // ReCreate();
         }
 
-        public override Task ReCreate()
+        public override async Task ReCreate()
         {
             // if (HasBeenInitialized)
                 // return;
-            // base.ReCreate();
+            await base.ReCreate();
             if (InternalBuffer != null && !InternalBuffer.IsDisposed)
                 InternalBuffer.Dispose();
             InternalBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription(Size, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
             InternalBuffer.Name = Name;
-            return Task.CompletedTask;
         }
 
         public override Task<Resource> Clone(string cloneName)
