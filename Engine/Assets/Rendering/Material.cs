@@ -253,9 +253,12 @@ namespace Engine.Assets.Rendering
         {
             /*if (_pipeline != null && !_pipeline.IsDisposed && dispose)
                 _pipeline.Dispose();*/
-            if (_pipelines.TryGetValue(pass.PassName, out var pipelines) && !pipelines.TryGetValue(renderer, out var pipeline) && pipeline != null && pipeline.IsDisposed)
+            if (_pipelines.TryGetValue(pass.PassName, out var pipelines))
             {
-                pipeline.Dispose();
+                if (!pipelines.TryGetValue(renderer, out var pipeline) && pipeline != null && pipeline.IsDisposed)
+                {
+                    pipeline.Dispose();
+                }
                 pipelines.Remove(renderer);
             }
             GraphicsPipelineDescription pipelineDescription = new GraphicsPipelineDescription();
@@ -318,6 +321,7 @@ namespace Engine.Assets.Rendering
 
         public void Bind(Renderer renderer, string passName = "")
         {
+            Console.WriteLine($"{Name} {passName} {renderer == null} {_pipelines == null}");
             Pipeline pipeline = _pipelines.FirstOrDefault().Value?.FirstOrDefault(x => x.Key == renderer).Value;
             if (!string.IsNullOrEmpty(passName))
             {
@@ -329,21 +333,27 @@ namespace Engine.Assets.Rendering
             {
                 throw new Exception($"{Name} Missing a pipeline");
             }
+            if (renderer == null || renderer.CommandList == null)
+            {
+                throw new Exception($"{Name} Missing renderer.CommandList");
+            }
             renderer.CommandList.SetPipeline(pipeline);
             uint maxId = 0;
             foreach (var resSet in _resourceSets.OrderBy(x => x.Key))
             {
-                if (!resSet.Value.IsDisposed)
-                    maxId++;
+                if (resSet.Value == null || resSet.Value.IsDisposed)
+                    throw new Exception($"{Name} {resSet.Key} is null/disposed!");
+                maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value);
             }
             foreach (var resSet in _compoundBuffers.OrderBy(x => x.Key))
             {
-                if (!resSet.Value.InternalResourceSet.IsDisposed)
-                    maxId++;
+                if (resSet.Value.InternalResourceSet == null || resSet.Value.InternalResourceSet.IsDisposed)
+                    throw new Exception($"{Name} {resSet.Key} is null/disposed!");
+                maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value.InternalResourceSet);
             }
-            if (maxId != Shader._reflResourceLayouts.Count)
+            // if (maxId != Shader._reflResourceLayouts.Count)
             {
                 // throw new Exception($"{Name} Missing a resource set, found {maxId}, {Shader._reflResourceLayouts.Count} required");
             }
@@ -351,6 +361,7 @@ namespace Engine.Assets.Rendering
 
         public override void Dispose()
         {
+            base.Dispose();
             foreach (var resSet in _resourceSets)
             {
                 resSet.Value.Dispose();

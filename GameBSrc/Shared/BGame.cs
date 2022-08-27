@@ -54,8 +54,7 @@ namespace GameBSrc
         public Task<Texture2D> logo => ResourceManager.LoadTexture(Path.Combine(BGame.Instance.Data.GFXDir, "scp.jpg"));
         public string MusicClipPath => Path.Combine(Data.SFXDir, "music.ogg");
         public List<StaticModelEntity> floors = new List<StaticModelEntity>();
-        // public Task<GraphicsShader> Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
-        public Task<GraphicsShader> Shader => ResourceManager.LoadShader("Shaders/MainMesh");
+        public Task<GraphicsShader> Shader => ResourceManager.LoadShader("Shaders/MainMeshFog");
         public Task<GraphicsShader> AnimShader => ResourceManager.LoadShader("Shaders/MainMeshAnim");
         public int radioState = 0;
         public int currentFloor = 0;
@@ -86,7 +85,7 @@ namespace GameBSrc
         public async Task Init()
         {
             fogUniform = await ResourceManager.CreateUniformBuffer("WorldFogInfo", (uint)4 * 4);
-            // fogBuffer = await ResourceManager.CreateCompoundBuffer("WorldFogInfo", await Shader, FogSetId, fogUniform);
+            fogBuffer = await ResourceManager.CreateCompoundBuffer("WorldFogInfo", await Shader, FogSetId, fogUniform);
             if ((await Shader).Name == (await AnimShader).Name)
             {
                 throw new Exception("Oops");
@@ -982,11 +981,11 @@ namespace GameBSrc
             {
                 if (item is Material mat)
                 {
-                    /*if (mat.Shader.HasSet(FogSetId) && mat.Shader == await Shader)
+                    if (mat.Shader.HasSet(FogSetId) && mat.Shader == await Shader)
                     {
                         if (mat.Shader.GetSetName(FogSetId) == "WorldInfo1")
                             mat.SetUniforms(FogSetId, fogBuffer);
-                    }*/
+                    }
                 }
             }
             await base.Draw(renderer, dt);

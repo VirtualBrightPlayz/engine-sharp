@@ -100,6 +100,7 @@ namespace Engine.Assets.Textures
 
         public override void Dispose()
         {
+            base.Dispose();
             if (IsRaw)
                 return;
             // InternalSampler.Dispose();

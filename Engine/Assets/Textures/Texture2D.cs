@@ -165,6 +165,7 @@ namespace Engine.Assets.Textures
 
         public override void Dispose()
         {
+            base.Dispose();
             RenderingGlobals.GameImGui.RemoveImGuiBinding(Tex);
             InternalSampler.Dispose();
             Tex.Dispose();

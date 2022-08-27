@@ -8,8 +8,8 @@
     <!-- <DebuggerSupport>true</DebuggerSupport> -->
     <!-- <CopyOutputSymbolsToPublishDirectory>true</CopyOutputSymbolsToPublishDirectory> -->
     <DefineConstants>$(DefineConstants);WEBGL</DefineConstants>
-    <EmccFlags>-s FULL_ES2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -lopenal -s ASSERTIONS=0 -O3</EmccFlags>
-    <EmccFlags>$(EmccFlags) -s EXTRA_EXPORTED_RUNTIME_METHODS=autoResumeAudioContext -fexceptions</EmccFlags>
+    <EmccFlags>-sFULL_ES2=1 -sFULL_ES3=1 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sGL_ASSERTIONS=0 -lopenal -sASSERTIONS=0 -O3</EmccFlags>
+    <EmccFlags>$(EmccFlags) -fexceptions</EmccFlags>
     <!-- <EmccExtraLDFlags>-s WARN_ON_UNDEFINED_SYMBOLS=0</EmccExtraLDFlags> -->
     <PublishTrimmed>false</PublishTrimmed>
     <WasmNativeStrip>false</WasmNativeStrip>
@@ -63,6 +63,7 @@
     <NativeFileReference Include="emscripten.c" ScanForPInvokes="true" />
     <NativeFileReference Include="libEGL.c" ScanForPInvokes="true" />
     <NativeFileReference Include="soft_oal.c" ScanForPInvokes="true" />
+    <NativeFileReference Include="gl.c" ScanForPInvokes="true" />
     <NativeFileReference Include="@(AssimpSources)" ScanForPInvokes="true" />
     <NativeFileReference Include="..\..\cimgui\cimgui.cpp;..\..\cimgui\imgui\imgui.cpp;..\..\cimgui\imgui\imgui_draw.cpp;..\..\cimgui\imgui\imgui_demo.cpp;..\..\cimgui\imgui\imgui_widgets.cpp;..\..\cimgui\imgui\imgui_tables.cpp" ScanForPInvokes="true" />
     <!-- <NativeFileReference Include="..\..\cimgui\cimgui.cpp;..\..\cimgui\imgui\imgui.cpp;..\..\cimgui\imgui\imgui_draw.cpp;..\..\cimgui\imgui\imgui_demo.cpp;..\..\cimgui\imgui\imgui_widgets.cpp" ScanForPInvokes="true" /> -->

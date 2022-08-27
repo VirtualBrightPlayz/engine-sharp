@@ -51,6 +51,7 @@ namespace Engine.Assets.Rendering
 
         public override void Dispose()
         {
+            base.Dispose();
             InternalResourceSet.Dispose();
         }
     }

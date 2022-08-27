@@ -12,12 +12,16 @@ namespace Engine.Assets.Rendering
         public static RenderDoc RenderDocInstance { get; set; }
         public static Vector2 ViewSize { get; private set; }
 
+        #if WEBGL
+        public static void InitGameGraphics(GraphicsBackend api, SwapchainSource swapchainSource)
+        #else
         public static void InitGameGraphics(GraphicsBackend api)
+        #endif
         {
             APIBackend = api;
         #if WEBGL
             ViewSize = new Vector2(600, 400);
-            var desc = new SwapchainDescription(SwapchainSource.CreateWeb(), (uint)ViewSize.X, (uint)ViewSize.Y, Veldrid.PixelFormat.R32_Float, true);
+            var desc = new SwapchainDescription(swapchainSource, (uint)ViewSize.X, (uint)ViewSize.Y, Veldrid.PixelFormat.R32_Float, true);
             GameGraphics = GraphicsDevice.CreateOpenGLES(new GraphicsDeviceOptions()
             {
                 SingleThreaded = true,

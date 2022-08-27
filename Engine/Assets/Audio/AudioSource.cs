@@ -229,6 +229,7 @@ namespace Engine.Assets.Audio
 
         public override void Dispose()
         {
+            base.Dispose();
         #if WEBGL
             uint v = _handle.Value;
             AL10.alDeleteSources(1, ref v);

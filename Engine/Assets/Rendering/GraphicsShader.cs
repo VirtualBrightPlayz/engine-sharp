@@ -165,6 +165,7 @@ namespace Engine.Assets.Rendering
 
         public override void Dispose()
         {
+            base.Dispose();
             foreach (var shaderSet in _shaders)
             {
                 if (shaderSet.Value != null)

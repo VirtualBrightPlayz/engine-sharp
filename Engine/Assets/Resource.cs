@@ -8,13 +8,21 @@ namespace Engine.Assets
         public abstract bool IsValid { get; }
         public string Name { get; set; }
         public bool HasBeenInitialized { get; set; } = false;
-        public abstract void Dispose();
+        public virtual void Dispose()
+        {
+            Console.WriteLine($"Dispose {Name} ({GetType().Name})");
+        }
         public abstract Task<Resource> Clone(string cloneName);
         public virtual Task ReCreate()
         {
             Console.WriteLine($"ReCreate {Name} ({GetType().Name})");
             HasBeenInitialized = true;
             return Task.CompletedTask;
+        }
+        ~Resource()
+        {
+            Console.WriteLine($"~ctor {Name} ({GetType().Name})");
+            Dispose();
         }
     }
 }

@@ -48,7 +48,7 @@ namespace GameBSrc
             {
                 Model.AnimationTime = startAnimTime;
             }
-            Model.AnimationTime += dt * 60f * animSpeed;
+            Model.AnimationTime += dt * 60f * (animSpeed * Game.TimeScale);
             while (Model.AnimationTime >= endAnimTime)
             {
                 Model.AnimationTime -= endAnimTime - startAnimTime;
@@ -70,7 +70,7 @@ namespace GameBSrc
             pos.Z *= -1f;
             Rotation = Quaternion.CreateFromRotationMatrix(Matrix4x4.CreateLookAt(Position, Position + pos, Vector3.UnitY));
             QuaternionEx.Transform(-Vector3.UnitZ, Rotation, out var forward);
-            Position += forward * speed * 60f * (float)dt;
+            Position += forward * speed * 60f * (float)(dt * Game.TimeScale);
             MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation);
             await base.Tick(dt);
         }

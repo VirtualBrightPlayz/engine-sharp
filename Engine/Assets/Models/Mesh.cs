@@ -369,6 +369,7 @@ namespace Engine.Assets.Models
 
         public override void Dispose()
         {
+            base.Dispose();
             if (InternalWorldBuffer != null)
                 InternalWorldBuffer.Dispose();
             if (InternalWorldUniform != null)

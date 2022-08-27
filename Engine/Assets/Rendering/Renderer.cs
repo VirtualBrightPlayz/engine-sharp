@@ -167,6 +167,7 @@ namespace Engine.Assets.Rendering
 
         public override void Dispose()
         {
+            base.Dispose();
             foreach (var cbuf in MatrixBuffers)
             {
                 cbuf.Value.Dispose();

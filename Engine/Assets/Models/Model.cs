@@ -174,7 +174,7 @@ namespace Engine.Assets.Models
                     }
                     else if (_shouldLoadMats)
                     {
-                        var diffusePath = "Shaders/white.bmp"; // TODO
+                        var diffusePath = "Shaders/white.bmp";
                         CompoundBuffer buffer = await ResourceManager.CreateCompoundBuffer(diffusePath, InternalMaterials[^1].Shader, UniformConsts.DiffuseTextureSet, await ResourceManager.LoadTexture(diffusePath), await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
                         CompoundBuffers.Add(buffer);
                         InternalMaterials[^1].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[^1]);
@@ -232,7 +232,6 @@ namespace Engine.Assets.Models
                         {
                             siz = sizeof(System.Numerics.Matrix4x4);
                         }
-                        // Console.WriteLine($"siz {siz}");
                         bonesUniforms[i] = await ResourceManager.CreateUniformBuffer($"{Name}_BonesUniform_{i}_{Random.Shared.Next()}", (uint)siz * BonesMatrixCount);
                         if (Renderer.Current != null && Renderer.Current.IsDrawing)
                             bonesUniforms[i].UploadData(Renderer.Current, new System.Numerics.Matrix4x4[BonesMatrixCount]);
@@ -627,6 +626,7 @@ namespace Engine.Assets.Models
 
         public override void Dispose()
         {
+            base.Dispose();
             foreach (var buf in bonesUniforms)
             {
                 buf.Value.Dispose();

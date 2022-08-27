@@ -10,6 +10,10 @@ using Engine.Assets.Audio;
 using Engine.Assets;
 using Engine.Assets.Textures;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Linq.Expressions;
+using System.Linq;
 
 public class WebRuntime : WebAssemblyJSRuntime
 {
@@ -23,6 +27,7 @@ public static class WebEntry
     public static WebRuntime runtime;
     public static bool isBusy = false;
     private static Vector2? size;
+    private static Dictionary<string, IntPtr> proc = new Dictionary<string, IntPtr>();
 
     [DllImport("emscripten", CallingConvention = CallingConvention.Cdecl)]
     public static extern bool emscripten_webgl_enable_extension(IntPtr context, IntPtr extension);
@@ -43,13 +48,85 @@ public static class WebEntry
         return 0;
     }
 
+    public static IntPtr getProcAddress(string name)
+    {
+        if (proc.ContainsKey(name))
+            return proc[name];
+        if (proc.ContainsKey(name + "EXT"))
+            return proc[name + "EXT"];
+        throw new Exception(name);
+    }
+
+    public static Delegate CreateDelegate(object instance, MethodInfo method)
+    {
+        var param = method.GetParameters().Select(x => x.ParameterType).ToList();
+        param.Add(method.ReturnType);
+        var type = Expression.GetDelegateType(param.ToArray());
+
+        return Delegate.CreateDelegate(type, instance, method);
+    }
+
     [JSInvokable]
     public static async Task<int> Init()
     {
         Console.WriteLine("Starting...");
         runtime = new WebRuntime();
         FileManager.HttpPrefix = runtime.Invoke<string>("getHttpPrefix");
-        RenderingGlobals.InitGameGraphics(GraphicsBackend.OpenGLES);
+        WebSwapchainSource swapchainSource = new WebSwapchainSource();
+        unsafe
+        {
+            Emscripten.EmscriptenWebGLContextAttributes attributes = new Emscripten.EmscriptenWebGLContextAttributes();
+            Emscripten.emscripten_webgl_init_context_attributes(&attributes);
+            attributes.majorVersion = 2;
+            attributes.minorVersion = 0;
+            attributes.powerPreference = Emscripten.EM_WEBGL_POWER_PREFERENCE_DEFAULT;
+            int context = Emscripten.emscripten_webgl_create_context("#canvas", &attributes);
+            if (context == 0)
+            {
+                throw new Exception($"{nameof(Emscripten.emscripten_webgl_create_context)} returned 0");
+            }
+            int res = Emscripten.emscripten_webgl_get_context_attributes(context, &attributes);
+            if (res != Emscripten.EMSCRIPTEN_RESULT_SUCCESS)
+            {
+                throw new Exception($"{nameof(Emscripten.emscripten_webgl_get_context_attributes)} returned {res}");
+            }
+            if (attributes.majorVersion < 2)
+            {
+                throw new Exception($"{nameof(attributes.majorVersion)} is {attributes.majorVersion}, WebGL2 is required");
+            }
+            res = Emscripten.emscripten_webgl_make_context_current(context);
+            if (res != Emscripten.EMSCRIPTEN_RESULT_SUCCESS)
+            {
+                throw new Exception($"{nameof(Emscripten.emscripten_webgl_make_context_current)} returned {res}");
+            }
+            res = Emscripten.emscripten_webgl_get_current_context();
+            if (res != context)
+            {
+                throw new Exception($"{nameof(Emscripten.emscripten_webgl_get_current_context)} returned {res}, which is a different context from {context}");
+            }
+
+            var pinvokes = typeof(GL).GetMethods(BindingFlags.Public | BindingFlags.Static);
+            foreach (var item in pinvokes)
+            {
+                var fn = CreateDelegate(null, item);
+                IntPtr fnPtr = Marshal.GetFunctionPointerForDelegate(fn);
+                proc.Add(item.Name, fnPtr);
+            }
+
+            swapchainSource.platformInfo = new Veldrid.OpenGL.OpenGLPlatformInfo(
+                (IntPtr)context,
+                // Emscripten.emscripten_GetProcAddress,
+                getProcAddress,
+                (i) => Emscripten.emscripten_webgl_make_context_current((int)i),
+                () => (IntPtr)Emscripten.emscripten_webgl_get_current_context(),
+                () => { },
+                (i) => Emscripten.emscripten_webgl_destroy_context((int)i),
+                () => { },
+                (b) => { }
+            );
+        }
+
+        RenderingGlobals.InitGameGraphics(GraphicsBackend.OpenGLES, swapchainSource);
         renderer = await ResourceManager.CreateRenderer("MainRenderer");
         Renderer.Current = renderer;
         renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain));
@@ -113,6 +190,7 @@ public static class WebEntry
         await game.PreDraw(renderer, delta);
         renderer.Begin();
         renderer.Clear();
+        Renderer.Current = renderer;
         await game.Draw(renderer, delta);
         // DebugGlobals.DrawDebugWindow();
         ImGuiNET.ImGui.EndFrame();

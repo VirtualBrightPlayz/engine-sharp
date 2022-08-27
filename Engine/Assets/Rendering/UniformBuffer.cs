@@ -36,8 +36,8 @@ namespace Engine.Assets.Rendering
 
         public override async Task ReCreate()
         {
-            // if (HasBeenInitialized)
-                // return;
+            if (HasBeenInitialized)
+                return;
             await base.ReCreate();
             if (InternalBuffer != null && !InternalBuffer.IsDisposed)
                 InternalBuffer.Dispose();
@@ -82,6 +82,7 @@ namespace Engine.Assets.Rendering
 
         public override void Dispose()
         {
+            base.Dispose();
             if (InternalBuffer != null)
                 InternalBuffer.Dispose();
         }
