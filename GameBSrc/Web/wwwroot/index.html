@@ -42,6 +42,11 @@
             return request.response;
         };
 
+        window.engineError = (e) => {
+            console.error(e);
+            alert("Engine crashed. See the console for details.");
+        };
+
         function frame(time) {
             DotNet.invokeMethodAsync("Web", "Frame", time).then(code => {
             }).catch(err => {
@@ -51,14 +56,17 @@
         }
 
         function lockChangeAlert() {
+            if (!isRun)
+                return;
             if (document.pointerLockElement !== canvas) {
                 DotNet.invokeMethod("Engine.WebGL", "OnMouseUnlocked");
             }
         }
 
         var isRun = false;
+        var canRun = false;
         function runEngine() {
-            if (isRun)
+            if (isRun || !canRun)
                 return;
             isRun = true;
             console.log("Init...");
@@ -75,39 +83,54 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             Blazor.start();
+            canRun = true;
         });
 
         canvas.addEventListener("mousedown", ev => {
+            if (!isRun)
+                return;
             DotNet.invokeMethod("Engine.WebGL", "OnMouseDown", ev.buttons);
             ev.preventDefault();
         });
 
         canvas.addEventListener("mouseup", ev => {
+            if (!isRun)
+                return;
             DotNet.invokeMethod("Engine.WebGL", "OnMouseUp", ev.buttons);
             ev.preventDefault();
         });
 
         canvas.addEventListener("contextmenu", ev => {
+            if (!isRun)
+                return;
             ev.preventDefault();
         });
 
         window.addEventListener("resize", ev => {
+            if (!isRun)
+                return;
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             DotNet.invokeMethod("Web", "OnWindowResize", window.innerWidth, window.innerHeight);
         });
 
         canvas.addEventListener("mousemove", ev => {
+            if (!isRun)
+                return;
             DotNet.invokeMethod("Engine.WebGL", "OnMousePosition", ev.offsetX, ev.offsetY);
             DotNet.invokeMethod("Engine.WebGL", "OnMouseMove", -ev.movementX, -ev.movementY);
         });
 
         document.addEventListener("keydown", ev => {
+            if (!isRun)
+                return;
             DotNet.invokeMethod("Engine.WebGL", "OnKeyDown", ev.key);
             ev.preventDefault();
         });
 
         document.addEventListener("keyup", ev => {
+            if (!isRun)
+                return;
             DotNet.invokeMethod("Engine.WebGL", "OnKeyUp", ev.key);
             ev.preventDefault();
         });

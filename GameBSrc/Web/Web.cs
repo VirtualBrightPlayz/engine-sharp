@@ -153,9 +153,16 @@ public static class WebEntry
     [UnmanagedCallersOnly(EntryPoint = "FrameLoop")]
     public static async void FrameLoop()
     {
-        if (!isBusy)
+        try
         {
-            await Frame((double)emscripten_get_now() / 1000d);
+            if (!isBusy)
+            {
+                await Frame((double)emscripten_get_now() / 1000d);
+            }
+        }
+        catch (Exception e)
+        {
+            runtime.InvokeVoid("engineError", e.ToString());
         }
     }
 
