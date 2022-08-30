@@ -8,6 +8,7 @@ namespace Engine.Assets.Rendering
         public static GraphicsDevice GameGraphics { get; private set; }
         public static GraphicsBackend APIBackend { get; private set; }
         public static ImGuiRenderer GameImGui { get; private set; }
+        private static OutputDescription ImGuiOutput { get; set; }
         public static GraphicsBackend? NextFrameBackend { get; set; }
         public static RenderDoc RenderDocInstance { get; set; }
         public static Vector2 ViewSize { get; private set; }
@@ -30,6 +31,15 @@ namespace Engine.Assets.Rendering
             }, desc);
         #endif
             GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+        }
+
+        public static void ImGuiSetTarget(OutputDescription desc)
+        {
+            return;
+            if (desc.Equals(ImGuiOutput))
+                return;
+            GameImGui.CreateDeviceResources(GameGraphics, desc);
+            ImGuiOutput = desc;
         }
 
         public static void Resize(uint w, uint h)

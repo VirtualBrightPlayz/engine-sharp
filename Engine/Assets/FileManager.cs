@@ -29,6 +29,8 @@ namespace Engine.Assets
             using var client = new HttpClient();
             using var msg = new HttpRequestMessage(HttpMethod.Get, HttpPrefix + "/" + path);
             msg.SetBrowserRequestCache(BrowserRequestCache.NoCache);
+            msg.SetBrowserResponseStreamingEnabled(false);
+            // msg.SetBrowserRequestOption();
             // msg.SetBrowserRequestCache(BrowserRequestCache.Reload);
             var stream = await (await client.SendAsync(msg)).Content.ReadAsStreamAsync();
             // var stream = await client.GetStreamAsync(HttpPrefix + "/" + path);

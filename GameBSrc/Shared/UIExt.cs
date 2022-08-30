@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Numerics;
+using System.Threading.Tasks;
 using Engine;
 using Engine.Assets;
 using Engine.Assets.Audio;
@@ -14,9 +15,9 @@ namespace GameBSrc
     {
         public static ImGuiIOPtr _io;
         public static ImDrawListPtr _drawList;
-        public static ImFontPtr Pretext(ImGuiRenderer renderer)
+        public static async Task<ImFontPtr> Pretext(ImGuiRenderer renderer, float size)
         {
-            var font = ResourceManager.LoadImGuiFont($"{BGame.Instance.Data.GFXDir}/Pretext.TTF", 56f);
+            var font = await ResourceManager.LoadImGuiFont(renderer, $"{BGame.Instance.Data.GFXDir}/Pretext.TTF", size);
             return font;
         }
         public static Vector2 MenuScale = Vector2.One;
@@ -57,6 +58,7 @@ namespace GameBSrc
         {
             pos *= MenuScale;
             size *= MenuScale;
+            // _drawList.AddText(pos, color, text);
             _drawList.AddText(font, fSize, pos, color, text);
         }
 

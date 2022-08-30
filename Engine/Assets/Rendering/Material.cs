@@ -321,7 +321,6 @@ namespace Engine.Assets.Rendering
 
         public void Bind(Renderer renderer, string passName = "")
         {
-            Console.WriteLine($"{Name} {passName} {renderer == null} {_pipelines == null}");
             Pipeline pipeline = _pipelines.FirstOrDefault().Value?.FirstOrDefault(x => x.Key == renderer).Value;
             if (!string.IsNullOrEmpty(passName))
             {

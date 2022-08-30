@@ -184,6 +184,7 @@ public static class WebEntry
         double delta = time - lastTime;
         delta = Math.Min(delta, 0.5d);
         ResourceManager.Update();
+        RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription);
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputSnapshot);
         renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.1f, 1000f);
         Renderer.Current = renderer;

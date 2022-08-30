@@ -56,8 +56,8 @@ namespace Engine.Assets.Textures
 
         public override async Task ReCreate()
         {
-            // if (HasBeenInitialized)
-            //     return;
+            if (HasBeenInitialized)
+                return;
             await base.ReCreate();
             if (IsRaw)
                 // throw new NotSupportedException($"Can't clone raw framebuffers!");

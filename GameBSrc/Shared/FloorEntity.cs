@@ -63,10 +63,12 @@ namespace GameBSrc
         public override async Task Create(bool createStatic)
         {
             floorTextureRenderer = await ResourceManager.CreateRenderer($"Floor_{FloorNumber}");
+
             floorTexture = new RenderTexture2D($"Floor_{FloorNumber}", TexSize, TexSize);
             await floorTexture.ReCreate();
             // floorTextureUIRenderer = new ImGuiRenderer(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
-            // RenderFloorTexture();
+            // floorTextureUIRenderer = RenderingGlobals.GameImGui;
+            // await RenderFloorTexture();
             cubeMat = await ResourceManager.CreateMaterial($"{MarkerName}_{FloorNumber}", await BGame.Instance.Shader);
             cubeBuffer = await ResourceManager.CreateCompoundBuffer($"{DiffusePath}_{FloorNumber}", cubeMat.Shader, UniformConsts.DiffuseTextureSet, floorTexture, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             cubeMat.SetUniforms(UniformConsts.DiffuseTextureSet, cubeBuffer);
@@ -90,21 +92,34 @@ namespace GameBSrc
         public async Task RenderFloorTexture()
         {
             return;
+            floorTextureUIRenderer = new ImGuiRenderer(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
+            ImGui.EndFrame();
+            var font = await UIExt.Pretext(floorTextureUIRenderer, (int)(TexSize / 4f));
+            // if (!hasRendered)
+                // floorTextureUIRenderer.RecreateFontDeviceTexture();
+            // RenderingGlobals.ImGuiSetTarget(floorTexture.InternalFramebuffer.OutputDescription);
+            // floorTextureUIRenderer.CreateDeviceResources(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription);
             floorTextureRenderer.SetRenderTarget(floorTexture);
             floorTextureRenderer.Begin();
             floorTextureRenderer.Clear();
             floorTextureRenderer.Blit(await DiffuseTexture);
-            floorTextureUIRenderer.Update(0f, MiscGlobals.GameInputSnapshot);
+            System.Console.WriteLine("J");
+            floorTextureUIRenderer.Update(0.01f, MiscGlobals.GameInputSnapshot);
+            System.Console.WriteLine("I");
             UIExt.BeginDraw();
-            UIExt.Pretext(floorTextureUIRenderer);
-            if (!hasRendered)
-                floorTextureUIRenderer.RecreateFontDeviceTexture();
-            UIExt.TextLeft(UIExt.Pretext(floorTextureUIRenderer), TexSize / 4f, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
+            System.Console.WriteLine($"K {font.IsLoaded()} {font.FontSize}");
+            unsafe
+            {
+                System.Console.WriteLine($"fgkldj {new System.IntPtr(UIExt._drawList.NativePtr)}");
+            }
+            UIExt.TextLeft(font, font.FontSize, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
+            System.Console.WriteLine("H");
             ImGui.EndFrame();
             floorTextureUIRenderer.Render(RenderingGlobals.GameGraphics, floorTextureRenderer.CommandList);
             floorTextureRenderer.End();
             floorTextureRenderer.Submit();
-            // floorTextureUIRenderer.Update(0f, MiscGlobals.GameInputSnapshot);
+            // ImGui.EndFrame();
+            // floorTextureUIRenderer.Update(1f, MiscGlobals.GameInputSnapshot);
         }
 
         public override void MarkTransformDirty(TransformDirtyFlags flags)

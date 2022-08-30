@@ -101,7 +101,7 @@ namespace GameBSrc
             Music.ReferenceDistance = MaxAudioDist;
             Music.MinGain = 1f;
             Music.MaxGain = 1f;
-            Music.Play();
+            Music.Stop();
 
             Radio = new AudioSource("Radio");
             Radio.SetBuffer(await radioClips[0]);
@@ -145,6 +145,7 @@ namespace GameBSrc
 
             await SpawnFloors(201);
             SpawnPlayer();
+            Music.Play();
         }
 
         public void SpawnPlayer()
@@ -230,7 +231,7 @@ namespace GameBSrc
 
             floorActions = new FloorEntity.FloorAction[floorCount];
             floorTimers = new float[floorActions.Length];
-            Random rng = new Random(1); // seed set to debug
+            Random rng = new Random(Random.Shared.Next()); // seed set to debug
 
             int temp = 0;
             floorActions[0] = FloorEntity.FloorAction.Proceed;
@@ -293,7 +294,6 @@ namespace GameBSrc
             floorTimers[temp] = MinFloorTime;
 
             temp = rng.Next(33, 37);
-            temp = 1;
             floorActions[temp] = FloorEntity.FloorAction.Act_173;
             floorTimers[temp] = MinFloorTime;
 
@@ -408,7 +408,7 @@ namespace GameBSrc
             floorActions[temp] = FloorEntity.FloorAction.Darkness;
             floorTimers[temp] = MinFloorTime;
 
-            for (int i = 0; i < Math.Min(2, floorActions.Length); i++)
+            for (int i = 0; i < floorActions.Length; i++)
             {
                 var floor = new FloorEntity(i+1, Path.Combine(Data.GFXDir, GetFloor(rng, i, floorActions[i])), await ResourceManager.CreateMaterial("map0", await Shader));
                 await floor.Create(true);
@@ -527,6 +527,10 @@ namespace GameBSrc
 
             for (int i = 0; i < floorTimers.Length; i++)
             {
+                if (Math.Abs(i - currentFloor) > 3)
+                {
+                    continue;
+                }
                 if (floorTimers[i] > 0f)
                 {
                     Vector3 floorPos = new Vector3(4f, -1f-(i)*2f, 0f);

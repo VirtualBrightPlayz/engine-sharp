@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Engine.Assets.Audio;
@@ -89,17 +92,58 @@ namespace Engine.Assets
             }
         }
 
-        public static ImFontPtr LoadImGuiFont(string path, float size = 24f)
+        public static async Task<ImFontPtr> LoadImGuiFont(ImGuiRenderer renderer, string path, float size = 24f)
         {
-            if (Fonts.Any(x => x.Key == path))
+            /*if (Fonts.Any(x => x.Key == path))
             {
                 return Fonts.First(x => x.Key == path).Value;
-            }
+            }*/
             ImGuiIOPtr io = ImGui.GetIO();
-            ImFontPtr font = io.Fonts.AddFontFromFileTTF(path, size);
-            Fonts.Add(path, font);
-            io.Fonts.Build();
-            RenderingGlobals.GameImGui.RecreateFontDeviceTexture();
+            using Stream str = await FileManager.LoadStream(path);
+            byte[] data = null;//new byte[str.Length];
+            using StreamReader reader = new StreamReader(str, Encoding.UTF8);
+            data = Encoding.UTF8.GetBytes(reader.ReadToEnd());
+            // Console.WriteLine(str.Read(data, 0, data.Length));
+            ImFontPtr font = null;
+            unsafe
+            {
+                IntPtr dataptr = IntPtr.Zero;
+                try
+                {
+                    dataptr = Marshal.AllocHGlobal(data.Length);
+                    Marshal.Copy(data, 0, dataptr, data.Length);
+                    ImFontConfig cfg = new ImFontConfig();
+
+                    cfg.FontDataOwnedByAtlas = 0;
+
+                    cfg.GlyphMaxAdvanceX = float.MaxValue;
+                    cfg.OversampleH = 3;
+                    cfg.OversampleV = 1;
+                    cfg.RasterizerMultiply = 1f;
+                    cfg.EllipsisChar = ushort.MaxValue;
+
+                    cfg.FontData = dataptr.ToPointer();
+                    cfg.FontDataSize = data.Length;
+                    cfg.SizePixels = size;
+
+                    byte[] name = Encoding.UTF8.GetBytes(Path.GetFileName(path));
+                    Marshal.Copy(name, 0, new IntPtr(cfg.Name), Math.Min(name.Length, 39));
+                    cfg.Name[Math.Min(name.Length, 39)] = (byte)'\0';
+
+                    ImFontConfigPtr ptr = new ImFontConfigPtr(&cfg);
+                    font = io.Fonts.AddFont(ptr);
+                    // font = io.Fonts.AddFontFromMemoryTTF(dataptr, data.Length, size, ptr);
+                    ptr.Destroy();
+                    Fonts.Add(path, font);
+                    io.Fonts.Build();
+                    renderer.RecreateFontDeviceTexture();
+                    // RenderingGlobals.GameImGui.RecreateFontDeviceTexture();
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(dataptr);
+                }
+            }
             return font;
         }
 
