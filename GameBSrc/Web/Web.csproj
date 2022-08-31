@@ -11,7 +11,7 @@
     <EmccFlags>-sFULL_ES2=1 -sFULL_ES3=1 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sGL_ASSERTIONS=0 -lopenal -sASSERTIONS=0 -O3 -sERROR_ON_UNDEFINED_SYMBOLS=0</EmccFlags>
     <EmccFlags>$(EmccFlags) -fexceptions</EmccFlags>
     <!-- <EmccExtraLDFlags>-s WARN_ON_UNDEFINED_SYMBOLS=0</EmccExtraLDFlags> -->
-    <PublishTrimmed>false</PublishTrimmed>
+    <!-- <PublishTrimmed>false</PublishTrimmed> -->
     <WasmNativeStrip>false</WasmNativeStrip>
     <RunAOTCompilation>true</RunAOTCompilation>
     <!-- <WasmExceptionHandling>true</WasmExceptionHandling> -->
@@ -50,6 +50,7 @@
   <PropertyGroup>
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">false</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' == 'Release'">true</PublishTrimmed>
+    <!-- <TrimMode>copyused</TrimMode> -->
     <BlazorEnableCompression Condition="'$(Configuration)' == 'Debug'">false</BlazorEnableCompression>
     <WasmBuildNative>true</WasmBuildNative>
     <!-- <RunAOTCompilation>true</RunAOTCompilation>
@@ -70,9 +71,7 @@
     <!-- <NativeFileReference Include="..\..\cimgui\cimgui.cpp;..\..\cimgui\imgui\imgui.cpp;..\..\cimgui\imgui\imgui_draw.cpp;..\..\cimgui\imgui\imgui_demo.cpp;..\..\cimgui\imgui\imgui_widgets.cpp" ScanForPInvokes="true" /> -->
     <!-- <NativeFileReference Include="..\..\cimgui\cimgui.cpp" ScanForPInvokes="true" /> -->
     <!-- <NativeFileReference Include="cimgui.cpp" ScanForPInvokes="true" /> -->
-    <EmbeddedResource Include="ILLink.Descriptors.xml">
-      <LogicalName>ILLink.Descriptors.xml</LogicalName>
-    </EmbeddedResource>
+    <TrimmerRootDescriptor  Include="ILLink.Descriptors.xml" />
   </ItemGroup>
 
   <ItemGroup>
