@@ -105,13 +105,13 @@ public static class WebEntry
                 throw new Exception($"{nameof(Emscripten.emscripten_webgl_get_current_context)} returned {res}, which is a different context from {context}");
             }
 
-            var pinvokes = typeof(GL).GetMethods(BindingFlags.Public | BindingFlags.Static);
+            /*var pinvokes = typeof(GL).GetMethods(BindingFlags.Public | BindingFlags.Static);
             foreach (var item in pinvokes)
             {
                 var fn = CreateDelegate(null, item);
                 IntPtr fnPtr = Marshal.GetFunctionPointerForDelegate(fn);
                 proc.Add(item.Name, fnPtr);
-            }
+            }*/
 
             swapchainSource.platformInfo = new Veldrid.OpenGL.OpenGLPlatformInfo(
                 (IntPtr)context,

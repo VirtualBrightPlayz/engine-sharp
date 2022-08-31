@@ -1,0 +1,8 @@
+<Linker>
+  <Assembly Fullname="SharpGLTF.Core">
+    <Type Fullname="SharpGLTF.Core" Preserve="all" />
+  </Assembly>
+  <Assembly Fullname="SharpGLTF.Toolkit">
+    <Type Fullname="SharpGLTF.Toolkit" Preserve="all" />
+  </Assembly>
+</Linker>

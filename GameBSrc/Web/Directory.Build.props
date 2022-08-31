@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <ExcludeD3D11>true</ExcludeD3D11>
+  </PropertyGroup>
+</Project>
