@@ -270,7 +270,8 @@ namespace Engine.Assets.Audio
             if (HasBeenInitialized)
                 return;
             await base.ReCreate();
-            await Create(Name);
+            if (!_handle.HasValue)
+                await Create(Name);
             return;
         }
 

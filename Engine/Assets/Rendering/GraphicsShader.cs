@@ -141,7 +141,10 @@ namespace Engine.Assets.Rendering
             {
                 shaders[i].Name = Name + shaders[i].Stage.ToString();
             }
-            _compileResult = SpirvCompilation.CompileVertexFragment(vertShader.ShaderBytes, fragShader.ShaderBytes, GetCompilationTarget(RenderingGlobals.APIBackend)).Reflection;
+            if (pass == "main")
+                _compileResult = SpirvCompilation.CompileVertexFragment(vertShader.ShaderBytes, fragShader.ShaderBytes, GetCompilationTarget(RenderingGlobals.APIBackend)).Reflection;
+            else
+                SpirvCompilation.CompileVertexFragment(vertShader.ShaderBytes, fragShader.ShaderBytes, GetCompilationTarget(RenderingGlobals.APIBackend));
             _shaders.Add(pass, shaders);
         #endif
         }

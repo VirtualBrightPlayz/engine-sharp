@@ -173,7 +173,6 @@ namespace GameBSrc
             }
             if (Input.IsMouseDown(Veldrid.MouseButton.Right) && !wasEscPressed)
             {
-                BGame.Instance.DebugMode = Input.IsMouseLocked;
                 Input.IsMouseLocked = !Input.IsMouseLocked;
             }
             wasEscPressed = Input.IsMouseDown(Veldrid.MouseButton.Right);
@@ -191,6 +190,9 @@ namespace GameBSrc
 
         public async void UpdateMovement(double dt)
         {
+            if (Input.IsKeyPressed(Key.K))
+                BGame.Instance.DebugMode = Input.IsMouseLocked;
+
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
             Vector2 inputDirection = Vector2.Zero;
             if (Input.IsKeyPressed(Key.W))

@@ -46,6 +46,16 @@ public static class DesktopEntry
         while (!MiscGlobals.IsClosing)
         {
             MiscGlobals.Snapshot = RenderingGlobals.Window.PumpEvents();
+            if (MiscGlobals.ReCreateAllNextFrame)
+                await ResourceManager.ReCreateAll();
+            if (RenderingGlobals.NextFrameBackend.HasValue)
+            {
+                RenderingGlobals.DisposeGameGraphics();
+                RenderingGlobals.InitGameGraphics(RenderingGlobals.NextFrameBackend.Value);
+                await ResourceManager.ReCreateAll();
+            }
+            MiscGlobals.ReCreateAllNextFrame = false;
+            RenderingGlobals.NextFrameBackend = null;
             FrameLoop();
             if (!RenderingGlobals.Window.Exists)
                 break;

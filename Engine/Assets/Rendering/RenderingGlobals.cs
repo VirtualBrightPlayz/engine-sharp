@@ -49,6 +49,7 @@ namespace Engine.Assets.Rendering
                 PreferDepthRangeZeroToOne = true,
                 PreferStandardClipSpaceYDirection = true,
                 SyncToVerticalBlank = true,
+                SwapchainDepthFormat = PixelFormat.R32_Float,
             }, api, out win, out gfx);
             Window = win;
             GameGraphics = gfx;

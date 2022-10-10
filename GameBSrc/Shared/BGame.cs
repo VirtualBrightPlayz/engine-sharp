@@ -69,7 +69,7 @@ namespace GameBSrc
         public EnemyEntity enemy = null;
         public Entity currentObject = null;
         public int Brightness = 40;
-        public bool DebugMode = true;
+        public bool DebugMode = false;
         public uint frameCount = 0;
 
         public BGame() : base()
