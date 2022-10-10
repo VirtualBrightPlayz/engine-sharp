@@ -21,59 +21,59 @@ namespace Engine.Assets
         [JSInvokable]
         public static void OnMouseUnlocked()
         {
-            if (MiscGlobals.GameInputSnapshot == null)
+            if (MiscGlobals.GameInputHandler == null)
                 return;
-            MiscGlobals.GameInputSnapshot._mouseLocked = false;
+            MiscGlobals.GameInputHandler._mouseLocked = false;
         }
 
         [JSInvokable]
         public static void OnKeyDown(string key)
         {
-            if (MiscGlobals.GameInputSnapshot == null)
+            if (MiscGlobals.GameInputHandler == null)
                 return;
             if (Enum.TryParse<Key>(key, true, out Key res))
             {
-                MiscGlobals.GameInputSnapshot._currentlyPressedKeys.Add(res);
-                MiscGlobals.GameInputSnapshot._newlyPressedKeysThisFrame.Add(res);
-                MiscGlobals.GameInputSnapshot._keyEvents.Add(new KeyEvent(res, true, MiscGlobals.GameInputSnapshot.GetModifierKeys()));
+                MiscGlobals.GameInputHandler._currentlyPressedKeys.Add(res);
+                MiscGlobals.GameInputHandler._newlyPressedKeysThisFrame.Add(res);
+                MiscGlobals.GameInputHandler._keyEvents.Add(new KeyEvent(res, true, MiscGlobals.GameInputHandler.GetModifierKeys()));
             }
         }
 
         [JSInvokable]
         public static void OnKeyUp(string key)
         {
-            if (MiscGlobals.GameInputSnapshot == null)
+            if (MiscGlobals.GameInputHandler == null)
                 return;
             if (Enum.TryParse<Key>(key, true, out Key res))
             {
-                MiscGlobals.GameInputSnapshot._currentlyPressedKeys.Remove(res);
-                MiscGlobals.GameInputSnapshot._newlyPressedKeysThisFrame.Remove(res);
-                MiscGlobals.GameInputSnapshot._keyEvents.Add(new KeyEvent(res, false, MiscGlobals.GameInputSnapshot.GetModifierKeys()));
+                MiscGlobals.GameInputHandler._currentlyPressedKeys.Remove(res);
+                MiscGlobals.GameInputHandler._newlyPressedKeysThisFrame.Remove(res);
+                MiscGlobals.GameInputHandler._keyEvents.Add(new KeyEvent(res, false, MiscGlobals.GameInputHandler.GetModifierKeys()));
             }
         }
 
         [JSInvokable]
         public static void OnMousePosition(float x, float y)
         {
-            if (MiscGlobals.GameInputSnapshot == null)
+            if (MiscGlobals.GameInputHandler == null)
                 return;
-            MiscGlobals.GameInputSnapshot._mouseMove = new Vector2(x, y);
+            MiscGlobals.GameInputHandler._mouseMove = new Vector2(x, y);
         }
 
         [JSInvokable]
         public static void OnMouseMove(float x, float y)
         {
-            if (MiscGlobals.GameInputSnapshot == null)
+            if (MiscGlobals.GameInputHandler == null)
                 return;
-            MiscGlobals.GameInputSnapshot._mouseDelta += new Vector2(x, y);
+            MiscGlobals.GameInputHandler._mouseDelta += new Vector2(x, y);
         }
 
         [JSInvokable]
         public static void OnMouseDown(int button)
         {
-            if (MiscGlobals.GameInputSnapshot == null)
+            if (MiscGlobals.GameInputHandler == null)
                 return;
-            if (MiscGlobals.GameInputSnapshot._mouseDownButtons != button)
+            if (MiscGlobals.GameInputHandler._mouseDownButtons != button)
             {
                 MouseButton? btn = null;
                 if ((button & 1) == 1)
@@ -91,22 +91,22 @@ namespace Engine.Assets
                 if (btn.HasValue)
                 {
                     // Console.WriteLine($"down {btn.Value}");
-                    MiscGlobals.GameInputSnapshot._currentlyPressedMouseButtons.Add(btn.Value);
-                    MiscGlobals.GameInputSnapshot._newlyPressedMouseButtonsThisFrame.Add(btn.Value);
-                    MiscGlobals.GameInputSnapshot._mouseEvents.Add(new MouseEvent(btn.Value, true));
+                    MiscGlobals.GameInputHandler._currentlyPressedMouseButtons.Add(btn.Value);
+                    MiscGlobals.GameInputHandler._newlyPressedMouseButtonsThisFrame.Add(btn.Value);
+                    MiscGlobals.GameInputHandler._mouseEvents.Add(new MouseEvent(btn.Value, true));
                 }
-                MiscGlobals.GameInputSnapshot._mouseDownButtons = button;
+                MiscGlobals.GameInputHandler._mouseDownButtons = button;
             }
         }
 
         [JSInvokable]
         public static void OnMouseUp(int button)
         {
-            if (MiscGlobals.GameInputSnapshot == null)
+            if (MiscGlobals.GameInputHandler == null)
                 return;
-            if (MiscGlobals.GameInputSnapshot._mouseDownButtons != button)
+            if (MiscGlobals.GameInputHandler._mouseDownButtons != button)
             {
-                int bitButton = (MiscGlobals.GameInputSnapshot._mouseDownButtons ^ button);
+                int bitButton = (MiscGlobals.GameInputHandler._mouseDownButtons ^ button);
                 MouseButton? btn = null;
                 if ((bitButton & 1) == 1)
                 {
@@ -123,11 +123,11 @@ namespace Engine.Assets
                 if (btn.HasValue)
                 {
                     // Console.WriteLine($"up {btn.Value}");
-                    MiscGlobals.GameInputSnapshot._currentlyPressedMouseButtons.Remove(btn.Value);
-                    MiscGlobals.GameInputSnapshot._newlyPressedMouseButtonsThisFrame.Remove(btn.Value);
-                    MiscGlobals.GameInputSnapshot._mouseEvents.Add(new MouseEvent(btn.Value, false));
+                    MiscGlobals.GameInputHandler._currentlyPressedMouseButtons.Remove(btn.Value);
+                    MiscGlobals.GameInputHandler._newlyPressedMouseButtonsThisFrame.Remove(btn.Value);
+                    MiscGlobals.GameInputHandler._mouseEvents.Add(new MouseEvent(btn.Value, false));
                 }
-                MiscGlobals.GameInputSnapshot._mouseDownButtons = button;
+                MiscGlobals.GameInputHandler._mouseDownButtons = button;
             }
         }
     }

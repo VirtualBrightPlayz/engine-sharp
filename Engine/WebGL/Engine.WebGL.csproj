@@ -16,7 +16,7 @@
     <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0026" />
     <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0026" />
     <ProjectReference Include="..\..\OpenAL-CS\OpenAL-CS.Core.csproj" />
-    <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.Web.csproj" />
+    <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj" />
     <ProjectReference Include="..\..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
     <ProjectReference Include="..\..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
     <!-- <PackageReference Include="Veldrid" Version="4.8.0" />
