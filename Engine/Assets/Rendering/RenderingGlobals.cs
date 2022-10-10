@@ -1,5 +1,6 @@
 using System.Numerics;
 using Veldrid;
+using Veldrid.StartupUtilities;
 
 namespace Engine.Assets.Rendering
 {
@@ -12,6 +13,9 @@ namespace Engine.Assets.Rendering
         public static GraphicsBackend? NextFrameBackend { get; set; }
         public static RenderDoc RenderDocInstance { get; set; }
         public static Vector2 ViewSize { get; private set; }
+    #if !WEBGL
+        public static Veldrid.Sdl2.Sdl2Window Window { get; private set; }
+    #endif
 
         #if WEBGL
         public static void InitGameGraphics(GraphicsBackend api, SwapchainSource swapchainSource)
@@ -29,6 +33,25 @@ namespace Engine.Assets.Rendering
                 PreferDepthRangeZeroToOne = true,
                 PreferStandardClipSpaceYDirection = true,
             }, desc);
+        #else
+            Veldrid.Sdl2.Sdl2Window win = null;
+            GraphicsDevice gfx = null;
+            ViewSize = new Vector2(600, 400);
+            VeldridStartup.CreateWindowAndGraphicsDevice(new WindowCreateInfo()
+            {
+                X = 100,
+                Y = 100,
+                WindowWidth = (int)ViewSize.X,
+                WindowHeight = (int)ViewSize.Y,
+            }, new GraphicsDeviceOptions()
+            {
+                SingleThreaded = false,
+                PreferDepthRangeZeroToOne = true,
+                PreferStandardClipSpaceYDirection = true,
+                SyncToVerticalBlank = true,
+            }, api, out win, out gfx);
+            Window = win;
+            GameGraphics = gfx;
         #endif
             GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
         }
@@ -51,7 +74,11 @@ namespace Engine.Assets.Rendering
 
         public static void DisposeGameGraphics()
         {
-            
+            GameImGui.Dispose();
+        #if !WEBGL
+            Window.Close();
+        #endif
+            GameGraphics.Dispose();
         }
     }
 }

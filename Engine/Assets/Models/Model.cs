@@ -101,12 +101,12 @@ namespace Engine.Assets.Models
         private async Task Load()
         {
         #if !WEBGL
-            if (path.ToLower().EndsWith(".glb"))
+            if (_path.ToLower().EndsWith(".glb"))
         #endif
                 await GLTFLoadMeshes(_path);
         #if !WEBGL
             else
-                AssimpLoadMeshes(path, material, animate);
+                AssimpLoadMeshes(_path, _ogMaterial, _shouldAnimate);
         #endif
             LightUniform = await ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
             if (_shouldLoadMats)
@@ -409,11 +409,16 @@ namespace Engine.Assets.Models
 
         private async void AssimpLoadMeshes(string path, Rendering.Material defMaterial, bool animate)
         {
+            string extHint = null;
+            if (Path.GetExtension(path).ToLower() == ".gltf")
+            {
+                extHint = "gltf2";
+            }
             int vertexCount = 0;
             List<Vector3> colPos = new List<Vector3>();
             List<uint> colTris = new List<uint>();
             using AssimpContext ctx = new AssimpContext();
-            Scene scene = ctx.ImportFileFromStream(await FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace | PostProcessSteps.GenerateNormals | PostProcessSteps.FixInFacingNormals | PostProcessSteps.FindInvalidData);
+            Scene scene = ctx.ImportFileFromStream(await FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace | PostProcessSteps.GenerateNormals | PostProcessSteps.FixInFacingNormals | PostProcessSteps.FindInvalidData, extHint);
             _meshes = new Mesh[scene.MeshCount];
             for (int i = 0; i < _meshes.Length; i++)
             {

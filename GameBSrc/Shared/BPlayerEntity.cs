@@ -20,7 +20,7 @@ namespace GameBSrc
 {
     public class BPlayerEntity : PhysicsEntity
     {
-        public InputHandler Input => MiscGlobals.GameInputSnapshot;
+        public InputHandler Input => MiscGlobals.GameInputHandler;
         public Capsule shape;
         public float speed = 2f;
         public float acceleration = 20f;

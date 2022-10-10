@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using NAudio.Vorbis;
 using NAudio.Wave;
-#if WEBGL
+#if WEBGL || !LEGACY_START
 using OpenAL;
 #else
 using Silk.NET.OpenAL;
@@ -17,7 +17,7 @@ namespace Engine.Assets.Audio
         private uint? _handle;
         public uint Handle => _handle.Value;
         private byte[] _data;
-    #if WEBGL
+    #if WEBGL || !LEGACY_START
         private int _format;
     #else
         private AL _al => AudioGlobals.GameAudio;
@@ -33,7 +33,7 @@ namespace Engine.Assets.Audio
 
         public async Task Create(string path)
         {
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             if (_handle.HasValue)
             {
                 uint v2 = _handle.Value;
@@ -71,7 +71,7 @@ namespace Engine.Assets.Audio
             }
             else
             {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
                 AL10.alGenBuffers(1, out uint v);
                 AudioGlobals.CheckALError("gen buffers (empty)");
                 _handle = v;
@@ -84,7 +84,7 @@ namespace Engine.Assets.Audio
             }
         }
 
-    #if WEBGL
+    #if WEBGL || !LEGACY_START
     #else
         public AudioClip(string name, byte[] data, BufferFormat format, int freq)
         {
@@ -159,7 +159,7 @@ namespace Engine.Assets.Audio
             return output;
         }
 
-    #if WEBGL
+    #if WEBGL || !LEGACY_START
         public static int GetFormat(int BitsPerSample, int Channels)
         {
             int format = AL10.AL_FORMAT_MONO8;
@@ -224,7 +224,7 @@ namespace Engine.Assets.Audio
             buffer = buffer2;
 
             _data = buffer;
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             AL10.alGenBuffers(1, out uint v);
             AudioGlobals.CheckALError("genBuffer ogg");
@@ -250,7 +250,7 @@ namespace Engine.Assets.Audio
             buffer = buffer2;
             
             _data = buffer;
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             AL10.alGenBuffers(1, out uint v);
             AudioGlobals.CheckALError("genBuffer misc");
@@ -282,7 +282,7 @@ namespace Engine.Assets.Audio
         public override void Dispose()
         {
             base.Dispose();
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             uint v = _handle.Value;
             AL10.alDeleteBuffers(1, ref v);
             AudioGlobals.CheckALError();

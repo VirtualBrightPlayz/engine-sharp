@@ -1,6 +1,6 @@
 using System;
 using System.Numerics;
-#if WEBGL
+#if WEBGL || !LEGACY_START
 using OpenAL;
 #else
 using Silk.NET.OpenAL;
@@ -10,7 +10,7 @@ namespace Engine.Assets.Audio
 {
     public static unsafe class AudioGlobals
     {
-    #if WEBGL
+    #if WEBGL || !LEGACY_START
         public static Vector3 Position
         {
             get { AL10.alGetListener3f(AL10.AL_POSITION, out var x, out var y, out var z); CheckALError(); return new Vector3(x, y, z); }

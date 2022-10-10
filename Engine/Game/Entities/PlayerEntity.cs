@@ -1,4 +1,4 @@
-#if !WEBGL
+#if !WEBGL && LEGACY_START
 using System;
 using System.Diagnostics;
 using System.Numerics;

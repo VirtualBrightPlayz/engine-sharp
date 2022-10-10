@@ -189,6 +189,7 @@ public static class WebEntry
         }
         size = null;
         double delta = time - lastTime;
+        MiscGlobals.FPS = 1d / Math.Max(delta, 0.001d);
         delta = Math.Min(delta, 0.5d);
         ResourceManager.Update();
         RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription);

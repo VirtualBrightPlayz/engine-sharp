@@ -104,7 +104,7 @@ namespace GameBSrc
             floorTextureRenderer.Clear();
             floorTextureRenderer.Blit(await DiffuseTexture);
             System.Console.WriteLine("J");
-            floorTextureUIRenderer.Update(0.01f, MiscGlobals.GameInputSnapshot);
+            floorTextureUIRenderer.Update(0.01f, MiscGlobals.GameInputHandler);
             System.Console.WriteLine("I");
             UIExt.BeginDraw();
             System.Console.WriteLine($"K {font.IsLoaded()} {font.FontSize}");

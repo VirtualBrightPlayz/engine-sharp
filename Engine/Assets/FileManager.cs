@@ -38,7 +38,8 @@ namespace Engine.Assets
             return stream;
         #else
             var stream = typeof(FileManager).Assembly.GetManifestResourceStream(typeof(FileManager).Assembly.FullName + "." + path.Replace("/", "."));
-            string filepath = Path.Combine(Directory.GetCurrentDirectory(), path);
+            // string filepath = Path.Combine(Directory.GetCurrentDirectory(), path);
+            string filepath = Path.Combine(typeof(FileManager).Assembly.Location, "..", path);
             if (stream == null && File.Exists(filepath))
                 stream = File.OpenRead(filepath);
             return stream;

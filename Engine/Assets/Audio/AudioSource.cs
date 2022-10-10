@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
-#if WEBGL
+#if WEBGL || !LEGACY_START
 using OpenAL;
 #else
 using Silk.NET.OpenAL;
@@ -13,7 +13,7 @@ namespace Engine.Assets.Audio
     {
         public override bool IsValid => _handle.HasValue;
         private uint? _handle;
-    #if !WEBGL
+    #if !WEBGL && LEGACY_START
         private AL _al => AudioGlobals.GameAudio;
     #endif
         public AudioClip AudioBuffer { get; private set; }
@@ -23,7 +23,7 @@ namespace Engine.Assets.Audio
             {
                 if (!IsValid)
                     return false;
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
                 AL10.alGetSourcei(_handle.Value, AL10.AL_SOURCE_STATE, out int val);
                 AudioGlobals.CheckALError("Is playing");
                 return val == AL10.AL_PLAYING;
@@ -35,7 +35,7 @@ namespace Engine.Assets.Audio
         }
         public float MaxDistance
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSourcef(_handle.Value, AL10.AL_MAX_DISTANCE, out var value); AudioGlobals.CheckALError("get maxdist"); return value; }
             set { AL10.alSourcef(_handle.Value, AL10.AL_MAX_DISTANCE, value); AudioGlobals.CheckALError("set maxdist"); }
             #else
@@ -45,7 +45,7 @@ namespace Engine.Assets.Audio
         }
         public float ReferenceDistance
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSourcef(_handle.Value, AL10.AL_REFERENCE_DISTANCE, out var value); AudioGlobals.CheckALError(); return value; }
             set { AL10.alSourcef(_handle.Value, AL10.AL_REFERENCE_DISTANCE, value); AudioGlobals.CheckALError(); }
             #else
@@ -55,7 +55,7 @@ namespace Engine.Assets.Audio
         }
         public Vector3 Position
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSource3f(_handle.Value, AL10.AL_POSITION, out var x, out var y, out var z); AudioGlobals.CheckALError(); return new Vector3(x, y, z); }
             set { AL10.alSource3f(_handle.Value, AL10.AL_POSITION, value.X, value.Y, value.Z); AudioGlobals.CheckALError(); }
             #else
@@ -65,7 +65,7 @@ namespace Engine.Assets.Audio
         }
         public bool Looping
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSourcei(_handle.Value, AL10.AL_LOOPING, out var value); AudioGlobals.CheckALError(); return value == 1 ? true : false; }
             set { AL10.alSourcei(_handle.Value, AL10.AL_LOOPING, value ? 1 : 0); AudioGlobals.CheckALError(); }
             #else
@@ -75,7 +75,7 @@ namespace Engine.Assets.Audio
         }
         public float Gain
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSourcef(_handle.Value, AL10.AL_GAIN, out var value); AudioGlobals.CheckALError(); return value; }
             set { AL10.alSourcef(_handle.Value, AL10.AL_GAIN, value); AudioGlobals.CheckALError(); }
             #else
@@ -85,7 +85,7 @@ namespace Engine.Assets.Audio
         }
         public float MinGain
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSourcef(_handle.Value, AL10.AL_MIN_GAIN, out var value); AudioGlobals.CheckALError("get min gain"); return value; }
             set { AL10.alSourcef(_handle.Value, AL10.AL_MIN_GAIN, value); AudioGlobals.CheckALError("set min gain"); }
             #else
@@ -95,7 +95,7 @@ namespace Engine.Assets.Audio
         }
         public float MaxGain
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSourcef(_handle.Value, AL10.AL_MAX_GAIN, out var value); AudioGlobals.CheckALError("get max gain"); return value; }
             set { AL10.alSourcef(_handle.Value, AL10.AL_MAX_GAIN, value); AudioGlobals.CheckALError("set max gain"); }
             #else
@@ -105,7 +105,7 @@ namespace Engine.Assets.Audio
         }
         public float RolloffFactor
         {
-            #if WEBGL
+            #if WEBGL || !LEGACY_START
             get { AL10.alGetSourcef(_handle.Value, AL10.AL_ROLLOFF_FACTOR, out var value); AudioGlobals.CheckALError("get rolloff"); return value; }
             set { AL10.alSourcef(_handle.Value, AL10.AL_ROLLOFF_FACTOR, value); AudioGlobals.CheckALError("set rolloff"); }
             #else
@@ -116,7 +116,7 @@ namespace Engine.Assets.Audio
 
         public AudioSource()
         {
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             AL10.alGenSources(1, out uint v);
             AudioGlobals.CheckALError("gen sources");
             _handle = v;
@@ -137,7 +137,7 @@ namespace Engine.Assets.Audio
             if (HasBeenInitialized)
                 return;
             await base.ReCreate();
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             if (_handle.HasValue)
             {
                 uint v2 = _handle.Value;
@@ -188,7 +188,7 @@ namespace Engine.Assets.Audio
         {
             AudioBuffer = buffer;
             Stop();
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             AL10.alSourcei(_handle.Value, AL10.AL_BUFFER, (int)buffer.Handle);
             AudioGlobals.CheckALError();
         #else
@@ -209,7 +209,7 @@ namespace Engine.Assets.Audio
 
         public void Stop()
         {
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             AL10.alSourceStop(_handle.Value);
             AudioGlobals.CheckALError();
         #else
@@ -219,7 +219,7 @@ namespace Engine.Assets.Audio
 
         public void Play()
         {
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             AL10.alSourcePlay(_handle.Value);
             AudioGlobals.CheckALError();
         #else
@@ -230,7 +230,7 @@ namespace Engine.Assets.Audio
         public override void Dispose()
         {
             base.Dispose();
-        #if WEBGL
+        #if WEBGL || !LEGACY_START
             uint v = _handle.Value;
             AL10.alDeleteSources(1, ref v);
             AudioGlobals.CheckALError();

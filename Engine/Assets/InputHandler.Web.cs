@@ -1,3 +1,4 @@
+#if WEBGL
 using System;
 using System.Numerics;
 using Microsoft.JSInterop;
@@ -131,3 +132,4 @@ namespace Engine.Assets
         }
     }
 }
+#endif

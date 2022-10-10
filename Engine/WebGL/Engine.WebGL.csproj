@@ -16,7 +16,7 @@
     <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0026" />
     <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0026" />
     <ProjectReference Include="..\..\OpenAL-CS\OpenAL-CS.Core.csproj" />
-    <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj" />
+    <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.Web.csproj" />
     <ProjectReference Include="..\..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
     <ProjectReference Include="..\..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
     <!-- <PackageReference Include="Veldrid" Version="4.8.0" />
@@ -33,25 +33,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="../Shaders/MainMesh.glsl">
+    <None Update="../../Shaders/MainMesh.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="../Shaders/MainMeshAnim.glsl">
+    <None Update="../../Shaders/MainMeshAnim.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="../Shaders/ForwardLights.glsl">
+    <None Update="../../Shaders/ForwardLights.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="../Shaders/Blit.glsl">
+    <None Update="../../Shaders/Blit.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="../Shaders/cube.gltf">
+    <None Update="../../Shaders/cube.gltf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="../Shaders/white.bmp">
+    <None Update="../../Shaders/white.bmp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="../Shaders/bump.bmp">
+    <None Update="../../Shaders/bump.bmp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

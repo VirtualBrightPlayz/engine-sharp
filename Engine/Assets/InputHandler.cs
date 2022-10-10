@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-// using Silk.NET.Input;
+using Engine.Assets.Rendering;
 using Veldrid;
+using Veldrid.Sdl2;
 #if WEBGL
 using Microsoft.JSInterop;
 #endif
@@ -29,12 +30,12 @@ namespace Engine.Assets
             {
                 if (MiscGlobals.IsFocused)
                 {
-                    // TODO:
-                    /*
-                    var oldpos = Program.GameInputContext.Mice[0].Position;
-                    Program.GameInputContext.Mice[0].Position = value;
+                #if !WEBGL
+                    var oldpos = _mousePosition;
+                    RenderingGlobals.Window.SetMousePosition(value);
                     _mouseDeltaOffset = value - oldpos;
-                    */
+                    _mousePosition = value;
+                #endif
                 }
             }
         }
@@ -46,67 +47,25 @@ namespace Engine.Assets
             {
                 if (MiscGlobals.IsFocused || !value)
                 {
-                    // TODO:
                     _mouseLocked = value;
-                    // Program.GameInputContext.Mice[0].Cursor.CursorMode = value ? CursorMode.Hidden : CursorMode.Normal;
                 #if WEBGL
                     MiscGlobals.WebRuntime.InvokeVoid("lockMouse", value);
+                #else
+                    RenderingGlobals.Window.CursorVisible = !value;
                 #endif
                 }
             }
         }
 
+    #if WEBGL
         public Vector2 MouseDelta => _mouseDelta;
-
-        /*
-        public static Veldrid.Key SilkToVeldridKey(Silk.NET.Input.Key key)
-        {
-            try
-            {
-                switch (key)
-                {
-                    default:
-                        return Enum.Parse<Veldrid.Key>(Enum.GetName(key), true);
-                }
-            }
-            catch (ArgumentException)
-            {
-                return Veldrid.Key.Unknown;
-            }
-        }
-
-        public static Veldrid.MouseButton SilkToVeldridMouseButton(Silk.NET.Input.MouseButton key)
-        {
-            try
-            {
-                switch (key)
-                {
-                    default:
-                        return Enum.Parse<Veldrid.MouseButton>(Enum.GetName(key), true);
-                }
-            }
-            catch (ArgumentException)
-            {
-                return Veldrid.MouseButton.Left;
-            }
-        }
-        */
+    #else
+        public Vector2 MouseDelta => RenderingGlobals.Window.MouseDelta + _mouseDelta;
+    #endif
 
         public InputHandler()
         {
-            /*Program.GameInputContext.Keyboards[0].KeyUp += KeyUp;
-            Program.GameInputContext.Keyboards[0].KeyDown += KeyDown;
-            Program.GameInputContext.Keyboards[0].KeyChar += KeyChar;
-            Program.GameInputContext.Mice[0].MouseUp += MouseUp;
-            Program.GameInputContext.Mice[0].MouseDown += MouseDown;*/
         }
-
-        /*
-        private void KeyChar(Silk.NET.Input.IKeyboard arg1, char arg2)
-        {
-            _keyCharEvents.Add(arg2);
-        }
-        */
 
         private ModifierKeys GetModifierKeys()
         {
@@ -120,44 +79,6 @@ namespace Engine.Assets
             return mod;
         }
 
-        /*
-        private void MouseUp(Silk.NET.Input.IMouse m, Silk.NET.Input.MouseButton btn)
-        {
-            Veldrid.MouseButton k = SilkToVeldridMouseButton(btn);
-            _mouseEvents.Add(new MouseEvent(k, false));
-            _currentlyPressedMouseButtons.Remove(k);
-            _newlyPressedMouseButtonsThisFrame.Remove(k);
-        }
-
-        private void MouseDown(Silk.NET.Input.IMouse m, Silk.NET.Input.MouseButton btn)
-        {
-            Veldrid.MouseButton k = SilkToVeldridMouseButton(btn);
-            _mouseEvents.Add(new MouseEvent(k, true));
-            if (_currentlyPressedMouseButtons.Add(k))
-            {
-                _newlyPressedMouseButtonsThisFrame.Add(k);
-            }
-        }
-
-        private void KeyDown(Silk.NET.Input.IKeyboard kbd, Silk.NET.Input.Key key, int arg3)
-        {
-            Veldrid.Key k = SilkToVeldridKey(key);
-            _keyEvents.Add(new KeyEvent(k, true, GetModifierKeys()));
-            if (_currentlyPressedKeys.Add(k))
-            {
-                _newlyPressedKeysThisFrame.Add(k);
-            }
-        }
-
-        private void KeyUp(Silk.NET.Input.IKeyboard kbd, Silk.NET.Input.Key key, int arg3)
-        {
-            Veldrid.Key k = SilkToVeldridKey(key);
-            _keyEvents.Add(new KeyEvent(k, false, GetModifierKeys()));
-            _currentlyPressedKeys.Remove(k);
-            _newlyPressedKeysThisFrame.Remove(k);
-        }
-        */
-
         public void Update()
         {
             _newlyPressedKeysThisFrame.Clear();
@@ -165,25 +86,63 @@ namespace Engine.Assets
             _keyEvents.Clear();
             _keyCharEvents.Clear();
             _mouseEvents.Clear();
+        #if WEBGL
             UpdateMouse();
-            /*_mouseDelta = _mousePosition - Program.GameInputContext.Mice[0].Position + _mouseDeltaOffset;
+        #else
+            MiscGlobals.IsFocused = RenderingGlobals.Window.Focused;
+            _mouseDelta = new Vector2((int)_mouseDeltaOffset.X, (int)_mouseDeltaOffset.Y);
             _mouseDeltaOffset = Vector2.Zero;
-            _mousePosition = Program.GameInputContext.Mice[0].Position;*/
+            _mousePosition = MousePosition;
+
+            foreach (var key in MiscGlobals.Snapshot.KeyEvents.Where(x => x.Down && !x.Repeat).Select(x => x.Key))
+            {
+                _currentlyPressedKeys.Add(key);
+            }
+
+            foreach (var key in MiscGlobals.Snapshot.KeyEvents.Where(x => !x.Down && !x.Repeat).Select(x => x.Key))
+            {
+                _currentlyPressedKeys.Remove(key);
+            }
+        #endif
         }
 
+    #if WEBGL
         public IReadOnlyList<KeyEvent> KeyEvents => _keyEvents;
+    #else
+        public IReadOnlyList<KeyEvent> KeyEvents => MiscGlobals.Snapshot.KeyEvents;
+    #endif
 
+    #if WEBGL
         public IReadOnlyList<MouseEvent> MouseEvents => _mouseEvents;
+    #else
+        public IReadOnlyList<MouseEvent> MouseEvents => MiscGlobals.Snapshot.MouseEvents;
+    #endif
 
+    #if WEBGL
         public IReadOnlyList<char> KeyCharPresses => _keyCharEvents;
+    #else
+        public IReadOnlyList<char> KeyCharPresses => MiscGlobals.Snapshot.KeyCharPresses;
+    #endif
 
+    #if WEBGL
         public Vector2 MousePosition => _mousePosition;
+    #else
+        public Vector2 MousePosition => MiscGlobals.Snapshot.MousePosition;
+    #endif
 
+    #if WEBGL
         public float WheelDelta => 0f;
+    #else
+        public float WheelDelta => MiscGlobals.Snapshot.WheelDelta;
+    #endif
 
         public bool IsMouseDown(Veldrid.MouseButton button)
         {
+        #if WEBGL
             return (_currentlyPressedMouseButtons.Contains(button));
+        #else
+            return MiscGlobals.Snapshot.IsMouseDown(button);
+        #endif
         }
 
         public bool IsKeyPressed(Veldrid.Key key)
@@ -193,11 +152,6 @@ namespace Engine.Assets
 
         public void Dispose()
         {
-            /*Program.GameInputContext.Keyboards[0].KeyUp -= KeyUp;
-            Program.GameInputContext.Keyboards[0].KeyDown -= KeyDown;
-            Program.GameInputContext.Keyboards[0].KeyChar -= KeyChar;
-            Program.GameInputContext.Mice[0].MouseUp -= MouseUp;
-            Program.GameInputContext.Mice[0].MouseDown -= MouseDown;*/
         }
     }
 }

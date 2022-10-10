@@ -85,6 +85,7 @@ namespace Engine.Assets.Rendering
                 string shaderCode = await FileManager.LoadStringASCII($"{_path}.glsl");
                 var processor = new ShaderProcessor();
                 await processor.CreateShaders(_path, shaderCode, CreateShaders);
+                Passes = processor.Passes.ToList();
             }
             else
             {
