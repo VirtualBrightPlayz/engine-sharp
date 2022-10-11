@@ -20,6 +20,7 @@ namespace Engine.Assets
         public static ResourceFactory GraphicsFactory => RenderingGlobals.GameGraphics.ResourceFactory;
         public static List<Resource> AllResources { get; private set; } = new List<Resource>();
         private static List<Resource> StagedResources = new List<Resource>();
+        private static List<Resource> UnStagedResources = new List<Resource>();
         public static Dictionary<string, ImFontPtr> Fonts { get; private set; } = new Dictionary<string, ImFontPtr>();
         private readonly static object _poolLock = new object();
         private static bool isBusy = false;
@@ -30,12 +31,15 @@ namespace Engine.Assets
             lock (_poolLock)
             {
                 AllResources.AddRange(StagedResources);
+                AllResources.RemoveAll(x => UnStagedResources.Contains(x));
                 StagedResources.Clear();
+                UnStagedResources.Clear();
             }
         }
 
         public static async Task ReCreateAll()
         {
+            // var res = AllResources.ToArray();
             foreach (var item in AllResources)
             {
                 item.HasBeenInitialized = false;
@@ -289,7 +293,8 @@ namespace Engine.Assets
             lock (_poolLock)
             {
                 resource.Dispose();
-                AllResources.Remove(resource);
+                UnStagedResources.Add(resource);
+                // AllResources.Remove(resource);
             }
         }
 
@@ -301,6 +306,13 @@ namespace Engine.Assets
                 {
                     item.Dispose();
                 }
+            }
+        }
+
+        public static void Clear()
+        {
+            lock (_poolLock)
+            {
                 AllResources.Clear();
             }
         }

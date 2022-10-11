@@ -50,6 +50,7 @@ public static class DesktopEntry
                 await ResourceManager.ReCreateAll();
             if (RenderingGlobals.NextFrameBackend.HasValue)
             {
+                ResourceManager.UnloadAll();
                 RenderingGlobals.DisposeGameGraphics();
                 RenderingGlobals.InitGameGraphics(RenderingGlobals.NextFrameBackend.Value);
                 await ResourceManager.ReCreateAll();

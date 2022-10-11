@@ -53,6 +53,8 @@ namespace Engine.Assets.Audio
 
         public static void DisposeGameAudio()
         {
+            ALC10.alcDestroyContext(GameAudioCtx);
+            CheckALError("Init");
         }
     #else
         public static AL GameAudio { get; private set; }

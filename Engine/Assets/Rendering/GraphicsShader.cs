@@ -154,7 +154,7 @@ namespace Engine.Assets.Rendering
             switch (backend)
             {
                 case GraphicsBackend.Direct3D11:
-                    return CrossCompileTarget.HLSL;
+                    // return CrossCompileTarget.HLSL;
                 case GraphicsBackend.Vulkan:
                 case GraphicsBackend.OpenGL:
                     return CrossCompileTarget.GLSL;
@@ -170,6 +170,11 @@ namespace Engine.Assets.Rendering
         public override void Dispose()
         {
             base.Dispose();
+            foreach (var res in _reflResourceLayouts)
+            {
+                if (res != null && !res.IsDisposed)
+                    res.Dispose();
+            }
             foreach (var shaderSet in _shaders)
             {
                 if (shaderSet.Value != null)

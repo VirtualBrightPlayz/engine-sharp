@@ -574,6 +574,11 @@ namespace Engine.Assets.Models
             if (HasBeenInitialized)
                 return;
             await base.ReCreate();
+            foreach (var buf in CompoundBuffers)
+            {
+                ResourceManager.Unload(buf);
+            }
+            CompoundBuffers.Clear();
             await Load();
             for (int i = 0; i < _meshes.Length; i++)
             {

@@ -284,9 +284,13 @@ namespace Engine.Assets.Audio
         {
             base.Dispose();
         #if WEBGL || !LEGACY_START
-            uint v = _handle.Value;
-            AL10.alDeleteBuffers(1, ref v);
-            AudioGlobals.CheckALError();
+            return;
+            if (_handle.HasValue)
+            {
+                uint v = _handle.Value;
+                AL10.alDeleteBuffers(1, ref v);
+                AudioGlobals.CheckALError();
+            }
         #else
             _al.DeleteBuffer(_handle.Value);
         #endif
