@@ -414,6 +414,10 @@ namespace Engine.Assets.Models
             {
                 extHint = "gltf2";
             }
+            else
+            {
+                extHint = Path.GetExtension(path);
+            }
             int vertexCount = 0;
             List<Vector3> colPos = new List<Vector3>();
             List<uint> colTris = new List<uint>();

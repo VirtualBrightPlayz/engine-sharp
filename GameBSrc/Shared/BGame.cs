@@ -144,6 +144,8 @@ namespace GameBSrc
             soundEmitter.Stop();
 
             await SpawnFloors(201);
+            await CreateEnemy(0f, 0f, 0f, "mental.jpg");
+            ClearEnemy();
             SpawnPlayer();
             Music.Play();
         }
