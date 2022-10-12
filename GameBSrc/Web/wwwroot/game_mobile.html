@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> -->
+    <title>SCP-087-B</title>
+    <base href="/087b/" />
+</head>
+
+<body style="background-color: black; margin: 0; height: 100%; padding: 0;">
+    <canvas width="600" height="400" style="margin: 0; padding: 0; position: absolute; width: 100%; height: 100%;" id="canvas" onclick="runEngine();"></canvas>
+
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+
+    <script type="text/javascript">
+        var canvas = document.getElementById("canvas");
+        var Module = {
+            canvas: canvas,
+            onRuntimeInitialized: () => {
+                console.log("onRuntimeInitialized");
+            },
+        };
+
+        window.init = () => {
+            window.requestAnimationFrame(frame);
+            return 0;
+        };
+
+        window.lockMouse = (val) => {
+            if (val)
+                canvas.requestPointerLock();
+            else
+                document.exitPointerLock();
+        };
+
+        window.getHttpPrefix = () => {
+            return window.location.protocol + "//" + window.location.host + "/087b/";
+        };
+
+        window.getHttpContent = (path) => {
+            var request = new XMLHttpRequest();
+            request.open("GET", path, false);
+            request.send(null);
+            return request.response;
+        };
+
+        window.engineError = (e) => {
+            console.error(e);
+            alert("Engine crashed. See the console for details.");
+        };
+
+        function frame(time) {
+            DotNet.invokeMethodAsync("Web", "Frame", time).then(code => {
+            }).catch(err => {
+                console.error(err);
+                alert("Engine crashed. See the console for details.");
+            });
+        }
+
+        function lockChangeAlert() {
+            if (!isRun)
+                return;
+            if (document.pointerLockElement !== canvas) {
+                DotNet.invokeMethod("Engine.WebGL", "OnMouseUnlocked");
+            }
+        }
+
+        var isRun = false;
+        var canRun = false;
+        function runEngine() {
+            if (isRun || !canRun)
+                return;
+            isRun = true;
+            console.log("Init...");
+            document.addEventListener('pointerlockchange', lockChangeAlert, false);
+            DotNet.invokeMethodAsync("Web", "Init").then(code => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                DotNet.invokeMethod("Web", "OnWindowResize", window.innerWidth, window.innerHeight);
+            }).catch(err => {
+                console.error(err);
+                alert("Engine crashed. See the console for details.");
+            });
+        }
+
+        function sendKeyDown(k) {
+            if (!isRun)
+                return;
+            DotNet.invokeMethod("Engine.WebGL", "OnKeyDown", k);
+        }
+
+        function sendKeyUp(k) {
+            if (!isRun)
+                return;
+            DotNet.invokeMethod("Engine.WebGL", "OnKeyUp", k);
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            Blazor.start().then(() => {
+                canRun = true;
+            });
+        });
+
+        canvas.addEventListener("mousedown", ev => {
+            if (!isRun)
+                return;
+            DotNet.invokeMethod("Engine.WebGL", "OnMouseDown", ev.buttons);
+            ev.preventDefault();
+        });
+
+        canvas.addEventListener("mouseup", ev => {
+            if (!isRun)
+                return;
+            DotNet.invokeMethod("Engine.WebGL", "OnMouseUp", ev.buttons);
+            ev.preventDefault();
+        });
+
+        canvas.addEventListener("contextmenu", ev => {
+            if (!isRun)
+                return;
+            ev.preventDefault();
+        });
+
+        window.addEventListener("resize", ev => {
+            if (!isRun)
+                return;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            DotNet.invokeMethod("Web", "OnWindowResize", window.innerWidth, window.innerHeight);
+        });
+
+        canvas.addEventListener("mousemove", ev => {
+            if (!isRun)
+                return;
+            DotNet.invokeMethod("Engine.WebGL", "OnMousePosition", ev.offsetX, ev.offsetY);
+            DotNet.invokeMethod("Engine.WebGL", "OnMouseMove", -ev.movementX, -ev.movementY);
+        });
+
+        document.addEventListener("keydown", ev => {
+            if (!isRun)
+                return;
+            DotNet.invokeMethod("Engine.WebGL", "OnKeyDown", ev.key);
+            ev.preventDefault();
+        });
+
+        document.addEventListener("keyup", ev => {
+            if (!isRun)
+                return;
+            DotNet.invokeMethod("Engine.WebGL", "OnKeyUp", ev.key);
+            ev.preventDefault();
+        });
+    </script>
+
+    <style>
+        .btn {
+            position: relative;
+            /* width: 25%; */
+            /* height: 25%; */
+            border: none;
+            /* padding: 0; */
+            margin: 2px;
+        }
+    </style>
+
+    <!-- <button onclick="runEngine();">Start</button> -->
+    <div style="position: absolute; bottom: 10%; left: 10%;">
+        <button class="btn" style="left: 25%;" onmousedown="sendKeyDown('w');" onmouseup="sendKeyUp('w');">W</button><br/><button class="btn" onmousedown="sendKeyDown('a');" onmouseup="sendKeyUp('a');">A</button><button class="btn" onmousedown="sendKeyDown('s');" onmouseup="sendKeyUp('s');">S</button><button class="btn" onmousedown="sendKeyDown('d');" onmouseup="sendKeyUp('d');">D</button>
+    </div>
+</body>
+</html>

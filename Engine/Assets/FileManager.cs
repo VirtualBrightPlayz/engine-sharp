@@ -28,7 +28,7 @@ namespace Engine.Assets
             Console.WriteLine(HttpPrefix + "/" + path);
             using var client = new HttpClient();
             using var msg = new HttpRequestMessage(HttpMethod.Get, HttpPrefix + "/" + path);
-            msg.SetBrowserRequestCache(BrowserRequestCache.NoCache);
+            // msg.SetBrowserRequestCache(BrowserRequestCache.NoCache);
             msg.SetBrowserResponseStreamingEnabled(false);
             // msg.SetBrowserRequestOption();
             // msg.SetBrowserRequestCache(BrowserRequestCache.Reload);
