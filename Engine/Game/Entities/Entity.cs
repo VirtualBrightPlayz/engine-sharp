@@ -52,6 +52,16 @@ namespace Engine.Game.Entities
             return Task.CompletedTask;
         }
 
+        public virtual Task ReCreate()
+        {
+            return Task.CompletedTask;
+        }
+
+        public virtual Task Unload()
+        {
+            return Task.CompletedTask;
+        }
+
         public virtual void Dispose()
         {
         }

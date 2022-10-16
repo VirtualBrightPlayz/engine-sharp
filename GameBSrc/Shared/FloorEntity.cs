@@ -145,6 +145,19 @@ namespace GameBSrc
             hasRendered = true;
         }
 
+        public override async Task ReCreate()
+        {
+            await base.ReCreate();
+            floorTexture.HasBeenInitialized = false;
+            await floorTexture.ReCreate();
+        }
+
+        public override async Task Unload()
+        {
+            await base.Unload();
+            floorTexture.Dispose();
+        }
+
         public override async Task Draw(Renderer renderer, double dt)
         {
             if ((renderer.ViewPosition - Position).LengthSquared() > 225f)

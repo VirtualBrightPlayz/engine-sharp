@@ -123,6 +123,8 @@ namespace Engine.Assets.Rendering
 
         public void SetUniforms(uint setId, CompoundBuffer buffer)
         {
+            if (buffer.InternalResourceSet == null || buffer.InternalResourceSet.IsDisposed)
+                throw new Exception($"Material.SetUniforms: {buffer.Name}'s InternalResourceSet is null/disposed!");
             if (_compoundBuffers.ContainsKey(setId))
                 _compoundBuffers[setId] = buffer;
             else
@@ -366,6 +368,10 @@ namespace Engine.Assets.Rendering
                 resSet.Value.Dispose();
             }
             _resourceSets.Clear();
+            foreach (var cmp in _compoundBuffers)
+            {
+                ResourceManager.Unload(cmp.Value);
+            }
             _compoundBuffers.Clear();
             foreach (var item in _pipelines)
             {

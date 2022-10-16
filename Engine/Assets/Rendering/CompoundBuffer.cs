@@ -29,8 +29,8 @@ namespace Engine.Assets.Rendering
 
         public override async Task ReCreate()
         {
-            // if (HasBeenInitialized)
-            //     return;
+            if (HasBeenInitialized)
+                return;
             await base.ReCreate();
             if (InternalResourceSet != null && !InternalResourceSet.IsDisposed)
                 InternalResourceSet.Dispose();
@@ -52,7 +52,14 @@ namespace Engine.Assets.Rendering
         public override void Dispose()
         {
             base.Dispose();
-            InternalResourceSet.Dispose();
+            if (InternalResourceSet != null && !InternalResourceSet.IsDisposed)
+                InternalResourceSet.Dispose();
+            InternalResourceSet = null;
+            InternalShader.Dispose();
+            foreach (var item in Bindables)
+            {
+                item.Dispose();
+            }
         }
     }
 }

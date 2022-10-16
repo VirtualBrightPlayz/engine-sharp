@@ -87,7 +87,7 @@ namespace Engine.Assets.Rendering
         private string[] vertexCode;
         private string[] fragmentCode;
 
-        public async Task CreateShaders(string _path, string shaderCode, Action<string, string, string, string> callback)
+        public async Task CreateShaders(string _path, string shaderCode, Func<string, string, string, string, Task> callback)
         {
         #if WEBGL
             const string version = "#version 300 es";
@@ -155,7 +155,7 @@ namespace Engine.Assets.Rendering
                 (string[] vert, string[] frag) = await ProccessShaderCode(_path, shaderCode, pass);
                 vertexShaderOutput.AddRange(vert);
                 fragmentShaderOutput.AddRange(frag);
-                callback?.Invoke(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), pass, _path);
+                await callback?.Invoke(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), pass, _path);
             }
         }
 

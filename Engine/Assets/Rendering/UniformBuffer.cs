@@ -85,6 +85,7 @@ namespace Engine.Assets.Rendering
             base.Dispose();
             if (InternalBuffer != null)
                 InternalBuffer.Dispose();
+            InternalBuffer = null;
         }
     }
 }

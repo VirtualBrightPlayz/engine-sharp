@@ -53,6 +53,7 @@ namespace Engine.Assets.Rendering
             }, api, out win, out gfx);
             Window = win;
             GameGraphics = gfx;
+            APIBackend = gfx.BackendType;
         #endif
             GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
         }
@@ -76,10 +77,13 @@ namespace Engine.Assets.Rendering
         public static void DisposeGameGraphics()
         {
             GameImGui.Dispose();
+            GameImGui = null;
         #if !WEBGL
             Window.Close();
+            Window = null;
         #endif
             GameGraphics.Dispose();
+            GameGraphics = null;
         }
     }
 }

@@ -91,7 +91,7 @@ namespace Engine.Assets.Rendering
             {
                 string vertCode = await FileManager.LoadStringASCII($"{_path}.vert");
                 string fragCode = await FileManager.LoadStringASCII($"{_path}.frag");
-                CreateShaders(vertCode, fragCode, "main", _path);
+                await CreateShaders(vertCode, fragCode, "main", _path);
             }
         #endif
             _reflResourceLayouts.Clear();
@@ -119,7 +119,7 @@ namespace Engine.Assets.Rendering
             return _compileResult.ResourceLayouts[(int)index].Elements[0].Name;
         }
 
-        private async void CreateShaders(string vertCode, string fragCode, string pass, string pa)
+        private async Task CreateShaders(string vertCode, string fragCode, string pass, string pa)
         {
         #if WEBGL
             Console.WriteLine(vertCode);

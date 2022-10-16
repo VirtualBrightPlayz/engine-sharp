@@ -290,6 +290,7 @@ namespace Engine.Assets.Audio
                 uint v = _handle.Value;
                 AL10.alDeleteBuffers(1, ref v);
                 AudioGlobals.CheckALError();
+                _handle = null;
             }
         #else
             _al.DeleteBuffer(_handle.Value);

@@ -29,13 +29,14 @@ namespace Engine.Assets.Audio
         private static IntPtr GameAudioDevice;
         private static IntPtr GameAudioCtx;
 
-        public static void CheckALError(string id = "")
+        public static void CheckALError(string id = "", bool errThrow = true)
         {
             int err = AL10.alGetError();
             if (err != AL10.AL_NO_ERROR)
             {
                 Console.WriteLine($"AL AudioError: 0x{err.ToString("X4")} at {id}");
-                throw new InvalidOperationException($"AL AudioError: 0x{err.ToString("X4")} at {id}");
+                if (errThrow)
+                    throw new InvalidOperationException($"AL AudioError: 0x{err.ToString("X4")} at {id}");
             }
         }
 
@@ -54,7 +55,7 @@ namespace Engine.Assets.Audio
         public static void DisposeGameAudio()
         {
             ALC10.alcDestroyContext(GameAudioCtx);
-            CheckALError("Init");
+            CheckALError("Dispose", false);
         }
     #else
         public static AL GameAudio { get; private set; }

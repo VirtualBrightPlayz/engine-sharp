@@ -35,7 +35,8 @@ public static class DesktopEntry
         RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = await ResourceManager.CreateRenderer("MainRenderer");
         Renderer.Current = renderer;
-        renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain));
+        RenderTexture2D mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
+        renderer.SetRenderTarget(mainRT);
         await renderer.InternalRenderTexture.ReCreate();
         AudioGlobals.InitGameAudio();
         MiscGlobals.InitGameMisc();
@@ -47,17 +48,30 @@ public static class DesktopEntry
         {
             MiscGlobals.Snapshot = RenderingGlobals.Window.PumpEvents();
             if (MiscGlobals.ReCreateAllNextFrame)
+            {
+                ResourceManager.UnloadAll();
                 await ResourceManager.ReCreateAll();
+                ResourceManager.Update();
+            }
             if (RenderingGlobals.NextFrameBackend.HasValue)
             {
                 ResourceManager.UnloadAll();
+                await game.Unload();
+                mainRT.Dispose();
+                // AudioGlobals.DisposeGameAudio();
                 RenderingGlobals.DisposeGameGraphics();
                 RenderingGlobals.InitGameGraphics(RenderingGlobals.NextFrameBackend.Value);
+                // AudioGlobals.InitGameAudio();
+                Renderer.Current = renderer;
+                mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
+                renderer.SetRenderTarget(mainRT);
+                await game.ReCreate();
                 await ResourceManager.ReCreateAll();
+                ResourceManager.Update();
             }
             MiscGlobals.ReCreateAllNextFrame = false;
             RenderingGlobals.NextFrameBackend = null;
-            FrameLoop();
+            await FrameLoop();
             if (!RenderingGlobals.Window.Exists)
                 break;
         }
@@ -67,7 +81,7 @@ public static class DesktopEntry
         return 0;
     }
 
-    public static async void FrameLoop()
+    public static async Task FrameLoop()
     {
         try
         {

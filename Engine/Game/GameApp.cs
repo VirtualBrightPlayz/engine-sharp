@@ -59,6 +59,22 @@ namespace Engine.Game
                 Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, dispatcher);
         }
 
+        public virtual async Task ReCreate()
+        {
+            foreach (var ent in Entities.ToArray())
+            {
+                await ent.ReCreate();
+            }
+        }
+
+        public virtual async Task Unload()
+        {
+            foreach (var ent in Entities.ToArray())
+            {
+                await ent.Unload();
+            }
+        }
+
         public virtual void Dispose()
         {
             dispatcher.Dispose();

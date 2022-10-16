@@ -56,8 +56,8 @@ namespace Engine.Assets.Textures
 
         public override async Task ReCreate()
         {
-            if (HasBeenInitialized)
-                return;
+            // if (HasBeenInitialized)
+            //     return;
             await base.ReCreate();
             if (IsRaw)
                 // throw new NotSupportedException($"Can't clone raw framebuffers!");
@@ -68,7 +68,6 @@ namespace Engine.Assets.Textures
             FramebufferDescription fbDesc = new FramebufferDescription(null, ColorTex);
             InternalFramebuffer = ResourceManager.GraphicsFactory.CreateFramebuffer(fbDesc);
             UpdateSamplerInfo(Info);
-            return;
         }
 
         public override Task<Resource> Clone(string cloneName)
@@ -103,10 +102,17 @@ namespace Engine.Assets.Textures
             base.Dispose();
             if (IsRaw)
                 return;
-            // InternalSampler.Dispose();
-            RenderingGlobals.GameImGui.RemoveImGuiBinding(ColorTex);
-            InternalFramebuffer.Dispose();
-            ColorTex.Dispose();
+            if (InternalSampler != null && !InternalSampler.IsDisposed)
+                InternalSampler.Dispose();
+            InternalSampler = null;
+            if (RenderingGlobals.GameImGui != null && ColorTex != null && ColorTex.IsDisposed)
+                RenderingGlobals.GameImGui.RemoveImGuiBinding(ColorTex);
+            if (InternalFramebuffer != null && !InternalFramebuffer.IsDisposed)
+                InternalFramebuffer.Dispose();
+            InternalFramebuffer = null;
+            if (ColorTex != null && !ColorTex.IsDisposed)
+                ColorTex.Dispose();
+            ColorTex = null;
         }
     }
 }

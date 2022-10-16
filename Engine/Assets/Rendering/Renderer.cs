@@ -50,11 +50,11 @@ namespace Engine.Assets.Rendering
             Name = name;
             // ReCreate();
             ViewMatrix = Matrix4x4.Identity;
-            ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
+            // ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
             // ViewMatrixResource.UploadData(ViewMatrix);
-            ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
+            // ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
             // ProjMatrixResource.UploadData(ProjectionMatrix);
-            WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
+            // WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
             // WorldInfoResource.UploadData(ViewPosition);
         }
 
@@ -65,13 +65,22 @@ namespace Engine.Assets.Rendering
             await base.ReCreate();
             if (_commandList != null && !_commandList.IsDisposed)
                 _commandList.Dispose();
+            /*
             if (ViewMatrixResource != null)
                 await ViewMatrixResource.ReCreate();
             if (ProjMatrixResource != null)
                 await ProjMatrixResource.ReCreate();
             if (WorldInfoResource != null)
                 await WorldInfoResource.ReCreate();
+            */
+            ViewMatrixResource = await ResourceManager.CreateUniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
+            ProjMatrixResource = await ResourceManager.CreateUniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
+            WorldInfoResource = await ResourceManager.CreateUniformBuffer("WorldInfo", (uint)4 * 4);
             foreach (var item in MatrixBuffers)
+            {
+                await item.Value.ReCreate();
+            }
+            foreach (var item in WorldInfoBuffers)
             {
                 await item.Value.ReCreate();
             }
@@ -90,6 +99,7 @@ namespace Engine.Assets.Rendering
                 0, 1, 2,
                 3, 2, 1,
             };
+            BlitMesh.Indices.Clear();
             BlitMesh.Indices.AddRange(inds);
             BlitMesh.UploadData(blitVertices);
         }
@@ -173,10 +183,22 @@ namespace Engine.Assets.Rendering
                 cbuf.Value.Dispose();
             }
             MatrixBuffers.Clear();
-            ViewMatrixResource.Dispose();
-            ProjMatrixResource.Dispose();
-            WorldInfoResource.Dispose();
+            foreach (var item in WorldInfoBuffers)
+            {
+                item.Value.Dispose();
+            }
+            WorldInfoBuffers.Clear();
+            // ViewMatrixResource.Dispose();
+            ResourceManager.Unload(ViewMatrixResource);
+            ViewMatrixResource = null;
+            ResourceManager.Unload(ProjMatrixResource);
+            // ProjMatrixResource.Dispose();
+            ProjMatrixResource = null;
+            ResourceManager.Unload(WorldInfoResource);
+            // WorldInfoResource.Dispose();
+            WorldInfoResource = null;
             _commandList.Dispose();
+            _commandList = null;
         }
     }
 }

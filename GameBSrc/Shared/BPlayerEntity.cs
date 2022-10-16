@@ -132,7 +132,7 @@ namespace GameBSrc
         {
             await base.Tick(dt);
             UpdateLookRotation();
-            UpdateMovement(dt);
+            await UpdateMovement(dt);
             if (MathF.Abs(Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear.Y) > 4f) // TODO: fix this
             {
                 BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
@@ -188,10 +188,10 @@ namespace GameBSrc
             MarkTransformDirty(TransformDirtyFlags.Rotation);
         }
 
-        public async void UpdateMovement(double dt)
+        public async Task UpdateMovement(double dt)
         {
             if (Input.IsKeyPressed(Key.K))
-                BGame.Instance.DebugMode = Input.IsMouseLocked;
+                BGame.Instance.DebugMode = !Input.IsMouseLocked;
 
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
             Vector2 inputDirection = Vector2.Zero;

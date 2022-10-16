@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Engine.Assets
 {
-    public abstract class Resource : IDisposable
+    public abstract class Resource //: IDisposable
     {
         public abstract bool IsValid { get; }
         public string Name { get; set; }
@@ -11,6 +11,7 @@ namespace Engine.Assets
         public virtual void Dispose()
         {
             Console.WriteLine($"Dispose {Name} ({GetType().Name})");
+            HasBeenInitialized = false;
         }
         public abstract Task<Resource> Clone(string cloneName);
         public virtual Task ReCreate()

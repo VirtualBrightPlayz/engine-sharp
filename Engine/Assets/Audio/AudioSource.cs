@@ -133,7 +133,6 @@ namespace Engine.Assets.Audio
 
         public override async Task ReCreate()
         {
-            return;
             if (HasBeenInitialized)
                 return;
             await base.ReCreate();
@@ -143,6 +142,7 @@ namespace Engine.Assets.Audio
                 uint v2 = _handle.Value;
                 AL10.alDeleteSources(1, ref v2);
                 AudioGlobals.CheckALError();
+                _handle = null;
             }
             AL10.alGenSources(1, out uint v);
             AudioGlobals.CheckALError();
@@ -234,6 +234,7 @@ namespace Engine.Assets.Audio
             uint v = _handle.Value;
             AL10.alDeleteSources(1, ref v);
             AudioGlobals.CheckALError();
+            _handle = null;
         #else
             _al.DeleteSource(_handle.Value);
         #endif

@@ -106,7 +106,7 @@ namespace Engine.Assets.Models
                 await GLTFLoadMeshes(_path);
         #if !WEBGL
             else
-                AssimpLoadMeshes(_path, _ogMaterial, _shouldAnimate);
+                await AssimpLoadMeshes(_path, _ogMaterial, _shouldAnimate);
         #endif
             LightUniform = await ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
             if (_shouldLoadMats)
@@ -407,7 +407,7 @@ namespace Engine.Assets.Models
             return false;
         }
 
-        private async void AssimpLoadMeshes(string path, Rendering.Material defMaterial, bool animate)
+        private async Task AssimpLoadMeshes(string path, Rendering.Material defMaterial, bool animate)
         {
             string extHint = null;
             if (Path.GetExtension(path).ToLower() == ".gltf")
@@ -583,6 +583,19 @@ namespace Engine.Assets.Models
                 ResourceManager.Unload(buf);
             }
             CompoundBuffers.Clear();
+            _boneIdByName.Clear();
+            if (_meshes != null)
+            {
+                for (int i = 0; i < _meshes.Length; i++)
+                {
+                    ResourceManager.Unload(_meshes[i]);
+                }
+            }
+            foreach (var buf in bonesUniforms)
+            {
+                ResourceManager.Unload(buf.Value);
+            }
+            bonesUniforms.Clear();
             await Load();
             for (int i = 0; i < _meshes.Length; i++)
             {
@@ -641,10 +654,24 @@ namespace Engine.Assets.Models
         public override void Dispose()
         {
             base.Dispose();
+            foreach (var buf in CompoundBuffers)
+            {
+                ResourceManager.Unload(buf);
+            }
+            CompoundBuffers.Clear();
+            _boneIdByName.Clear();
+            if (_meshes != null)
+            {
+                for (int i = 0; i < _meshes.Length; i++)
+                {
+                    ResourceManager.Unload(_meshes[i]);
+                }
+            }
             foreach (var buf in bonesUniforms)
             {
-                buf.Value.Dispose();
+                ResourceManager.Unload(buf.Value);
             }
+            bonesUniforms.Clear();
             _meshes = null;
         }
     }

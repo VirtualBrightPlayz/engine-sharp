@@ -22,13 +22,13 @@ namespace Engine.Assets
         private static List<Resource> StagedResources = new List<Resource>();
         private static List<Resource> UnStagedResources = new List<Resource>();
         public static Dictionary<string, ImFontPtr> Fonts { get; private set; } = new Dictionary<string, ImFontPtr>();
-        private readonly static object _poolLock = new object();
+        // private readonly static object _poolLock = new object();
         private static bool isBusy = false;
         public static bool IsBusy => FileManager.IsBusy;
 
         public static void Update()
         {
-            lock (_poolLock)
+            // lock (_poolLock)
             {
                 AllResources.AddRange(StagedResources);
                 AllResources.RemoveAll(x => UnStagedResources.Contains(x));
@@ -39,8 +39,8 @@ namespace Engine.Assets
 
         public static async Task ReCreateAll()
         {
-            // var res = AllResources.ToArray();
-            foreach (var item in AllResources)
+            var res = AllResources;//.ToArray();
+            foreach (var item in res)
             {
                 item.HasBeenInitialized = false;
             }
@@ -50,7 +50,7 @@ namespace Engine.Assets
                 item.Value.Destroy();
             }
             Fonts.Clear();
-            foreach (var item in AllResources)
+            foreach (var item in res)
             {
                 await item.ReCreate();
             }
@@ -86,11 +86,17 @@ namespace Engine.Assets
             {
                 if (AllResources.Any(x => x.Name == name && x is T))
                 {
-                    return AllResources.First(x => x.Name == name && x is T) as T;
+                    var y = AllResources.First(x => x.Name == name && x is T) as T;
+                    if (!y.HasBeenInitialized)
+                        await y.ReCreate();
+                    return y;
                 }
                 if (StagedResources.Any(x => x.Name == name && x is T))
                 {
-                    return StagedResources.First(x => x.Name == name && x is T) as T;
+                    var y = StagedResources.First(x => x.Name == name && x is T) as T;
+                    if (!y.HasBeenInitialized)
+                        await y.ReCreate();
+                    return y;
                 }
                 return null;
             }
@@ -158,7 +164,7 @@ namespace Engine.Assets
             {
                 StagedResources.Add(resource);
                 #if WEBGL
-                Update();
+                // Update();
                 #endif
             }
         }
@@ -290,7 +296,7 @@ namespace Engine.Assets
 
         public static void Unload(Resource resource)
         {
-            lock (_poolLock)
+            // lock (_poolLock)
             {
                 resource.Dispose();
                 UnStagedResources.Add(resource);
@@ -300,7 +306,7 @@ namespace Engine.Assets
 
         public static void UnloadAll()
         {
-            lock (_poolLock)
+            // lock (_poolLock)
             {
                 foreach (var item in AllResources)
                 {
@@ -311,7 +317,7 @@ namespace Engine.Assets
 
         public static void Clear()
         {
-            lock (_poolLock)
+            // lock (_poolLock)
             {
                 AllResources.Clear();
             }

@@ -374,8 +374,12 @@ namespace Engine.Assets.Models
                 InternalWorldBuffer.Dispose();
             if (InternalWorldUniform != null)
                 InternalWorldUniform.Dispose();
-            _vertexBuffer.Dispose();
-            _indexBuffer.Dispose();
+            if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
+                _vertexBuffer.Dispose();
+            _vertexBuffer = null;
+            if (_indexBuffer != null && !_indexBuffer.IsDisposed)
+                _indexBuffer.Dispose();
+            _indexBuffer = null;
         }
     }
 }
