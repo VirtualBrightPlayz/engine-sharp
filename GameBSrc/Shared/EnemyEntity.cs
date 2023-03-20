@@ -26,19 +26,18 @@ namespace GameBSrc
         {
             this.path = path;
             this.material = material;
-            // Create(path, material);
         }
 
-        public async Task Create()
+        public void Create()
         {
-            var mat = await ResourceManager.Clone<Material>($"{Name}_Material", material);
+            var mat = material.Clone<Material>($"{Name}_Material");
             // Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, material, path, false, true));
-            Model = await ResourceManager.LoadModel(Name, mat, path, false, true);
+            Model = new Model(Name, path, mat, false, true);
             Model.CompoundBuffers.Clear();
             Model.CompoundBuffers.Add(buffer);
         }
 
-        public override async Task Draw(Renderer renderer, double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
             /*if (!fog)
             {
@@ -53,15 +52,15 @@ namespace GameBSrc
             {
                 Model.AnimationTime -= endAnimTime - startAnimTime;
             }
-            await base.Draw(renderer, dt);
-            await Model.SetWorldMatrixDraw(renderer, WorldMatrix);
+            base.Draw(renderer, dt);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
             /*if (!fog)
             {
                 BGame.Instance.fogUniform.UploadData(renderer, BGame.Instance.fogData);
             }*/
         }
 
-        public override async Task Tick(double dt)
+        public override void Tick(double dt)
         {
             var pos = BGame.Instance.player.Position;
             pos = Position - pos;
@@ -72,7 +71,7 @@ namespace GameBSrc
             QuaternionEx.Transform(-Vector3.UnitZ, Rotation, out var forward);
             Position += forward * speed * 60f * (float)(dt * Game.TimeScale);
             MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation);
-            await base.Tick(dt);
+            base.Tick(dt);
         }
     }
 }

@@ -85,7 +85,6 @@ namespace Engine.Assets.Models
 
         public Mesh(string name, bool isBigMesh, Material material) : base(name)
         {
-            // InternalWorldBuffer = ResourceManager.CreateCompoundBuffer("WorldBuffer", material.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
             IsBigMesh = isBigMesh;
             SetMaterial(material);
             ReCreate();

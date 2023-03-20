@@ -28,7 +28,7 @@ namespace Engine.Game.Entities
 
         public virtual void Create()
         {
-            Model = new Model(Name, _path, _material, _material == null, true);
+            Model = new Model(Name, _path, _material, false, false);
             // Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
         }
 

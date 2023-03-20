@@ -15,9 +15,9 @@ namespace GameBSrc
     {
         public static ImGuiIOPtr _io;
         public static ImDrawListPtr _drawList;
-        public static async Task<ImFontPtr> Pretext(ImGuiRenderer renderer, float size)
+        public static ImFontPtr Pretext(ImGuiRenderer renderer, float size)
         {
-            var font = await ResourceManager.LoadImGuiFont(renderer, $"{BGame.Instance.Data.GFXDir}/Pretext.TTF", size);
+            var font = ResourceManager.LoadImGuiFont(renderer, $"{BGame.Instance.Data.GFXDir}/Pretext.TTF", size);
             return font;
         }
         public static Vector2 MenuScale = Vector2.One;

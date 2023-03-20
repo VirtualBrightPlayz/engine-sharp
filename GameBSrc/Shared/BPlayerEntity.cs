@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
-using System.Threading.Tasks;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuUtilities;
@@ -41,9 +40,9 @@ namespace GameBSrc
         private float prevFootstepTime;
         private float footstepTime;
         private AudioSource footstepSource;
-        private Task<AudioClip>[] footstepClips = new Task<AudioClip>[]
+        private AudioClip[] footstepClips = new AudioClip[]
         {
-            ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "step.wav")),
+            new AudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "step.wav")),
         };
         private Vector4 nextLightColor = Vector4.One;
         private int mouseSpeed = 10;
@@ -60,9 +59,9 @@ namespace GameBSrc
             bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Discrete), shape.Radius * 0.02f));
         }
 
-        public override async Task PreDraw(Renderer renderer, double dt)
+        public override void PreDraw(Renderer renderer, double dt)
         {
-            await base.PreDraw(renderer, dt);
+            base.PreDraw(renderer, dt);
             UpdateLook(dt);
             QuaternionEx.Transform(Vector3.UnitX, Rotation, out var localUnitX);
             viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob + localUnitX * leftRightBob;
@@ -73,16 +72,16 @@ namespace GameBSrc
             UpdateAudioPos();
         }
 
-        public override async Task Draw(Renderer renderer, double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
-            await base.Draw(renderer, dt);
+            base.Draw(renderer, dt);
             UpdateAudioPos();
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
             if (!Input.IsMouseLocked)
             {
                 ImGui.SetNextWindowPos(RenderingGlobals.ViewSize / 2f - RenderingGlobals.ViewSize / 3f);
                 ImGui.SetNextWindowSize(RenderingGlobals.ViewSize / 3f * 2f);
-                ImGui.PushFont(await UIExt.Pretext(RenderingGlobals.GameImGui, 12f));
+                ImGui.PushFont(UIExt.Pretext(RenderingGlobals.GameImGui, 12f));
                 if (ImGui.Begin("Settings", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove))
                 {
                     if (ImGui.Button("Resume"))
@@ -154,11 +153,11 @@ namespace GameBSrc
             AudioGlobals.OrientationRaw = orientation;
         }
 
-        public override async Task Tick(double dt)
+        public override void Tick(double dt)
         {
-            await base.Tick(dt);
+            base.Tick(dt);
             UpdateLookRotation();
-            await UpdateMovement(dt);
+            UpdateMovement(dt);
             if (MathF.Abs(Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear.Y) > 4f) // TODO: fix this
             {
                 BGame.Instance.killTimer = Math.Max(BGame.Instance.killTimer, 1);
@@ -220,7 +219,7 @@ namespace GameBSrc
             MarkTransformDirty(TransformDirtyFlags.Rotation);
         }
 
-        public async Task UpdateMovement(double dt)
+        public void UpdateMovement(double dt)
         {
             if (Input.IsKeyPressed(Key.K))
                 BGame.Instance.DebugMode = !Input.IsMouseLocked;
@@ -272,7 +271,7 @@ namespace GameBSrc
             float velLen = targetVelocity.Length();
             if (prevFootstepTime + footstepInterval < footstepTime)
             {
-                footstepSource.SetBuffer(await footstepClips[Random.Shared.Next(footstepClips.Length)]);
+                footstepSource.SetBuffer(footstepClips[Random.Shared.Next(footstepClips.Length)]);
                 footstepSource.Play();
                 prevFootstepTime = footstepTime;
             }

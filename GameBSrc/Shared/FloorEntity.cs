@@ -39,9 +39,9 @@ namespace GameBSrc
         }
 
         public const string CubePath = "Shaders/cube.gltf";
-        public string DiffusePath => Path.Combine(BGame.Instance.Data.GFXDir, "sign.jpg");
+        public static string DiffusePath => Path.Combine(BGame.Instance.Data.GFXDir, "sign.jpg");
         public const string MarkerName = "FloorMarker";
-        public Task<Texture2D> DiffuseTexture => ResourceManager.LoadTexture(DiffusePath);
+        public static Texture2D DiffuseTexture = new Texture2D(DiffusePath);
 
         public RenderTexture2D floorTexture;
         public Renderer floorTextureRenderer;
@@ -60,22 +60,19 @@ namespace GameBSrc
             // Create();
         }
 
-        public override async Task Create(bool createStatic)
+        public override void Create(bool createStatic)
         {
-            floorTextureRenderer = await ResourceManager.CreateRenderer($"Floor_{FloorNumber}");
+            floorTextureRenderer = new Renderer($"Floor_{FloorNumber}");
 
             floorTexture = new RenderTexture2D($"Floor_{FloorNumber}", TexSize, TexSize);
-            await floorTexture.ReCreate();
-            // floorTextureUIRenderer = new ImGuiRenderer(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
-            // floorTextureUIRenderer = RenderingGlobals.GameImGui;
-            // await RenderFloorTexture();
-            cubeMat = await ResourceManager.CreateMaterial($"{MarkerName}_{FloorNumber}", await BGame.Instance.Shader);
-            cubeBuffer = await ResourceManager.CreateCompoundBuffer($"{DiffusePath}_{FloorNumber}", cubeMat.Shader, UniformConsts.DiffuseTextureSet, floorTexture, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
+            floorTexture.ReCreate();
+            cubeMat = new Material($"{MarkerName}_{FloorNumber}", BGame.Instance.Shader);
+            cubeBuffer = new CompoundBuffer($"{DiffusePath}_{FloorNumber}", cubeMat.Shader, UniformConsts.DiffuseTextureSet, floorTexture, Texture2D.DefaultWhite, Texture2D.DefaultNormal);
             cubeMat.SetUniforms(UniformConsts.DiffuseTextureSet, cubeBuffer);
 
             // /*
             Cube = new ModelEntity($"{MarkerName}_{FloorNumber}", CubePath, cubeMat);
-            await Cube.Create();
+            Cube.Create();
             Cube.Model.CompoundBuffers.Clear();
             Cube.Model.CompoundBuffers.Add(cubeBuffer);
             Cube.Scale = Vector3.One * 0.25f;
@@ -87,21 +84,21 @@ namespace GameBSrc
             BGame.Instance.Entities.Add(Cube);
             // */
 
-            await base.Create(false);
+            base.Create(createStatic);
         }
 
-        public async Task RenderFloorTexture()
+        public void RenderFloorTexture()
         {
             // floorTextureUIRenderer = new ImGuiRenderer(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
             floorTextureUIRenderer = RenderingGlobals.GameImGui;
             RenderingGlobals.ImGuiSetTarget(floorTexture);
-            var font = await UIExt.Pretext(floorTextureUIRenderer, (int)(TexSize / 4f));
+            var font = UIExt.Pretext(floorTextureUIRenderer, (int)(TexSize / 4f));
             // if (!hasRendered)
                 // floorTextureUIRenderer.RecreateFontDeviceTexture();
             floorTextureRenderer.SetRenderTarget(floorTexture);
             floorTextureRenderer.Begin();
             floorTextureRenderer.Clear();
-            floorTextureRenderer.Blit(await DiffuseTexture);
+            floorTextureRenderer.Blit(DiffuseTexture);
             floorTextureUIRenderer.Update(0f, MiscGlobals.GameInputHandler);
             UIExt.BeginDraw();
             UIExt.TextLeft(font, TexSize / 4f, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
@@ -116,7 +113,7 @@ namespace GameBSrc
             base.MarkTransformDirty(flags);
         }
 
-        public override async Task Tick(double dt)
+        public override void Tick(double dt)
         {
             bool isVisible = (Renderer.Current.ViewPosition - Position).LengthSquared() > 225f;
             if (staticHandle.HasValue && isVisible)
@@ -128,31 +125,31 @@ namespace GameBSrc
             {
                 staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
             }
-            await base.Tick(dt);
+            base.Tick(dt);
             if (!hasRendered)
-                await RenderFloorTexture();
+                RenderFloorTexture();
             hasRendered = true;
         }
 
-        public override async Task ReCreate()
+        public override void ReCreate()
         {
-            await base.ReCreate();
+            base.ReCreate();
             floorTexture.HasBeenInitialized = false;
-            await floorTexture.ReCreate();
+            floorTexture.ReCreate();
             hasRendered = false;
         }
 
-        public override async Task Unload()
+        public override void Unload()
         {
-            await base.Unload();
+            base.Unload();
             floorTexture.Dispose();
         }
 
-        public override async Task Draw(Renderer renderer, double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
             if ((renderer.ViewPosition - Position).LengthSquared() > 225f)
                 return;
-            await base.Draw(renderer, dt);
+            base.Draw(renderer, dt);
         }
 
         public override void Dispose()

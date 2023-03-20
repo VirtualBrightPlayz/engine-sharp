@@ -29,6 +29,11 @@ namespace Engine.Assets
             Console.WriteLine($"Clone {Name} ({GetType().Name})");
             return CloneInternal(cloneName);
         }
+        public T Clone<T>(string cloneName) where T : Resource
+        {
+            Console.WriteLine($"Clone {Name} ({GetType().Name})");
+            return (T)CloneInternal(cloneName);
+        }
         public void ReCreate()
         {
             if (HasBeenInitialized)

@@ -108,6 +108,7 @@ namespace Engine.Assets.Audio
             AudioGlobals.CheckALError("gen sources");
             _handle = v;
             SetDefaultParameters();
+            // ReCreate();
         }
 
         protected override void ReCreateInternal()
@@ -159,12 +160,8 @@ namespace Engine.Assets.Audio
         {
             AudioBuffer = buffer;
             Stop();
-        #if WEBGL || !LEGACY_START
             AL10.alSourcei(_handle.Value, AL10.AL_BUFFER, (int)buffer.Handle);
             AudioGlobals.CheckALError();
-        #else
-            _al.SetSourceProperty(_handle.Value, SourceInteger.Buffer, buffer.Handle);
-        #endif
         }
 
         public void SetDefaultParameters()

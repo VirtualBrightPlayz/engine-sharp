@@ -27,8 +27,7 @@ namespace Engine.Assets.Audio
 
         public AudioClip(string path) : base(path)
         {
-            Name = path;
-            // Create(path);
+            ReCreate();
         }
 
         public void Create(string path)

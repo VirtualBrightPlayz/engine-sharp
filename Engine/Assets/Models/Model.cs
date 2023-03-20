@@ -95,13 +95,14 @@ namespace Engine.Assets.Models
             _shouldLoadMats = loadMaterials;
             _shouldAnimate = animate;
             InternalMaterials = new List<Rendering.Material>();
+            ReCreate();
         }
 
         private void Load()
         {
-            if (_path.ToLower().EndsWith(".glb"))
-                GLTFLoadMeshes(_path);
-            else
+            // if (_path.ToLower().EndsWith(".glb"))
+                // GLTFLoadMeshes(_path);
+            // else
                 AssimpLoadMeshes(_path, _ogMaterial, _shouldAnimate);
             LightUniform = new UniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
             if (_shouldLoadMats)

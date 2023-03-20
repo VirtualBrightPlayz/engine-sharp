@@ -29,7 +29,7 @@ namespace Engine.Game.Entities
 
         public virtual void Create(bool createStatic)
         {
-            Model = new Model(Name, _path, _material, _material == null, false);
+            Model = new Model(Name, _path, _material, true, false);
             List<Triangle> tris = new List<Triangle>();
             for (int i = 0; i < Model.CollisionTriangles.Length - 2; i+=3)
             {

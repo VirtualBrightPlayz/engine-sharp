@@ -75,18 +75,18 @@ namespace Engine.Assets
         public static ImFontPtr LoadImGuiFont(ImGuiRenderer renderer, string path, float size = 24f)
         {
             string path2 = path + "_size" + size;
-            if (RenderingGlobals.GameImGui != renderer)
-                return null;
+            // if (RenderingGlobals.GameImGui != renderer)
+                // return null;
             if (Fonts.Any(x => x.Value.Any(y => y.Key == path2)))
             {
                 renderer.RecreateFontDeviceTexture();
                 return Fonts.First(x => x.Value.Any(y => y.Key == path2)).Value[path2];
             }
             ImGuiIOPtr io = ImGui.GetIO();
-            using Stream str = FileManager.LoadStream(path);
-            byte[] data = null;//new byte[str.Length];
-            using StreamReader reader = new StreamReader(str, Encoding.ASCII);
-            data = Encoding.ASCII.GetBytes(reader.ReadToEnd());
+            // using Stream str = FileManager.LoadStream(path);
+            // byte[] data = null;//new byte[str.Length];
+            // using StreamReader reader = new StreamReader(str, Encoding.ASCII);
+            // data = Encoding.ASCII.GetBytes(reader.ReadToEnd());
             ImFontPtr font = null;
 
             font = io.Fonts.AddFontFromFileTTF(path, size);

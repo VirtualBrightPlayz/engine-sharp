@@ -23,25 +23,25 @@ public static class DesktopEntry
     private static TimeSpan startTime;
     private static TimeSpan currentTime => new TimeSpan(DateTime.UtcNow.Ticks);
 
-    public static void Main(string[] args)
+    public static int Main(string[] args)
     {
-        Init().GetAwaiter().GetResult();
+        return Init();
     }
 
-    public static async Task<int> Init()
+    public static int Init()
     {
         Console.WriteLine("Starting...");
         RenderingGlobals.InitGameGraphics(GraphicsBackend.Vulkan);
         RenderingGlobals.Window.Resized += OnWindowResize;
-        renderer = await ResourceManager.CreateRenderer("MainRenderer");
+        renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
         RenderTexture2D mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
         renderer.SetRenderTarget(mainRT);
-        await renderer.InternalRenderTexture.ReCreate();
+        renderer.InternalRenderTexture.ReCreate();
         AudioGlobals.InitGameAudio();
         MiscGlobals.InitGameMisc();
         game = new GameBSrc.BGame();
-        await game.Setup();
+        game.Setup();
         ResourceManager.Update();
         startTime = currentTime;
         while (!MiscGlobals.IsClosing)
@@ -50,13 +50,13 @@ public static class DesktopEntry
             if (MiscGlobals.ReCreateAllNextFrame)
             {
                 ResourceManager.UnloadAll();
-                await ResourceManager.ReCreateAll();
+                ResourceManager.ReCreateAll();
                 ResourceManager.Update();
             }
             if (RenderingGlobals.NextFrameBackend.HasValue)
             {
                 ResourceManager.UnloadAll();
-                await game.Unload();
+                game.Unload();
                 mainRT.Dispose();
                 // AudioGlobals.DisposeGameAudio();
                 RenderingGlobals.DisposeGameGraphics();
@@ -65,13 +65,13 @@ public static class DesktopEntry
                 Renderer.Current = renderer;
                 mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
                 renderer.SetRenderTarget(mainRT);
-                await game.ReCreate();
-                await ResourceManager.ReCreateAll();
+                game.ReCreate();
+                ResourceManager.ReCreateAll();
                 ResourceManager.Update();
             }
             MiscGlobals.ReCreateAllNextFrame = false;
             RenderingGlobals.NextFrameBackend = null;
-            await FrameLoop();
+            FrameLoop();
             if (!RenderingGlobals.Window.Exists)
                 break;
         }
@@ -81,13 +81,13 @@ public static class DesktopEntry
         return 0;
     }
 
-    public static async Task FrameLoop()
+    public static void FrameLoop()
     {
         try
         {
             if (!isBusy)
             {
-                await Frame((double)(currentTime - startTime).TotalSeconds);
+                Frame((double)(currentTime - startTime).TotalSeconds);
             }
         }
         catch (Exception e)
@@ -103,7 +103,7 @@ public static class DesktopEntry
         size = new Vector2(RenderingGlobals.Window.Width, RenderingGlobals.Window.Height);
     }
 
-    public static async Task<int> Frame(double time)
+    public static int Frame(double time)
     {
         isBusy = true;
         if (size.HasValue)
@@ -113,7 +113,7 @@ public static class DesktopEntry
             RenderingGlobals.Resize((uint)size?.X, (uint)size?.Y);
             renderer.InternalRenderTexture.Dispose();
             renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain));
-            await renderer.InternalRenderTexture.ReCreate();
+            renderer.InternalRenderTexture.ReCreate();
         }
         size = null;
         double delta = time - lastTime;
@@ -124,11 +124,11 @@ public static class DesktopEntry
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputHandler);
         renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.1f, 1000f);
         Renderer.Current = renderer;
-        await game.PreDraw(renderer, delta);
+        game.PreDraw(renderer, delta);
         renderer.Begin();
         renderer.Clear();
         Renderer.Current = renderer;
-        await game.Draw(renderer, delta);
+        game.Draw(renderer, delta);
         // DebugGlobals.DrawDebugWindow();
         ImGuiNET.ImGui.EndFrame();
         RenderingGlobals.GameImGui.Render(RenderingGlobals.GameGraphics, renderer.CommandList);
@@ -136,7 +136,7 @@ public static class DesktopEntry
         renderer.Submit();
         RenderingGlobals.GameGraphics.SwapBuffers();
         MiscGlobals.GameInputHandler.Update();
-        await game.Tick(delta);
+        game.Tick(delta);
         lastTime = time;
         isBusy = false;
         return 0;

@@ -33,7 +33,6 @@ namespace Propnado
         private bool wasEscPressed = false;
         public bool DebugMode = false;
         public Vector3 Velocity { get; set; } = Vector3.Zero;
-        private int mouseSpeed = 10;
         private bool posDeltaFlipFlop = false;
 
         public NoClipPlayer() : base("NoClipPlayer")
