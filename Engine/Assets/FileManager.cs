@@ -42,6 +42,9 @@ namespace Engine.Assets
             string filepath = Path.Combine(typeof(FileManager).Assembly.Location, "..", path);
             if (stream == null && File.Exists(filepath))
                 stream = File.OpenRead(filepath);
+            filepath = Path.Combine(Directory.GetCurrentDirectory(), path);
+            if (stream == null && File.Exists(filepath))
+                stream = File.OpenRead(filepath);
             return stream;
         #endif
         }

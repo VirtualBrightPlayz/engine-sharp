@@ -1,4 +1,5 @@
 using System.Numerics;
+using Engine.Assets.Textures;
 using Veldrid;
 using Veldrid.StartupUtilities;
 
@@ -58,13 +59,22 @@ namespace Engine.Assets.Rendering
             GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
         }
 
-        public static void ImGuiSetTarget(OutputDescription desc)
+        public static void ImGuiSetTarget(OutputDescription desc, int w, int h)
         {
-            return;
             if (desc.Equals(ImGuiOutput))
                 return;
             GameImGui.CreateDeviceResources(GameGraphics, desc);
+            GameImGui.WindowResized(w, h);
             ImGuiOutput = desc;
+        }
+
+        public static void ImGuiSetTarget(RenderTexture2D rt)
+        {
+            if (rt.InternalFramebuffer.OutputDescription.Equals(ImGuiOutput))
+                return;
+            GameImGui.CreateDeviceResources(GameGraphics, rt.InternalFramebuffer.OutputDescription);
+            GameImGui.WindowResized((int)rt.Width, (int)rt.Height);
+            ImGuiOutput = rt.InternalFramebuffer.OutputDescription;
         }
 
         public static void Resize(uint w, uint h)

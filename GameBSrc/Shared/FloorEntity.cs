@@ -73,9 +73,10 @@ namespace GameBSrc
             cubeBuffer = await ResourceManager.CreateCompoundBuffer($"{DiffusePath}_{FloorNumber}", cubeMat.Shader, UniformConsts.DiffuseTextureSet, floorTexture, await Texture2D.DefaultWhite, await Texture2D.DefaultNormal);
             cubeMat.SetUniforms(UniformConsts.DiffuseTextureSet, cubeBuffer);
 
-            /*
+            // /*
             Cube = new ModelEntity($"{MarkerName}_{FloorNumber}", CubePath, cubeMat);
             await Cube.Create();
+            Cube.Model.CompoundBuffers.Clear();
             Cube.Model.CompoundBuffers.Add(cubeBuffer);
             Cube.Scale = Vector3.One * 0.25f;
             if (FloorNumber % 2 == 0)
@@ -84,42 +85,30 @@ namespace GameBSrc
                 Cube.Position = new Vector3(7.4f+0.6f+0.24f, -FloorNumber*2f-0.6f, 7f-1.5f);
             Cube.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
             BGame.Instance.Entities.Add(Cube);
-            */
+            // */
 
             await base.Create(false);
         }
 
         public async Task RenderFloorTexture()
         {
-            return;
-            floorTextureUIRenderer = new ImGuiRenderer(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
-            ImGui.EndFrame();
+            // floorTextureUIRenderer = new ImGuiRenderer(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription, (int)floorTexture.InternalFramebuffer.Width, (int)floorTexture.InternalFramebuffer.Height);
+            floorTextureUIRenderer = RenderingGlobals.GameImGui;
+            RenderingGlobals.ImGuiSetTarget(floorTexture);
             var font = await UIExt.Pretext(floorTextureUIRenderer, (int)(TexSize / 4f));
             // if (!hasRendered)
                 // floorTextureUIRenderer.RecreateFontDeviceTexture();
-            // RenderingGlobals.ImGuiSetTarget(floorTexture.InternalFramebuffer.OutputDescription);
-            // floorTextureUIRenderer.CreateDeviceResources(RenderingGlobals.GameGraphics, floorTexture.InternalFramebuffer.OutputDescription);
             floorTextureRenderer.SetRenderTarget(floorTexture);
             floorTextureRenderer.Begin();
             floorTextureRenderer.Clear();
             floorTextureRenderer.Blit(await DiffuseTexture);
-            System.Console.WriteLine("J");
-            floorTextureUIRenderer.Update(0.01f, MiscGlobals.GameInputHandler);
-            System.Console.WriteLine("I");
+            floorTextureUIRenderer.Update(0f, MiscGlobals.GameInputHandler);
             UIExt.BeginDraw();
-            System.Console.WriteLine($"K {font.IsLoaded()} {font.FontSize}");
-            unsafe
-            {
-                System.Console.WriteLine($"fgkldj {new System.IntPtr(UIExt._drawList.NativePtr)}");
-            }
-            UIExt.TextLeft(font, font.FontSize, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
-            System.Console.WriteLine("H");
+            UIExt.TextLeft(font, TexSize / 4f, (Vector2.One * TexSize / 2f) - (Vector2.One * (TexSize / 8f)), Vector2.Zero, $"{FloorNumber}", UIExt.Color(new Vector4(0f, 0f, 0f, 1f)));
             ImGui.EndFrame();
             floorTextureUIRenderer.Render(RenderingGlobals.GameGraphics, floorTextureRenderer.CommandList);
             floorTextureRenderer.End();
             floorTextureRenderer.Submit();
-            // ImGui.EndFrame();
-            // floorTextureUIRenderer.Update(1f, MiscGlobals.GameInputSnapshot);
         }
 
         public override void MarkTransformDirty(TransformDirtyFlags flags)
@@ -150,6 +139,7 @@ namespace GameBSrc
             await base.ReCreate();
             floorTexture.HasBeenInitialized = false;
             await floorTexture.ReCreate();
+            hasRendered = false;
         }
 
         public override async Task Unload()

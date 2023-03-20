@@ -32,7 +32,7 @@ namespace Engine.Assets.Models
         public const uint ShaderWorldInfoSetId = 3;
         public const uint ShaderForwardSetId = 4;
         public const uint ShaderBonesSetId = 5;
-        public const uint BonesMatrixCount = 1;
+        public const uint BonesMatrixCount = 64;
         public override bool IsValid => false;
         private Mesh[] _meshes { get; set; }
         public Mesh[] Meshes => _meshes;
@@ -418,11 +418,12 @@ namespace Engine.Assets.Models
             {
                 extHint = Path.GetExtension(path);
             }
+            extHint = path;
             int vertexCount = 0;
             List<Vector3> colPos = new List<Vector3>();
             List<uint> colTris = new List<uint>();
             using AssimpContext ctx = new AssimpContext();
-            Scene scene = ctx.ImportFileFromStream(await FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace | PostProcessSteps.GenerateNormals | PostProcessSteps.FixInFacingNormals | PostProcessSteps.FindInvalidData, extHint);
+            Scene scene = ctx.ImportFileFromStream(await FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace, extHint);
             _meshes = new Mesh[scene.MeshCount];
             for (int i = 0; i < _meshes.Length; i++)
             {

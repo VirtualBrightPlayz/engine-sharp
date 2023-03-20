@@ -21,7 +21,7 @@ namespace Engine.Assets
         public static List<Resource> AllResources { get; private set; } = new List<Resource>();
         private static List<Resource> StagedResources = new List<Resource>();
         private static List<Resource> UnStagedResources = new List<Resource>();
-        public static Dictionary<string, ImFontPtr> Fonts { get; private set; } = new Dictionary<string, ImFontPtr>();
+        public static Dictionary<ImGuiRenderer, Dictionary<string, ImFontPtr>> Fonts { get; private set; } = new Dictionary<ImGuiRenderer, Dictionary<string, ImFontPtr>>();
         // private readonly static object _poolLock = new object();
         private static bool isBusy = false;
         public static bool IsBusy => FileManager.IsBusy;
@@ -47,7 +47,10 @@ namespace Engine.Assets
             ImGuiIOPtr io = ImGui.GetIO();
             foreach (var item in Fonts)
             {
-                item.Value.Destroy();
+                foreach (var item2 in item.Value)
+                {
+                    item2.Value.Destroy();
+                }
             }
             Fonts.Clear();
             foreach (var item in res)
@@ -104,17 +107,28 @@ namespace Engine.Assets
 
         public static async Task<ImFontPtr> LoadImGuiFont(ImGuiRenderer renderer, string path, float size = 24f)
         {
-            /*if (Fonts.Any(x => x.Key == path))
+            if (RenderingGlobals.GameImGui != renderer)
+                return null;
+            if (Fonts.Any(x => x.Value.Any(y => y.Key == path)))
             {
-                return Fonts.First(x => x.Key == path).Value;
-            }*/
+                renderer.RecreateFontDeviceTexture();
+                return Fonts.First(x => x.Value.Any(y => y.Key == path)).Value[path];
+            }
             ImGuiIOPtr io = ImGui.GetIO();
             using Stream str = await FileManager.LoadStream(path);
             byte[] data = null;//new byte[str.Length];
-            using StreamReader reader = new StreamReader(str, Encoding.UTF8);
-            data = Encoding.UTF8.GetBytes(reader.ReadToEnd());
-            // Console.WriteLine(str.Read(data, 0, data.Length));
+            using StreamReader reader = new StreamReader(str, Encoding.ASCII);
+            data = Encoding.ASCII.GetBytes(reader.ReadToEnd());
             ImFontPtr font = null;
+            // /*
+            font = io.Fonts.AddFontFromFileTTF(path, size);
+            if (!Fonts.ContainsKey(renderer))
+                Fonts.Add(renderer, new Dictionary<string, ImFontPtr>());
+            Fonts[renderer].Add(path, font);
+            io.Fonts.Build();
+            renderer.RecreateFontDeviceTexture();
+            return font;
+            // */
             unsafe
             {
                 IntPtr dataptr = IntPtr.Zero;
@@ -136,16 +150,18 @@ namespace Engine.Assets
                     cfg.FontDataSize = data.Length;
                     cfg.SizePixels = size;
 
-                    byte[] name = Encoding.UTF8.GetBytes(Path.GetFileName(path));
+                    byte[] name = Encoding.ASCII.GetBytes(Path.GetFileName(path));
                     Marshal.Copy(name, 0, new IntPtr(cfg.Name), Math.Min(name.Length, 39));
                     cfg.Name[Math.Min(name.Length, 39)] = (byte)'\0';
 
                     ImFontConfigPtr ptr = new ImFontConfigPtr(&cfg);
-                    font = io.Fonts.AddFont(ptr);
-                    // font = io.Fonts.AddFontFromMemoryTTF(dataptr, data.Length, size, ptr);
-                    ptr.Destroy();
-                    Fonts.Add(path, font);
-                    io.Fonts.Build();
+                    // font = io.Fonts.AddFont(ptr);
+                    font = io.Fonts.AddFontFromMemoryTTF(dataptr, data.Length, size, ptr);
+                    // ptr.Destroy();
+                    if (!Fonts.ContainsKey(renderer))
+                        Fonts.Add(renderer, new Dictionary<string, ImFontPtr>());
+                    Fonts[renderer].Add(path, font);
+                    bool built = io.Fonts.Build();
                     renderer.RecreateFontDeviceTexture();
                     // RenderingGlobals.GameImGui.RecreateFontDeviceTexture();
                 }

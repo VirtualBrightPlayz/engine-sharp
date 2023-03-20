@@ -120,7 +120,7 @@ public static class DesktopEntry
         MiscGlobals.FPS = 1d / Math.Max(delta, 0.001d);
         delta = Math.Min(delta, 0.5d);
         ResourceManager.Update();
-        RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription);
+        RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Width, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Height);
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputHandler);
         renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.1f, 1000f);
         Renderer.Current = renderer;
