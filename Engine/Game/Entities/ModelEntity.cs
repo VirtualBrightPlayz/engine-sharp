@@ -24,18 +24,18 @@ namespace Engine.Game.Entities
         {
             _path = path;
             _material = material;
-            // Create(path, material);
         }
 
-        public virtual async Task Create()
+        public virtual void Create()
         {
-            Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
+            Model = new Model(Name, _path, _material, _material == null, true);
+            // Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
         }
 
-        public override async Task Draw(Renderer renderer, double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
-            await base.Draw(renderer, dt);
-            await Model.SetWorldMatrixDraw(renderer, WorldMatrix);
+            base.Draw(renderer, dt);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
         }
     }
 }

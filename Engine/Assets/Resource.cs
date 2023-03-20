@@ -8,17 +8,35 @@ namespace Engine.Assets
         public abstract bool IsValid { get; }
         public string Name { get; set; }
         public bool HasBeenInitialized { get; set; } = false;
-        public virtual void Dispose()
+        public Resource(string name)
         {
+            Name = name;
+        }
+        protected abstract Resource CloneInternal(string cloneName);
+        protected abstract void ReCreateInternal();
+        protected abstract void DisposeInternal();
+        public void Dispose()
+        {
+            if (!HasBeenInitialized)
+                return;
             Console.WriteLine($"Dispose {Name} ({GetType().Name})");
             HasBeenInitialized = false;
+            DisposeInternal();
+            ResourceManager.UnloadInternal(this);
         }
-        public abstract Task<Resource> Clone(string cloneName);
-        public virtual Task ReCreate()
+        public Resource Clone(string cloneName)
         {
+            Console.WriteLine($"Clone {Name} ({GetType().Name})");
+            return CloneInternal(cloneName);
+        }
+        public void ReCreate()
+        {
+            if (HasBeenInitialized)
+                return;
             Console.WriteLine($"ReCreate {Name} ({GetType().Name})");
             HasBeenInitialized = true;
-            return Task.CompletedTask;
+            ReCreateInternal();
+            ResourceManager.AddInternal(this);
         }
         ~Resource()
         {

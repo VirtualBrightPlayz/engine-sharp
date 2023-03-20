@@ -87,7 +87,7 @@ namespace Engine.Assets.Rendering
         private string[] vertexCode;
         private string[] fragmentCode;
 
-        public async Task CreateShaders(string _path, string shaderCode, Func<string, string, string, string, Task> callback)
+        public void CreateShaders(string _path, string shaderCode, Action<string, string, string, string> callback)
         {
         #if WEBGL
             const string version = "#version 300 es";
@@ -116,7 +116,7 @@ namespace Engine.Assets.Rendering
                 defines = new Dictionary<string, string>();
                 fragInputs = 0;
                 uniformInputs = 0;
-                (string[] vert, string[] frag) = await ProccessShaderCode(_path, shaderCode, "main");
+                (string[] vert, string[] frag) = ProccessShaderCode(_path, shaderCode, "main");
                 vertexShaderOutput.AddRange(vert);
                 fragmentShaderOutput.AddRange(frag);
                 // CreateShaders(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), "main");
@@ -152,14 +152,14 @@ namespace Engine.Assets.Rendering
                 fragInputs = 0;
                 uniformInputs = 0;
                 List<string> pas = new List<string>();
-                (string[] vert, string[] frag) = await ProccessShaderCode(_path, shaderCode, pass);
+                (string[] vert, string[] frag) = ProccessShaderCode(_path, shaderCode, pass);
                 vertexShaderOutput.AddRange(vert);
                 fragmentShaderOutput.AddRange(frag);
-                await callback?.Invoke(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), pass, _path);
+                callback?.Invoke(string.Join(Environment.NewLine, vertexShaderOutput), string.Join(Environment.NewLine, fragmentShaderOutput), pass, _path);
             }
         }
 
-        private async Task<(string[], string[])> ProccessShaderCode(string file, string shaderCode, string curpass)
+        private (string[], string[]) ProccessShaderCode(string file, string shaderCode, string curpass)
         {
             const string pragmaVert = "#pragma vertex ";
             const string pragmaFrag = "#pragma fragment ";
@@ -213,10 +213,10 @@ namespace Engine.Assets.Rendering
                     {
                         string incFileName = inc.Substring(st + 1, (en + 1) - (st + 2));
                         string dir = Path.GetDirectoryName(file);
-                        if (await FileManager.Exists(Path.Combine(dir, incFileName)))
+                        if (FileManager.Exists(Path.Combine(dir, incFileName)))
                         {
-                            string incCode = await FileManager.LoadStringASCII(Path.Combine(dir, incFileName));
-                            (string[] incVertCode, string[] incFragCode) = await ProccessShaderCode(Path.Combine(dir, incFileName), incCode, curpass);
+                            string incCode = FileManager.LoadStringASCII(Path.Combine(dir, incFileName));
+                            (string[] incVertCode, string[] incFragCode) = ProccessShaderCode(Path.Combine(dir, incFileName), incCode, curpass);
                             vertexShaderOutput.AddRange(incVertCode);
                             fragmentShaderOutput.AddRange(incFragCode);
                         }

@@ -27,40 +27,33 @@ namespace Engine.Assets.Textures
             InternalSampler,
         };
 
-        public RenderTexture2D(string name, Framebuffer framebuffer)
+        public RenderTexture2D(string name, Framebuffer framebuffer) : base(name)
         {
-            Name = name;
             InternalFramebuffer = framebuffer;
             Width = InternalFramebuffer.Width;
             Height = InternalFramebuffer.Height;
             IsRaw = true;
         }
 
-        public RenderTexture2D(string name, Swapchain swapchain)
+        public RenderTexture2D(string name, Swapchain swapchain) : base(name)
         {
-            Name = name;
             InternalSwapchain = swapchain;
             Width = InternalSwapchain.Framebuffer.Width;
             Height = InternalSwapchain.Framebuffer.Height;
             IsRaw = true;
         }
 
-        public RenderTexture2D(string name, uint width, uint height)
+        public RenderTexture2D(string name, uint width, uint height) : base(name)
         {
-            Name = name;
             Width = width;
             Height = height;
             IsRaw = false;
-            // ReCreate();
+            ReCreate();
         }
 
-        public override async Task ReCreate()
+        protected override void ReCreateInternal()
         {
-            // if (HasBeenInitialized)
-            //     return;
-            await base.ReCreate();
             if (IsRaw)
-                // throw new NotSupportedException($"Can't clone raw framebuffers!");
                 return;
             TextureDescription colorDesc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled | TextureUsage.RenderTarget);
             ColorTex = ResourceManager.GraphicsFactory.CreateTexture(colorDesc);
@@ -70,14 +63,9 @@ namespace Engine.Assets.Textures
             UpdateSamplerInfo(Info);
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
-            return Task.FromResult<Resource>(this);
-            if (IsRaw)
-                throw new NotSupportedException($"Can't clone raw framebuffers!");
-            RenderTexture2D tex = new RenderTexture2D(cloneName, Width, Height);
-            tex.ReCreate();
-            return Task.FromResult<Resource>(tex);
+            return this;
         }
 
         public bool HasDepth()
@@ -89,7 +77,6 @@ namespace Engine.Assets.Textures
         {
             if (IsRaw)
                 return;
-                // throw new NotImplementedException($"Can't use samplers in framebuffers!");
             Info = info;
             if (InternalSampler != null && !InternalSampler.IsDisposed)
                 InternalSampler.Dispose();
@@ -97,9 +84,8 @@ namespace Engine.Assets.Textures
             InternalSampler.Name = Name;
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
             if (IsRaw)
                 return;
             if (InternalSampler != null && !InternalSampler.IsDisposed)

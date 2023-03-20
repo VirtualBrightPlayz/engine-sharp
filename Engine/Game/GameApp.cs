@@ -24,54 +24,53 @@ namespace Engine.Game
             Current = this;
         }
 
-        public virtual Task Setup()
+        public virtual void Setup()
         {
             BufferPool = new BufferPool();
             var targetThreadCount = Math.Max(1, Environment.ProcessorCount > 4 ? Environment.ProcessorCount - 2 : Environment.ProcessorCount - 1);
             Simulation = Simulation.Create(BufferPool, new Physics.NarrowPhaseCallbacks(), new Physics.PoseIntegratorCallbacks(new System.Numerics.Vector3(0, -10, 0)), new SolveDescription(8, 1));
             dispatcher = new ThreadDispatcher(targetThreadCount);
-            return Task.CompletedTask;
         }
 
-        public virtual async Task PreDraw(Renderer renderer, double dt)
+        public virtual void PreDraw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                await ent.PreDraw(renderer, dt);
+                ent.PreDraw(renderer, dt);
             }
         }
 
-        public virtual async Task Draw(Renderer renderer, double dt)
+        public virtual void Draw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                await ent.Draw(renderer, dt);
+                ent.Draw(renderer, dt);
             }
         }
 
-        public virtual async Task Tick(double dt)
+        public virtual void Tick(double dt)
         {
             foreach (var ent in Entities.ToArray())
             {
-                await ent.Tick(dt);
+                ent.Tick(dt);
             }
             if (TimeScale > 0f)
                 Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, dispatcher);
         }
 
-        public virtual async Task ReCreate()
+        public virtual void ReCreate()
         {
             foreach (var ent in Entities.ToArray())
             {
-                await ent.ReCreate();
+                ent.ReCreate();
             }
         }
 
-        public virtual async Task Unload()
+        public virtual void Unload()
         {
             foreach (var ent in Entities.ToArray())
             {
-                await ent.Unload();
+                ent.Unload();
             }
         }
 

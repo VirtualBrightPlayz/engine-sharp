@@ -1,11 +1,7 @@
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
-#if WEBGL || !LEGACY_START
 using OpenAL;
-#else
-using Silk.NET.OpenAL;
-#endif
 
 namespace Engine.Assets.Audio
 {
@@ -13,9 +9,6 @@ namespace Engine.Assets.Audio
     {
         public override bool IsValid => _handle.HasValue;
         private uint? _handle;
-    #if !WEBGL && LEGACY_START
-        private AL _al => AudioGlobals.GameAudio;
-    #endif
         public AudioClip AudioBuffer { get; private set; }
         public bool IsPlaying
         {
@@ -23,14 +16,9 @@ namespace Engine.Assets.Audio
             {
                 if (!IsValid)
                     return false;
-            #if WEBGL || !LEGACY_START
                 AL10.alGetSourcei(_handle.Value, AL10.AL_SOURCE_STATE, out int val);
                 AudioGlobals.CheckALError("Is playing");
                 return val == AL10.AL_PLAYING;
-            #else
-                _al.GetSourceProperty(_handle.Value, GetSourceInteger.SourceState, out int val);
-                return (SourceState)val == SourceState.Playing;
-            #endif
             }
         }
         public float MaxDistance
@@ -114,29 +102,16 @@ namespace Engine.Assets.Audio
             #endif
         }
 
-        public AudioSource()
+        public AudioSource(string name) : base(name)
         {
-        #if WEBGL || !LEGACY_START
             AL10.alGenSources(1, out uint v);
             AudioGlobals.CheckALError("gen sources");
             _handle = v;
-        #else
-            _handle = _al.GenSource();
-        #endif
             SetDefaultParameters();
         }
 
-        public AudioSource(string name) : this()
+        protected override void ReCreateInternal()
         {
-            Name = name;
-        }
-
-        public override async Task ReCreate()
-        {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
-        #if WEBGL || !LEGACY_START
             if (_handle.HasValue)
             {
                 uint v2 = _handle.Value;
@@ -147,11 +122,8 @@ namespace Engine.Assets.Audio
             AL10.alGenSources(1, out uint v);
             AudioGlobals.CheckALError();
             _handle = v;
-        #else
-            _al.DeleteSource(_handle.Value);
-            _handle = _al.GenSource();
-        #endif
-            await AudioBuffer.ReCreate();
+
+            AudioBuffer.ReCreate();
             SetBuffer(AudioBuffer);
             SetDefaultParameters();
             RolloffFactor = RolloffFactor;
@@ -164,10 +136,9 @@ namespace Engine.Assets.Audio
             Position = Position;
             if (IsPlaying)
                 Play();
-            return;
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             AudioSource src = new AudioSource(cloneName);
             src.SetBuffer(AudioBuffer);
@@ -181,7 +152,7 @@ namespace Engine.Assets.Audio
             src.Position = Position;
             if (src.IsPlaying)
                 src.Play();
-            return Task.FromResult<Resource>(src);
+            return src;
         }
 
         public void SetBuffer(AudioClip buffer)
@@ -227,17 +198,12 @@ namespace Engine.Assets.Audio
         #endif
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
-        #if WEBGL || !LEGACY_START
             uint v = _handle.Value;
             AL10.alDeleteSources(1, ref v);
             AudioGlobals.CheckALError();
             _handle = null;
-        #else
-            _al.DeleteSource(_handle.Value);
-        #endif
         }
     }
 }

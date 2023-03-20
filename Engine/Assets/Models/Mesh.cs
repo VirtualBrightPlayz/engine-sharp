@@ -81,66 +81,46 @@ namespace Engine.Assets.Models
         public List<uint> Indices { get; set; } = new List<uint>();
         public IReadOnlyList<IVertex> VertexList => _vertexList;
         private List<IVertex> _vertexList = new List<IVertex>();
-        [Obsolete]
-        public List<Vector3> Vertices { get; set; } = new List<Vector3>();
-        [Obsolete]
-        public List<Vector3> Normals { get; set; } = new List<Vector3>();
-        [Obsolete]
-        public List<Vector2> UV0s { get; set; } = new List<Vector2>();
-        [Obsolete]
-        public List<Vector2> UV1s { get; set; } = new List<Vector2>();
-        [Obsolete]
-        public List<Vector4> BoneWeights { get; set; } = new List<Vector4>();
-        [Obsolete]
-        public List<UInt4> BoneIndices { get; set; } = new List<UInt4>();
-        [Obsolete]
-        public List<RgbaFloat> Colors { get; set; } = new List<RgbaFloat>();
         public bool IsBigMesh { get; private set; }
 
-        public Mesh(string name, bool isBigMesh, Material material)
+        public Mesh(string name, bool isBigMesh, Material material) : base(name)
         {
-            Name = name;
-            InternalMaterial = material;
-            if (material.Shader.HasSet(UniformConsts.WorldMatrixBufferSet))
-            {
-                InternalWorldUniform = new UniformBuffer("WorldUniform", (uint)16 * 4);
-                InternalWorldBuffer = new CompoundBuffer("WorldBuffer", material.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
-            }
             // InternalWorldBuffer = ResourceManager.CreateCompoundBuffer("WorldBuffer", material.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
             IsBigMesh = isBigMesh;
+            SetMaterial(material);
+            ReCreate();
         }
 
-        public override async Task ReCreate()
+        public void SetMaterial(Material mat)
         {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
+            InternalWorldUniform?.Dispose();
+            InternalWorldBuffer?.Dispose();
+            InternalMaterial = mat;
+            if (InternalMaterial.Shader.HasSet(UniformConsts.WorldMatrixBufferSet))
+            {
+                InternalWorldUniform = new UniformBuffer("WorldUniform", (uint)16 * 4);
+                InternalWorldBuffer = new CompoundBuffer("WorldBuffer", InternalMaterial.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
+            }
+        }
+
+        protected override void ReCreateInternal()
+        {
             if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
                 _vertexBuffer.Dispose();
             if (_indexBuffer != null && !_indexBuffer.IsDisposed)
                 _indexBuffer.Dispose();
             if (InternalMaterial != null)
-                await InternalMaterial.ReCreate();
+                InternalMaterial.ReCreate();
             if (InternalWorldUniform != null)
-                await InternalWorldUniform.ReCreate();
+                InternalWorldUniform.ReCreate();
             if (InternalWorldBuffer != null)
-                await InternalWorldBuffer.ReCreate();
+                InternalWorldBuffer.ReCreate();
             UploadDataSkipChecks();
         }
 
-        public override async Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             throw new NotImplementedException();
-            Mesh m = new Mesh(cloneName, IsBigMesh, InternalMaterial);
-            m.Vertices = Vertices.ToList();
-            m.Normals = Normals.ToList();
-            m.UV0s = UV0s.ToList();
-            m.UV1s = UV1s.ToList();
-            m.BoneWeights = BoneWeights.ToList();
-            m.BoneIndices = BoneIndices.ToList();
-            m.Colors = Colors.ToList();
-            await m.ReCreate();
-            return m;
         }
 
         public static uint GetFormatSize(VertexElementFormat format)
@@ -250,53 +230,6 @@ namespace Engine.Assets.Models
             _indexCount = (uint)Indices.Count;
         }
 
-        [Obsolete]
-        public void UploadDataOld()
-        {
-            VertexPositionColorUV[] data = new VertexPositionColorUV[Vertices.Count];
-            for (int i = 0; i < data.Length; i++)
-            {
-                if (BoneWeights.Any() && BoneIndices.Any())
-                {
-                    data[i] = new VertexPositionColorUV(Vertices[i], Normals[i], UV0s[i], UV1s[i], Colors[i], BoneWeights[i], BoneIndices[i]);
-                }
-                else
-                {
-                    data[i] = new VertexPositionColorUV(Vertices[i], Normals[i], UV0s[i], UV1s[i], Colors[i]);
-                }
-            }
-            UploadData<VertexPositionColorUV>(data);
-            /*
-            return;
-            if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
-                _vertexBuffer.Dispose();
-            if (_indexBuffer != null && !_indexBuffer.IsDisposed)
-                _indexBuffer.Dispose();
-            VertexPositionColorUV[] data = new VertexPositionColorUV[Vertices.Count];
-            for (int i = 0; i < data.Length; i++)
-            {
-                if (BoneWeights.Any() && BoneIndices.Any())
-                {
-                    data[i] = new VertexPositionColorUV(Vertices[i], Normals[i], UV0s[i], UV1s[i], Colors[i], BoneWeights[i], BoneIndices[i]);
-                }
-                else
-                {
-                    data[i] = new VertexPositionColorUV(Vertices[i], Normals[i], UV0s[i], UV1s[i], Colors[i]);
-                }
-            }
-            _vertexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)data.Length * VertexPositionColorUV.SizeInBytes, BufferUsage.VertexBuffer));
-            _indexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)Indices.Count * (uint)(IsBigMesh ? sizeof(uint) : sizeof(ushort)), BufferUsage.IndexBuffer));
-            _vertexBuffer.Name = $"{Name}_VertexBuffer";
-            _indexBuffer.Name = $"{Name}_IndexBuffer";
-            Program.GameGraphics.UpdateBuffer(_vertexBuffer, 0, data);
-            if (IsBigMesh)
-                Program.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
-            else
-                Program.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
-            _indexCount = (uint)Indices.Count;
-            */
-        }
-
         public void ClearVertexList()
         {
             _vertexList.Clear();
@@ -325,37 +258,15 @@ namespace Engine.Assets.Models
                 throw new InvalidOperationException($"{typeof(T).FullName} is not valid in the current VertexList");
         }
 
-        public void AddVertex(Vector3 position, Vector3 normal, Vector2 uv0, Vector2 uv1, RgbaFloat color)
-        {
-            Vertices.Add(position);
-            Normals.Add(normal);
-            UV0s.Add(uv0);
-            UV1s.Add(uv1);
-            Colors.Add(color);
-            BoneWeights.Clear();
-            BoneIndices.Clear();
-        }
-
-        public void AddVertex(Vector3 position, Vector3 normal, Vector2 uv0, Vector2 uv1, RgbaFloat color, Vector4 weight, UInt4 index)
-        {
-            Vertices.Add(position);
-            Normals.Add(normal);
-            UV0s.Add(uv0);
-            UV1s.Add(uv1);
-            Colors.Add(color);
-            BoneWeights.Add(weight);
-            BoneIndices.Add(index);
-        }
-
         public void SetWorldMatrix(Renderer renderer, Matrix4x4 worldBuffer)
         {
             InternalWorldUniform.UploadData(renderer, worldBuffer);
             InternalMaterial.SetUniforms(UniformConsts.WorldMatrixBufferSet, InternalWorldBuffer);
         }
 
-        public async Task PreDraw(Renderer renderer)
+        public void PreDraw(Renderer renderer)
         {
-            await renderer.SetupStandardMatrixUniforms(InternalMaterial);
+            renderer.SetupStandardMatrixUniforms(InternalMaterial);
             InternalMaterial.PreDraw(renderer);
         }
 
@@ -367,13 +278,10 @@ namespace Engine.Assets.Models
             renderer.CommandList.DrawIndexed(_indexCount, 1, 0, 0, 0);
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
-            if (InternalWorldBuffer != null)
-                InternalWorldBuffer.Dispose();
-            if (InternalWorldUniform != null)
-                InternalWorldUniform.Dispose();
+            InternalWorldBuffer?.Dispose();
+            InternalWorldUniform?.Dispose();
             if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
                 _vertexBuffer.Dispose();
             _vertexBuffer = null;

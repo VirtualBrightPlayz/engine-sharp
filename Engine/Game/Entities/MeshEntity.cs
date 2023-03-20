@@ -32,20 +32,20 @@ namespace Engine.Game.Entities
             staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));*/
         }
 
-        private async void Create(string path, Material material)
+        private void Create(string path, Material material)
         {
-            Mesh = await ResourceManager.Clone<Mesh>($"{Name}_{Random.Shared.Next()}", await ResourceManager.CreateMesh(path, false, material));
+            Mesh = new Mesh(path, false, material);
         }
 
-        public override async Task PreDraw(Renderer renderer, double dt)
+        public override void PreDraw(Renderer renderer, double dt)
         {
-            await base.PreDraw(renderer, dt);
-            await Mesh.PreDraw(renderer);
+            base.PreDraw(renderer, dt);
+            Mesh.PreDraw(renderer);
         }
 
-        public override async Task Draw(Renderer renderer, double dt)
+        public override void Draw(Renderer renderer, double dt)
         {
-            await base.Draw(renderer, dt);
+            base.Draw(renderer, dt);
             Mesh.SetWorldMatrix(renderer, WorldMatrix);
             Mesh.Draw(renderer);
         }

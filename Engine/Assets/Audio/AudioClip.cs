@@ -25,26 +25,23 @@ namespace Engine.Assets.Audio
     #endif
         private int _sampleRate;
 
-        public AudioClip(string path)
+        public AudioClip(string path) : base(path)
         {
             Name = path;
             // Create(path);
         }
 
-        public async Task Create(string path)
+        public void Create(string path)
         {
-        #if WEBGL || !LEGACY_START
             if (_handle.HasValue)
             {
                 uint v2 = _handle.Value;
                 AL10.alDeleteBuffers(1, ref v2);
                 AudioGlobals.CheckALError("delete buffers");
             }
-        #else
-        #endif
-            if (await FileManager.Exists(path))
+            if (FileManager.Exists(path))
             {
-                var stream = await FileManager.LoadStream(path);
+                var stream = FileManager.LoadStream(path);
                 switch (Path.GetExtension(path).ToLower())
                 {
                     case ".ogg":
@@ -71,28 +68,12 @@ namespace Engine.Assets.Audio
             }
             else
             {
-            #if WEBGL || !LEGACY_START
                 AL10.alGenBuffers(1, out uint v);
                 AudioGlobals.CheckALError("gen buffers (empty)");
                 _handle = v;
                 throw new Exception($"Unable to find/load {path}");
-            #else
-                // TODO: delete existing buffer
-                _handle = _al.GenBuffer();
-                _al.BufferData(_handle.Value, BufferFormat.Mono8, new byte[0], 0);
-            #endif
             }
         }
-
-    #if WEBGL || !LEGACY_START
-    #else
-        public AudioClip(string name, byte[] data, BufferFormat format, int freq)
-        {
-            Name = name;
-            _handle = _al.GenBuffer();
-            _al.BufferData(_handle.Value, format, data, freq);
-        }
-    #endif
 
         public static byte[] MixStereo32ToMono32(byte[] input)
         {
@@ -159,7 +140,6 @@ namespace Engine.Assets.Audio
             return output;
         }
 
-    #if WEBGL || !LEGACY_START
         public static int GetFormat(int BitsPerSample, int Channels)
         {
             int format = AL10.AL_FORMAT_MONO8;
@@ -185,33 +165,7 @@ namespace Engine.Assets.Audio
                 throw new NotSupportedException($"{BitsPerSample} not supported. Must be 8 or 16");
             return format;
         }
-    #else
-        public static BufferFormat GetFormat(int BitsPerSample, int Channels)
-        {
-            BufferFormat format = BufferFormat.Mono8;
-            if (BitsPerSample == 8)
-            {
-                if (Channels == 1)
-                    format = BufferFormat.Mono8;
-                else if (Channels == 2)
-                    format = BufferFormat.Stereo8;
-                else
-                    throw new NotSupportedException($"{Channels} not supported. Must be 1 or 2");
-            }
-            else if (BitsPerSample == 16)
-            {
-                if (Channels == 1)
-                    format = BufferFormat.Mono16;
-                else if (Channels == 2)
-                    format = BufferFormat.Stereo16;
-                else
-                    throw new NotSupportedException($"{Channels} not supported. Must be 1 or 2");
-            }
-            else
-                throw new NotSupportedException($"{BitsPerSample} not supported. Must be 8 or 16");
-            return format;
-        }
-    #endif
+
 
         private void LoadFromStream(ISampleProvider file, long length)
         {
@@ -224,19 +178,13 @@ namespace Engine.Assets.Audio
             buffer = buffer2;
 
             _data = buffer;
-        #if WEBGL || !LEGACY_START
+
             _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             AL10.alGenBuffers(1, out uint v);
             AudioGlobals.CheckALError("genBuffer ogg");
             _handle = v;
             AL10.alBufferData(_handle.Value, _format, buffer, buffer.Length, provider.WaveFormat.SampleRate);
             AudioGlobals.CheckALError("buffer data ogg");
-        #else
-            var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
-            _sampleRate = provider.WaveFormat.SampleRate;
-            _handle = _al.GenBuffer();
-            _al.BufferData(_handle.Value, format, buffer, provider.WaveFormat.SampleRate);
-        #endif
         }
 
         private void LoadFromStream(WaveStream file)
@@ -250,41 +198,29 @@ namespace Engine.Assets.Audio
             buffer = buffer2;
             
             _data = buffer;
-        #if WEBGL || !LEGACY_START
+
             var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
             AL10.alGenBuffers(1, out uint v);
             AudioGlobals.CheckALError("genBuffer misc");
             _handle = v;
             AL10.alBufferData(_handle.Value, format, buffer, buffer.Length, provider.WaveFormat.SampleRate);
             AudioGlobals.CheckALError("buffer data misc");
-        #else
-            var format = _format = GetFormat(provider.WaveFormat.BitsPerSample, provider.WaveFormat.Channels);
-            _sampleRate = provider.WaveFormat.SampleRate;
-            _handle = _al.GenBuffer();
-            _al.BufferData(_handle.Value, format, buffer, provider.WaveFormat.SampleRate);
-        #endif
         }
 
-        public override async Task ReCreate()
+        protected override void ReCreateInternal()
         {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
             if (!_handle.HasValue)
-                await Create(Name);
-            return;
+                Create(Name);
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             throw new NotImplementedException();
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
-        #if WEBGL || !LEGACY_START
-            return;
+            // return;
             if (_handle.HasValue)
             {
                 uint v = _handle.Value;
@@ -292,9 +228,6 @@ namespace Engine.Assets.Audio
                 AudioGlobals.CheckALError();
                 _handle = null;
             }
-        #else
-            _al.DeleteBuffer(_handle.Value);
-        #endif
         }
     }
 }

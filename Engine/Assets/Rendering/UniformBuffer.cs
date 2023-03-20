@@ -27,25 +27,21 @@ namespace Engine.Assets.Rendering
             InternalBuffer
         };
 
-        public UniformBuffer(string name, uint size)
+        public UniformBuffer(string name, uint size) : base(name)
         {
-            Name = name;
             Size = size;
-            // ReCreate();
+            ReCreate();
         }
 
-        public override async Task ReCreate()
+        protected override void ReCreateInternal()
         {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
             if (InternalBuffer != null && !InternalBuffer.IsDisposed)
                 InternalBuffer.Dispose();
             InternalBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription(Size, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
             InternalBuffer.Name = Name;
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             throw new NotImplementedException();
         }
@@ -80,12 +76,10 @@ namespace Engine.Assets.Rendering
             RenderingGlobals.GameGraphics.UpdateBuffer(InternalBuffer, offsetInBytes, data, sizeInBytes);
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
-            if (InternalBuffer != null)
-                InternalBuffer.Dispose();
-            InternalBuffer = null;
+            InternalBuffer?.Dispose();
+            // InternalBuffer = null;
         }
     }
 }

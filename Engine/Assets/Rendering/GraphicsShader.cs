@@ -31,17 +31,14 @@ namespace Engine.Assets.Rendering
         {
         }
 
-        public GraphicsShader(string name, string path)
+        public GraphicsShader(string name, string path) : base(name)
         {
-            Name = name;
             _path = path;
+            ReCreate();
         }
 
-        public override async Task ReCreate()
+        protected override void ReCreateInternal()
         {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
             foreach (var res in _reflResourceLayouts)
             {
                 if (res != null && !res.IsDisposed)
@@ -59,41 +56,21 @@ namespace Engine.Assets.Rendering
                 }
             }
             _shaders.Clear();
-        #if WEBGL
-            string manifest = await FileManager.LoadString($"{_path}.glsl.json");
-            Passes = JsonConvert.DeserializeObject<List<ShaderPass>>(manifest);
-            foreach (var pass in Passes)
+
+            if (FileManager.Exists($"{_path}.glsl"))
             {
-                string passManifest = await FileManager.LoadString($"{_path}.glsl.{pass.PassName}.json");
-                object result = JsonConvert.DeserializeObject(passManifest);
-                JObject lin = JObject.FromObject(result);
-                ShaderDescription vertShader = new ShaderDescription(ShaderStages.Vertex, Encoding.ASCII.GetBytes(lin["VertexShader"].ToObject<string>()), "main");
-                ShaderDescription fragShader = new ShaderDescription(ShaderStages.Fragment, Encoding.ASCII.GetBytes(lin["FragmentShader"].ToObject<string>()), "main");
-                Shader[] shaders = new Shader[2];
-                shaders[0] = ResourceManager.GraphicsFactory.CreateShader(vertShader);
-                shaders[1] = ResourceManager.GraphicsFactory.CreateShader(fragShader);
-                _shaders.Add(pass.PassName, shaders);
-                _compileResult = lin["Reflection"].ToObject<SpirvReflection>();
-                string json = lin["Reflection"].ToString(Formatting.None);
-                using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                _compileResult = SpirvReflection.LoadFromJson(ms);
-            }
-            // _compileResult = SpirvReflection.LoadFromJson(await FileManager.LoadStream(_path + ".glsl.main.json"));
-        #else
-            if (await FileManager.Exists($"{_path}.glsl"))
-            {
-                string shaderCode = await FileManager.LoadStringASCII($"{_path}.glsl");
+                string shaderCode = FileManager.LoadStringASCII($"{_path}.glsl");
                 var processor = new ShaderProcessor();
-                await processor.CreateShaders(_path, shaderCode, CreateShaders);
+                processor.CreateShaders(_path, shaderCode, CreateShaders);
                 Passes = processor.Passes.ToList();
             }
             else
             {
-                string vertCode = await FileManager.LoadStringASCII($"{_path}.vert");
-                string fragCode = await FileManager.LoadStringASCII($"{_path}.frag");
-                await CreateShaders(vertCode, fragCode, "main", _path);
+                string vertCode = FileManager.LoadStringASCII($"{_path}.vert");
+                string fragCode = FileManager.LoadStringASCII($"{_path}.frag");
+                CreateShaders(vertCode, fragCode, "main", _path);
             }
-        #endif
+
             _reflResourceLayouts.Clear();
             for (int i = 0; i < _compileResult.ResourceLayouts.Length; i++)
             {
@@ -102,11 +79,9 @@ namespace Engine.Assets.Rendering
             }
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             throw new Exception("Can't clone shaders");
-            GraphicsShader res = new GraphicsShader(cloneName, _path);
-            return Task.FromResult<Resource>(res);
         }
 
         public bool HasSet(uint index)
@@ -119,21 +94,8 @@ namespace Engine.Assets.Rendering
             return _compileResult.ResourceLayouts[(int)index].Elements[0].Name;
         }
 
-        private async Task CreateShaders(string vertCode, string fragCode, string pass, string pa)
+        private void CreateShaders(string vertCode, string fragCode, string pass, string pa)
         {
-        #if WEBGL
-            Console.WriteLine(vertCode);
-            Console.WriteLine(fragCode);
-            Console.WriteLine(pass);
-            Console.WriteLine(pa);
-            ShaderDescription vertShader = new ShaderDescription(ShaderStages.Vertex, Encoding.ASCII.GetBytes(vertCode), "main");
-            ShaderDescription fragShader = new ShaderDescription(ShaderStages.Fragment, Encoding.ASCII.GetBytes(fragCode), "main");
-            Shader[] shaders = new Shader[2];
-            shaders[0] = ResourceManager.GraphicsFactory.CreateShader(vertShader);
-            shaders[1] = ResourceManager.GraphicsFactory.CreateShader(fragShader);
-            _shaders.Add(pass, shaders);
-            _compileResult = SpirvReflection.LoadFromJson(await FileManager.LoadStream(pa + ".glsl.main.json"));
-        #else
             ShaderDescription vertShader = new ShaderDescription(ShaderStages.Vertex, Encoding.ASCII.GetBytes(vertCode), "main");
             ShaderDescription fragShader = new ShaderDescription(ShaderStages.Fragment, Encoding.ASCII.GetBytes(fragCode), "main");
             Shader[] shaders = ResourceManager.GraphicsFactory.CreateFromSpirv(vertShader, fragShader, new CrossCompileOptions(RenderingGlobals.APIBackend == GraphicsBackend.OpenGL, RenderingGlobals.APIBackend == GraphicsBackend.Vulkan));
@@ -146,7 +108,6 @@ namespace Engine.Assets.Rendering
             else
                 SpirvCompilation.CompileVertexFragment(vertShader.ShaderBytes, fragShader.ShaderBytes, GetCompilationTarget(RenderingGlobals.APIBackend));
             _shaders.Add(pass, shaders);
-        #endif
         }
 
         private static CrossCompileTarget GetCompilationTarget(GraphicsBackend backend)
@@ -167,9 +128,8 @@ namespace Engine.Assets.Rendering
             }
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
             foreach (var res in _reflResourceLayouts)
             {
                 if (res != null && !res.IsDisposed)

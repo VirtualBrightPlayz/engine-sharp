@@ -35,18 +35,14 @@ namespace Engine.Assets.Rendering
         private Dictionary<uint, CompoundBuffer> _compoundBuffers = new Dictionary<uint, CompoundBuffer>();
         private Dictionary<uint, ResourceLayout> layouts = new Dictionary<uint, ResourceLayout>();
 
-        public Material(string name, GraphicsShader shader)
+        public Material(string name, GraphicsShader shader) : base(name)
         {
-            Name = name;
             Shader = shader;
-            // ReCreate();
+            ReCreate();
         }
 
-        public override async Task ReCreate()
+        protected override void ReCreateInternal()
         {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
             foreach (var item in _pipelines)
             {
                 foreach (var pipeline in item.Value)
@@ -60,7 +56,7 @@ namespace Engine.Assets.Rendering
             {
                 foreach (var item in res.Value)
                 {
-                    await item.ReCreate();
+                    item.ReCreate();
                 }
             }
             foreach (var uniform in _uniformLayouts)
@@ -68,12 +64,12 @@ namespace Engine.Assets.Rendering
                 foreach (var item in uniform.Value)
                 {
                     if (item.resource != null)
-                        await item.resource.ReCreate();
+                        item.resource.ReCreate();
                 }
             }
             foreach (var cbuffer in _compoundBuffers)
             {
-                await cbuffer.Value.ReCreate();
+                cbuffer.Value.ReCreate();
                 SetUniforms(cbuffer.Key, cbuffer.Value);
             }
             foreach (var res in _resourceSets)
@@ -82,19 +78,16 @@ namespace Engine.Assets.Rendering
                     res.Value.Dispose();
             }
             _resourceSets.Clear();
-            await Shader.ReCreate();
+            Shader.ReCreate();
             foreach (var uniform in _uniformLayouts)
             {
                 SetUniforms(uniform.Key, true, uniform.Value);
             }
-            // foreach (var pass in Shader.Passes)
-                // CreatePipeline(Program.MainRenderer, pass);
         }
 
-        public override async Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             Material res = new Material(cloneName, Shader);
-            await res.ReCreate();
             return res;
         }
 
@@ -360,9 +353,8 @@ namespace Engine.Assets.Rendering
             }
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
             foreach (var resSet in _resourceSets)
             {
                 resSet.Value.Dispose();
@@ -370,7 +362,7 @@ namespace Engine.Assets.Rendering
             _resourceSets.Clear();
             foreach (var cmp in _compoundBuffers)
             {
-                ResourceManager.Unload(cmp.Value);
+                cmp.Value.Dispose();
             }
             _compoundBuffers.Clear();
             foreach (var item in _pipelines)

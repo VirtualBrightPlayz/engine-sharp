@@ -27,7 +27,7 @@ namespace Engine.Assets.Rendering
         public Dictionary<GraphicsShader, CompoundBuffer> WorldInfoBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
         public RenderTexture2D InternalRenderTexture { get; private set; }
         private Mesh BlitMesh;
-        private Task<GraphicsShader> BlitShader => ResourceManager.LoadShader("Shaders/Blit");
+        private GraphicsShader BlitShader = new GraphicsShader("Shaders/Blit");
         public bool IsDrawing { get; private set; } = false;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -45,11 +45,10 @@ namespace Engine.Assets.Rendering
             }
         }
 
-        public Renderer(string name)
+        public Renderer(string name) : base(name)
         {
-            Name = name;
-            // ReCreate();
             ViewMatrix = Matrix4x4.Identity;
+            ReCreate();
             // ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
             // ViewMatrixResource.UploadData(ViewMatrix);
             // ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
@@ -58,35 +57,24 @@ namespace Engine.Assets.Rendering
             // WorldInfoResource.UploadData(ViewPosition);
         }
 
-        public override async Task ReCreate()
+        protected override void ReCreateInternal()
         {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
             if (_commandList != null && !_commandList.IsDisposed)
                 _commandList.Dispose();
-            /*
-            if (ViewMatrixResource != null)
-                await ViewMatrixResource.ReCreate();
-            if (ProjMatrixResource != null)
-                await ProjMatrixResource.ReCreate();
-            if (WorldInfoResource != null)
-                await WorldInfoResource.ReCreate();
-            */
-            ViewMatrixResource = await ResourceManager.CreateUniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
-            ProjMatrixResource = await ResourceManager.CreateUniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
-            WorldInfoResource = await ResourceManager.CreateUniformBuffer("WorldInfo", (uint)4 * 4);
+            ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
+            ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
+            WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
             foreach (var item in MatrixBuffers)
             {
-                await item.Value.ReCreate();
+                item.Value.ReCreate();
             }
             foreach (var item in WorldInfoBuffers)
             {
-                await item.Value.ReCreate();
+                item.Value.ReCreate();
             }
             _commandList = ResourceManager.GraphicsFactory.CreateCommandList();
             _commandList.Name = Name;
-            BlitMesh = await ResourceManager.CreateMesh("BlitMesh", false, await ResourceManager.CreateMaterial("BlitMaterial", await BlitShader));
+            BlitMesh = new Mesh("BlitMesh", false, new Material("BlitMaterial", BlitShader));
             BlitVertex[] blitVertices = new BlitVertex[]
             {
                 new BlitVertex(new Vector3(-1f, -1f, 1f), new Vector2(0f, 1f), Vector4.One),
@@ -104,7 +92,7 @@ namespace Engine.Assets.Rendering
             BlitMesh.UploadData(blitVertices);
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             throw new NotImplementedException();
         }
@@ -120,22 +108,22 @@ namespace Engine.Assets.Rendering
             WorldInfoResource.UploadData(this, ViewPosition);
         }
 
-        public async Task SetupStandardMatrixUniforms(Material material)
+        public void SetupStandardMatrixUniforms(Material material)
         {
             if (!MatrixBuffers.ContainsKey(material.Shader))
             {
                 MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewProjectionMatrixBufferSet, ViewMatrixResource, ProjMatrixResource);
-                await MatrixBuffers[material.Shader].ReCreate();
+                MatrixBuffers[material.Shader].ReCreate();
             }
             material.SetUniforms(UniformConsts.ViewProjectionMatrixBufferSet, MatrixBuffers[material.Shader]);
         }
 
-        public async Task SetupStandardWorldInfoUniforms(Material material, uint setId)
+        public void SetupStandardWorldInfoUniforms(Material material, uint setId)
         {
             if (!WorldInfoBuffers.ContainsKey(material.Shader))
             {
                 WorldInfoBuffers[material.Shader] = new CompoundBuffer("WorldInfoBuffer", material.Shader, setId, WorldInfoResource);
-                await WorldInfoBuffers[material.Shader].ReCreate();
+                WorldInfoBuffers[material.Shader].ReCreate();
             }
             material.SetUniforms(setId, WorldInfoBuffers[material.Shader]);
         }
@@ -175,9 +163,8 @@ namespace Engine.Assets.Rendering
             BlitMesh.Draw(this, "main");
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
             foreach (var cbuf in MatrixBuffers)
             {
                 cbuf.Value.Dispose();
@@ -188,15 +175,12 @@ namespace Engine.Assets.Rendering
                 item.Value.Dispose();
             }
             WorldInfoBuffers.Clear();
-            // ViewMatrixResource.Dispose();
-            ResourceManager.Unload(ViewMatrixResource);
-            ViewMatrixResource = null;
-            ResourceManager.Unload(ProjMatrixResource);
-            // ProjMatrixResource.Dispose();
-            ProjMatrixResource = null;
-            ResourceManager.Unload(WorldInfoResource);
-            // WorldInfoResource.Dispose();
-            WorldInfoResource = null;
+            ViewMatrixResource?.Dispose();
+            // ViewMatrixResource = null;
+            ProjMatrixResource?.Dispose();
+            // ProjMatrixResource = null;
+            WorldInfoResource?.Dispose();
+            // WorldInfoResource = null;
             _commandList.Dispose();
             _commandList = null;
         }

@@ -13,13 +13,12 @@ namespace Engine.Assets.Rendering
         public IMaterialBindable[] Bindables { get; private set; }
         public uint LayoutIndex { get; private set; }
 
-        public CompoundBuffer(string name, GraphicsShader shader, uint layoutIndex, params IMaterialBindable[] bindables)
+        public CompoundBuffer(string name, GraphicsShader shader, uint layoutIndex, params IMaterialBindable[] bindables) : base(name)
         {
-            Name = name;
             InternalShader = shader;
             LayoutIndex = layoutIndex;
             Bindables = bindables;
-            // ReCreate();
+            ReCreate();
         }
 
         public bool Contains(GraphicsShader shader, uint layoutIndex, params IMaterialBindable[] bindables)
@@ -27,31 +26,27 @@ namespace Engine.Assets.Rendering
             return InternalShader == shader && LayoutIndex == layoutIndex /*&& Bindables.All(x => Array.IndexOf(bindables, x) != -1)*/;
         }
 
-        public override async Task ReCreate()
+        protected override void ReCreateInternal()
         {
-            if (HasBeenInitialized)
-                return;
-            await base.ReCreate();
             if (InternalResourceSet != null && !InternalResourceSet.IsDisposed)
                 InternalResourceSet.Dispose();
-            await InternalShader.ReCreate();
+            InternalShader.ReCreate();
             foreach (var item in Bindables)
             {
-                await item.ReCreate();
+                item.ReCreate();
             }
             ResourceSetDescription desc = new ResourceSetDescription(InternalShader._reflResourceLayouts[(int)LayoutIndex], Bindables.SelectMany(x => x.Bindables).ToArray());
             InternalResourceSet = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
             InternalResourceSet.Name = Name;
         }
 
-        public override Task<Resource> Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             throw new NotSupportedException("Can't clone CompoundBuffers");
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
-            base.Dispose();
             if (InternalResourceSet != null && !InternalResourceSet.IsDisposed)
                 InternalResourceSet.Dispose();
             InternalResourceSet = null;

@@ -39,9 +39,9 @@ namespace Engine.Game.Entities
             }
         }
 
-        public override async Task Tick(double dt)
+        public override void Tick(double dt)
         {
-            await base.Tick(dt);
+            base.Tick(dt);
             if (bodyHandle.HasValue)
             {
                 Position = Game.Simulation.Bodies[bodyHandle.Value].Pose.Position;

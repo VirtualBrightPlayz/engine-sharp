@@ -37,29 +37,24 @@ namespace Engine.Game.Entities
         {
         }
 
-        public virtual Task PreDraw(Renderer renderer, double dt)
+        public virtual void PreDraw(Renderer renderer, double dt)
         {
-            return Task.CompletedTask;
         }
 
-        public virtual Task Draw(Renderer renderer, double dt)
+        public virtual void Draw(Renderer renderer, double dt)
         {
-            return Task.CompletedTask;
         }
 
-        public virtual Task Tick(double dt)
+        public virtual void Tick(double dt)
         {
-            return Task.CompletedTask;
         }
 
-        public virtual Task ReCreate()
+        public virtual void ReCreate()
         {
-            return Task.CompletedTask;
         }
 
-        public virtual Task Unload()
+        public virtual void Unload()
         {
-            return Task.CompletedTask;
         }
 
         public virtual void Dispose()
