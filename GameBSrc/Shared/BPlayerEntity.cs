@@ -46,6 +46,8 @@ namespace GameBSrc
             ResourceManager.LoadAudioClip(Path.Combine(BGame.Instance.Data.SFXDir, "step.wav")),
         };
         private Vector4 nextLightColor = Vector4.One;
+        private int mouseSpeed = 10;
+        private bool posDeltaFlipFlop = false;
 
         public BPlayerEntity() : base("Player")
         {
@@ -61,7 +63,7 @@ namespace GameBSrc
         public override async Task PreDraw(Renderer renderer, double dt)
         {
             await base.PreDraw(renderer, dt);
-            UpdateLook();
+            UpdateLook(dt);
             QuaternionEx.Transform(Vector3.UnitX, Rotation, out var localUnitX);
             viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob + localUnitX * leftRightBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * 5f * (MathF.PI / 180f)), out Vector3 up);
@@ -76,6 +78,30 @@ namespace GameBSrc
             await base.Draw(renderer, dt);
             UpdateAudioPos();
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
+            if (!Input.IsMouseLocked)
+            {
+                ImGui.SetNextWindowPos(RenderingGlobals.ViewSize / 2f - RenderingGlobals.ViewSize / 3f);
+                ImGui.SetNextWindowSize(RenderingGlobals.ViewSize / 3f * 2f);
+                ImGui.PushFont(await UIExt.Pretext(RenderingGlobals.GameImGui, 12f));
+                if (ImGui.Begin("Settings", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove))
+                {
+                    if (ImGui.Button("Resume"))
+                    {
+                        Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
+                        Input.IsMouseLocked = true;
+                        posDeltaFlipFlop = true;
+                    }
+                    ImGui.Separator();
+                    ImGui.DragInt("Mouse Sensitivity", ref mouseSpeed);
+                    ImGui.Separator();
+                    if (ImGui.Button("Quit"))
+                    {
+                        MiscGlobals.IsClosing = true;
+                    }
+                }
+                ImGui.End();
+                ImGui.PopFont();
+            }
             if (BGame.Instance.DebugMode)
             {
                 if (ImGui.Begin("Test"))
@@ -158,7 +184,7 @@ namespace GameBSrc
             footstepSource.Dispose();
         }
 
-        public void UpdateLook()
+        public void UpdateLook(double delta)
         {
             if (!MiscGlobals.IsFocused)
             {
@@ -166,16 +192,22 @@ namespace GameBSrc
             }
             if (Input.IsMouseLocked)
             {
-                Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
-                lookAxis += Input.MouseDelta * Vector2.One * 0.25f;
-                lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
-                UpdateLookRotation();
+                if (posDeltaFlipFlop)
+                    Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
+                else
+                {
+                    lookAxis += Input.MouseDelta * Vector2.One * (float)delta * mouseSpeed;
+                    lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
+                    UpdateLookRotation();
+                }
+                posDeltaFlipFlop = !posDeltaFlipFlop;
             }
-            if (Input.IsMouseDown(Veldrid.MouseButton.Right) && !wasEscPressed)
+            if ((Input.IsMouseDown(Veldrid.MouseButton.Right) || Input.IsKeyPressed(Key.Escape)) && !wasEscPressed)
             {
                 Input.IsMouseLocked = !Input.IsMouseLocked;
+                posDeltaFlipFlop = true;
             }
-            wasEscPressed = Input.IsMouseDown(Veldrid.MouseButton.Right);
+            wasEscPressed = Input.IsMouseDown(Veldrid.MouseButton.Right) || Input.IsKeyPressed(Key.Escape);
         }
 
         public void UpdateLookRotation()

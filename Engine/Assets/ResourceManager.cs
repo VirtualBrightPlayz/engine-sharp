@@ -107,12 +107,13 @@ namespace Engine.Assets
 
         public static async Task<ImFontPtr> LoadImGuiFont(ImGuiRenderer renderer, string path, float size = 24f)
         {
+            string path2 = path + "_size" + size;
             if (RenderingGlobals.GameImGui != renderer)
                 return null;
-            if (Fonts.Any(x => x.Value.Any(y => y.Key == path)))
+            if (Fonts.Any(x => x.Value.Any(y => y.Key == path2)))
             {
                 renderer.RecreateFontDeviceTexture();
-                return Fonts.First(x => x.Value.Any(y => y.Key == path)).Value[path];
+                return Fonts.First(x => x.Value.Any(y => y.Key == path2)).Value[path2];
             }
             ImGuiIOPtr io = ImGui.GetIO();
             using Stream str = await FileManager.LoadStream(path);
@@ -124,7 +125,7 @@ namespace Engine.Assets
             font = io.Fonts.AddFontFromFileTTF(path, size);
             if (!Fonts.ContainsKey(renderer))
                 Fonts.Add(renderer, new Dictionary<string, ImFontPtr>());
-            Fonts[renderer].Add(path, font);
+            Fonts[renderer].Add(path2, font);
             io.Fonts.Build();
             renderer.RecreateFontDeviceTexture();
             return font;
