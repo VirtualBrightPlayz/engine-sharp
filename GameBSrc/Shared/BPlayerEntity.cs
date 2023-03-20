@@ -46,7 +46,7 @@ namespace GameBSrc
         };
         private Vector4 nextLightColor = Vector4.One;
         private int mouseSpeed = 10;
-        private bool posDeltaFlipFlop = false;
+        private double posDeltaFlipFlop;
 
         public BPlayerEntity() : base("Player")
         {
@@ -88,7 +88,7 @@ namespace GameBSrc
                     {
                         Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
                         Input.IsMouseLocked = true;
-                        posDeltaFlipFlop = true;
+                        // posDeltaFlipFlop = true;
                     }
                     ImGui.Separator();
                     ImGui.DragInt("Mouse Sensitivity", ref mouseSpeed);
@@ -191,20 +191,24 @@ namespace GameBSrc
             }
             if (Input.IsMouseLocked)
             {
-                if (posDeltaFlipFlop)
+                if (posDeltaFlipFlop > 0.025d)
+                {
+                    posDeltaFlipFlop = 0d;
                     Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
+                }
                 else
                 {
                     lookAxis += Input.MouseDelta * Vector2.One * (float)delta * mouseSpeed;
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                     UpdateLookRotation();
                 }
-                posDeltaFlipFlop = !posDeltaFlipFlop;
+                posDeltaFlipFlop += delta;
+                // posDeltaFlipFlop = !posDeltaFlipFlop;
             }
             if ((Input.IsMouseDown(Veldrid.MouseButton.Right) || Input.IsKeyPressed(Key.Escape)) && !wasEscPressed)
             {
                 Input.IsMouseLocked = !Input.IsMouseLocked;
-                posDeltaFlipFlop = true;
+                // posDeltaFlipFlop = true;
             }
             wasEscPressed = Input.IsMouseDown(Veldrid.MouseButton.Right) || Input.IsKeyPressed(Key.Escape);
         }
