@@ -198,7 +198,7 @@ namespace GameBSrc
                 }
                 else
                 {
-                    lookAxis += Input.MouseDelta * Vector2.One * (float)delta * mouseSpeed;
+                    lookAxis += Input.MouseDelta * Vector2.One * 0.025f * mouseSpeed;
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                     UpdateLookRotation();
                 }
