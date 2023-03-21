@@ -35,9 +35,12 @@ namespace Engine.Assets.Rendering
             {
                 item.ReCreate();
             }
-            ResourceSetDescription desc = new ResourceSetDescription(InternalShader._reflResourceLayouts[(int)LayoutIndex], Bindables.SelectMany(x => x.Bindables).ToArray());
-            InternalResourceSet = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
-            InternalResourceSet.Name = Name;
+            if (LayoutIndex < InternalShader._reflResourceLayouts.Count && LayoutIndex >= 0)
+            {
+                ResourceSetDescription desc = new ResourceSetDescription(InternalShader._reflResourceLayouts[(int)LayoutIndex], Bindables.SelectMany(x => x.Bindables).ToArray());
+                InternalResourceSet = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
+                InternalResourceSet.Name = Name;
+            }
         }
 
         protected override Resource CloneInternal(string cloneName)

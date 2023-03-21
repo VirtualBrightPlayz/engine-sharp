@@ -33,7 +33,7 @@ namespace Propnado
         private bool wasEscPressed = false;
         public bool DebugMode = false;
         public Vector3 Velocity { get; set; } = Vector3.Zero;
-        private bool posDeltaFlipFlop = false;
+        private double posDeltaFlipFlop;
 
         public NoClipPlayer() : base("NoClipPlayer")
         {
@@ -42,7 +42,7 @@ namespace Propnado
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
-            UpdateLook();
+            UpdateLook(dt);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, LocalUp);
             renderer.ViewPosition = viewPos;
             UpdateAudioPos();
@@ -94,7 +94,7 @@ namespace Propnado
             base.Dispose();
         }
 
-        public void UpdateLook()
+        public void UpdateLook(double dt)
         {
             if (!MiscGlobals.IsFocused)
             {
@@ -102,15 +102,18 @@ namespace Propnado
             }
             if (Input.IsMouseLocked)
             {
-                if (posDeltaFlipFlop)
-                    Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
-                else
+                if (posDeltaFlipFlop > 0.01d)
                 {
-                    lookAxis += Input.MouseDelta * Vector2.One * 0.25f;
+                    posDeltaFlipFlop = 0d;
+                    Input.Position = new Vector2(RenderingGlobals.ViewSize.X / 2, RenderingGlobals.ViewSize.Y / 2);
+                }
+                // else
+                {
+                    lookAxis += Input.MouseDelta * Vector2.One * 0.01f;
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                     UpdateLookRotation();
                 }
-                posDeltaFlipFlop = !posDeltaFlipFlop;
+                posDeltaFlipFlop += dt;
             }
             if (Input.IsKeyPressed(Veldrid.Key.Escape) && !wasEscPressed)
             {

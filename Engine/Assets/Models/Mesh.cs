@@ -277,6 +277,13 @@ namespace Engine.Assets.Models
             renderer.CommandList.DrawIndexed(_indexCount, 1, 0, 0, 0);
         }
 
+        public void DrawNow(Renderer renderer)
+        {
+            renderer.CommandList.SetVertexBuffer(0, _vertexBuffer);
+            renderer.CommandList.SetIndexBuffer(_indexBuffer, IsBigMesh ? IndexFormat.UInt32 : IndexFormat.UInt16);
+            renderer.CommandList.DrawIndexed(_indexCount, 1, 0, 0, 0);
+        }
+
         protected override void DisposeInternal()
         {
             InternalWorldBuffer?.Dispose();
