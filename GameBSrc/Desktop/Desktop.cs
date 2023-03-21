@@ -108,8 +108,6 @@ public static class DesktopEntry
         isBusy = true;
         if (size.HasValue)
         {
-            Console.WriteLine(size?.X);
-            Console.WriteLine(size?.Y);
             RenderingGlobals.Resize((uint)size?.X, (uint)size?.Y);
             renderer.InternalRenderTexture.Dispose();
             renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain));
