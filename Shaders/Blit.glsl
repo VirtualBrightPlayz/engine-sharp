@@ -2,6 +2,8 @@
 #pragma fragment main
 #pass main
 #blend main true One Zero Add One Zero Add
+#pass alpha
+#blend alpha true One InverseSourceAlpha Add One InverseSourceAlpha Add
 
 #pragma in vertex vec3 Position
 #pragma in vertex vec2 UV0
@@ -25,7 +27,7 @@ void main()
 #if fragment
 void main()
 {
-    vec4 diffuseColor = texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), fsin_UV0);
+    vec4 diffuseColor = texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), fsin_UV0) * fsin_Color;
     FragColor = diffuseColor;
 }
 #endif

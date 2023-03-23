@@ -173,7 +173,7 @@ namespace Engine.Assets.Rendering
                 }
                 if (uniforms[i].resource is RenderTexture2D renderTex)
                 {
-                    throw new NotImplementedException();
+                    // throw new NotImplementedException();
                     elements.Add(new ResourceLayoutElementDescription(uniforms[i].name, ResourceKind.TextureReadOnly, stages));
                     elements.Add(new ResourceLayoutElementDescription(uniforms[i].name + "Sampler", ResourceKind.Sampler, stages));
                     _uniformResources[setId].Add(renderTex);
@@ -221,6 +221,12 @@ namespace Engine.Assets.Rendering
                         {
                             boundResources.Add(texture.Tex);
                             boundResources.Add(texture.InternalSampler);
+                            i += 2;
+                        }
+                        else if (res is RenderTexture2D renderTexture)
+                        {
+                            boundResources.Add(renderTexture.ColorTex);
+                            boundResources.Add(renderTexture.InternalSampler);
                             i += 2;
                         }
                         else if (res is UniformBuffer buf)
@@ -310,8 +316,6 @@ namespace Engine.Assets.Rendering
                 foreach (var pass in Shader.Passes)
                     CreatePipeline(renderer, pass);
             }
-            // if (_pipeline == null || _pipeline.IsDisposed)
-                // CreatePipeline(Program.GameGraphics.SwapchainFramebuffer.OutputDescription);
         }
 
         public void Bind(Renderer renderer, string passName = "")

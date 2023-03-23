@@ -37,8 +37,9 @@ namespace Engine.Game.Systems
 
         protected override void Update(double state, ref MeshData component)
         {
+            MaterialLookup[component.MaterialId].PreDraw(Renderer.Current);
             MaterialLookup[component.MaterialId].Bind(Renderer.Current);
-            // MeshLookup[component.MeshId].SetWorldMatrix(Renderer.Current, System.Numerics.Matrix4x4.Identity);
+            MeshLookup[component.MeshId].SetWorldMatrix(Renderer.Current, System.Numerics.Matrix4x4.Identity);
             MeshLookup[component.MeshId].DrawNow(Renderer.Current);
         }
     }

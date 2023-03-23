@@ -11,6 +11,8 @@ namespace Engine.Assets.Rendering
         public const string ProjectionMatrixName = "ProjectionMatrix";
         public const uint WorldMatrixBufferSet = 1;
         public const string WorldMatrixName = "WorldMatrix";
+        public const uint WorldInfoBufferSet = 3;
+        public const string WorldInfoName = "WorldInfo";
         public const uint DiffuseTextureSet = 2;
         public const string DiffuseTextureName = "DiffuseTexture";
         public const uint BonesMatrixBufferSet = 3;

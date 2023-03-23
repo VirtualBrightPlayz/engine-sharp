@@ -95,10 +95,10 @@ namespace Engine.Assets.Models
             InternalWorldUniform?.Dispose();
             InternalWorldBuffer?.Dispose();
             InternalMaterial = mat;
-            if (InternalMaterial.Shader.HasSet(UniformConsts.WorldMatrixBufferSet))
+            if (InternalMaterial.Shader.HasSet(UniformConsts.WorldMatrixName))
             {
                 InternalWorldUniform = new UniformBuffer("WorldUniform", (uint)16 * 4);
-                InternalWorldBuffer = new CompoundBuffer("WorldBuffer", InternalMaterial.Shader, UniformConsts.WorldMatrixBufferSet, InternalWorldUniform);
+                InternalWorldBuffer = new CompoundBuffer("WorldBuffer", InternalMaterial.Shader, UniformConsts.WorldMatrixName, InternalWorldUniform);
             }
         }
 
@@ -151,10 +151,10 @@ namespace Engine.Assets.Models
         public void UploadData<T>(T[] vertices) where T : unmanaged, IVertex
         {
             SetVertexList<T>(vertices);
-            UploadData<T>();
+            UploadData<T>((Renderer)null);
         }
 
-        public void UploadData<T>() where T : unmanaged, IVertex
+        public void UploadData<T>(Renderer renderer) where T : unmanaged, IVertex
         {
             if (_vertexList.Count == 0)
                 throw new InvalidOperationException("VertexList contains no values");
@@ -175,23 +175,36 @@ namespace Engine.Assets.Models
                     throw new InvalidOperationException($"{typeof(T).FullName}.{info.Name} is not in the {i} place in the struct");
             }
 
-            if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
+            /*if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
                 _vertexBuffer.Dispose();
             if (_indexBuffer != null && !_indexBuffer.IsDisposed)
-                _indexBuffer.Dispose();
+                _indexBuffer.Dispose();*/
 
             T[] data = _vertexList.Cast<T>().ToArray();
             uint size = (uint)Unsafe.SizeOf<T>();
 
-            _vertexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)data.Length * size, BufferUsage.VertexBuffer));
-            _indexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)Indices.Count * (uint)(IsBigMesh ? sizeof(uint) : sizeof(ushort)), BufferUsage.IndexBuffer));
+            if (_vertexBuffer == null || _vertexBuffer.IsDisposed)
+                _vertexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)data.Length * size, BufferUsage.VertexBuffer));
+            if (_indexBuffer == null || _indexBuffer.IsDisposed)
+                _indexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)Indices.Count * (uint)(IsBigMesh ? sizeof(uint) : sizeof(ushort)), BufferUsage.IndexBuffer));
             _vertexBuffer.Name = $"{Name}_VertexBuffer";
             _indexBuffer.Name = $"{Name}_IndexBuffer";
-            ModelGlobals.GameGraphics.UpdateBuffer(_vertexBuffer, 0, data);
-            if (IsBigMesh)
-                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
+            if (renderer != null)
+            {
+                renderer.CommandList.UpdateBuffer(_vertexBuffer, 0, data);
+                if (IsBigMesh)
+                    renderer.CommandList.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
+                else
+                    renderer.CommandList.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
+            }
             else
-                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
+            {
+                ModelGlobals.GameGraphics.UpdateBuffer(_vertexBuffer, 0, data);
+                if (IsBigMesh)
+                    ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
+                else
+                    ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
+            }
             _indexCount = (uint)Indices.Count;
         }
 

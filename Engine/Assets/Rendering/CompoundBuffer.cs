@@ -13,12 +13,21 @@ namespace Engine.Assets.Rendering
         public IMaterialBindable[] Bindables { get; private set; }
         public uint LayoutIndex { get; private set; }
 
+        public CompoundBuffer(string name, GraphicsShader shader, string layoutName, params IMaterialBindable[] bindables) : this(name, shader, (uint)shader.GetSetIndex(layoutName), bindables)
+        {
+        }
+
         public CompoundBuffer(string name, GraphicsShader shader, uint layoutIndex, params IMaterialBindable[] bindables) : base(name)
         {
             InternalShader = shader;
             LayoutIndex = layoutIndex;
             Bindables = bindables;
             ReCreate();
+        }
+
+        public bool Contains(GraphicsShader shader, string layoutName, params IMaterialBindable[] bindables)
+        {
+            return InternalShader == shader && LayoutIndex == (uint)shader.GetSetIndex(layoutName) /*&& Bindables.All(x => Array.IndexOf(bindables, x) != -1)*/;
         }
 
         public bool Contains(GraphicsShader shader, uint layoutIndex, params IMaterialBindable[] bindables)

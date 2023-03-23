@@ -112,7 +112,7 @@ namespace Engine.Assets.Rendering
         {
             if (!MatrixBuffers.ContainsKey(material.Shader))
             {
-                MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewProjectionMatrixBufferSet, ViewMatrixResource, ProjMatrixResource);
+                MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewMatrixName, ViewMatrixResource, ProjMatrixResource);
                 MatrixBuffers[material.Shader].ReCreate();
             }
             material.SetUniforms(UniformConsts.ViewProjectionMatrixBufferSet, MatrixBuffers[material.Shader]);
@@ -160,7 +160,22 @@ namespace Engine.Assets.Rendering
         {
             BlitMesh.InternalMaterial.ClearUniforms(0);
             BlitMesh.InternalMaterial.SetUniforms(0, new UniformLayout("Diffuse", tex, false, true));
+            BlitMesh.InternalMaterial.PreDraw(this);
             BlitMesh.Draw(this, "main");
+        }
+
+        public void Blit(Material mat)
+        {
+            mat.PreDraw(this);
+            mat.Bind(this, "alpha");
+            BlitMesh.DrawNow(this);
+        }
+
+        public void NewPass()
+        {
+            End();
+            Submit();
+            Begin();
         }
 
         protected override void DisposeInternal()

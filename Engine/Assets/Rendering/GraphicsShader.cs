@@ -21,11 +21,6 @@ namespace Engine.Assets.Rendering
         public SpirvReflection _compileResult { get; private set; }
         public List<ResourceLayout> _reflResourceLayouts { get; private set; } = new List<ResourceLayout>();
         public List<ShaderPass> Passes { get; private set; } = new List<ShaderPass>();
-        private Dictionary<string, string> defines;
-        private int fragInputs;
-        private List<string> passes;
-        private string[] vertexCode;
-        private string[] fragmentCode;
 
         public GraphicsShader(string path) : this(path, path)
         {
@@ -84,14 +79,38 @@ namespace Engine.Assets.Rendering
             throw new Exception("Can't clone shaders");
         }
 
+        public bool HasSet(string name)
+        {
+            for (int i = 0; i < _compileResult.ResourceLayouts.Length; i++)
+            {
+                if (_compileResult.ResourceLayouts[i].Elements.Any(x => x.Name == name))
+                    return true;
+            }
+            return false;
+        }
+
         public bool HasSet(uint index)
         {
             return _reflResourceLayouts.Count > index;
         }
 
-        public string GetSetName(uint index)
+        public int GetSetIndex(string name)
         {
-            return _compileResult.ResourceLayouts[(int)index].Elements[0].Name;
+            for (int i = 0; i < _compileResult.ResourceLayouts.Length; i++)
+            {
+                if (_compileResult.ResourceLayouts[i].Elements.Any(x => x.Name == name))
+                    return i;
+            }
+            return -1;
+        }
+
+        public string[] GetSetNames(uint index)
+        {
+            if (index < _compileResult.ResourceLayouts.Length)
+                return _compileResult.ResourceLayouts[(int)index].Elements.Select(x => x.Name).ToArray();
+            // if (index < _reflResourceLayouts.Count)
+                // return _reflResourceLayouts[(int)index].Name;
+            return new string[0];
         }
 
         private void CreateShaders(string vertCode, string fragCode, string pass, string pa)

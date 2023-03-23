@@ -252,6 +252,7 @@ namespace Engine.Assets.Rendering
                     if (!Enum.TryParse<ShaderComparisonKind>(settings[3], true, out var compare))
                         throw new InvalidOperationException(depthErrorString);
                     ShaderPass pass = new ShaderPass();
+                    pass.PassName = passName;
                     pass.DepthTest = testEnabled;
                     pass.DepthWrite = writeEnabled;
                     pass.DepthCompare = compare;
@@ -276,6 +277,7 @@ namespace Engine.Assets.Rendering
                     if (!Enum.TryParse<ShaderCullMode>(settings[1], true, out var compare))
                         throw new InvalidOperationException(depthErrorString);
                     ShaderPass pass = new ShaderPass();
+                    pass.PassName = passName;
                     pass.CullMode = compare;
                     int passIndex = Passes.FindIndex(x => x.PassName == passName);
                     if (passIndex != -1)

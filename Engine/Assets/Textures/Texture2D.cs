@@ -87,6 +87,14 @@ namespace Engine.Assets.Textures
             InternalSampler,
         };
 
+        public Texture2D(string name, uint w, uint h) : base(name)
+        {
+            Width = w;
+            Height = h;
+            _texData = new Rgba32[Width * Height];
+            ReCreate();
+        }
+
         public Texture2D(string path) : this(path, path)
         {
         }
@@ -143,6 +151,11 @@ namespace Engine.Assets.Textures
             return tex;
         }
 
+        public void Apply()
+        {
+            RenderingGlobals.GameGraphics.UpdateTexture(Tex, _texData, 0, 0, 0, Width, Height, 1, 0, 0);
+        }
+
         public void UpdateSamplerInfo(SamplerInfo info)
         {
             Info = info;
@@ -150,6 +163,23 @@ namespace Engine.Assets.Textures
                 InternalSampler.Dispose();
             InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription());
             InternalSampler.Name = Name;
+        }
+
+        public Rgba32 GetPixel(int x, int y)
+        {
+            if (_texData != null && x >= 0 && x < Width && y >= 0 && y < Height)
+            {
+                return _texData[x + y * Width];
+            }
+            return default;
+        }
+
+        public void SetPixel(Rgba32 rgba, int x, int y)
+        {
+            if (_texData != null && x >= 0 && x < Width && y >= 0 && y < Height)
+            {
+                _texData[x + y * Width] = rgba;
+            }
         }
 
         protected override void DisposeInternal()
