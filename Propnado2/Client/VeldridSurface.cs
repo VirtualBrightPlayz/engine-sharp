@@ -1,11 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Avalonia;
-using Avalonia.Media;
-using Avalonia.Platform;
-using Avalonia.Skia;
-using Avalonia.Visuals.Media.Imaging;
 using Engine.Assets;
 using Engine.Assets.Rendering;
 using Myra.Graphics2D.UI;

@@ -35,6 +35,7 @@ public class VeldridTexMan : ITexture2DManager
         {
             for (int x = bounds.X; x < bounds.Width; x++)
             {
+                // var col = new Rgba32(data[x + y * bounds.Width + 0], data[x + y * bounds.Width + 1], data[x + y * bounds.Width + 2], data[x + y * bounds.Width + 3]);
                 var col = new Rgba32(data[x * 4 + y * bounds.Width * 4 + 0], data[x * 4 + y * bounds.Width * 4 + 1], data[x * 4 + y * bounds.Width * 4 + 2], data[x * 4 + y * bounds.Width * 4 + 3]);
                 tex.SetPixel(col, x, y);
             }

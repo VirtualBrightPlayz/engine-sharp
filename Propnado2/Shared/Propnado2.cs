@@ -13,6 +13,8 @@ using Engine.Game.Components;
 using FontStashSharp;
 using Myra;
 using Myra.Graphics2D.UI;
+using Myra.Graphics2D.UI.Styles;
+using TheArtOfDev.HtmlRenderer.Avalonia;
 
 namespace Propnado
 {
@@ -22,35 +24,27 @@ namespace Propnado
 
         // public Entity Player;
         private Texture2D tex;
-        private Desktop desktop;
 
         public override void Setup()
         {
             base.Setup();
-            MyraEnvironment.Platform = new VeldridSurface();
-            // MyraEnvironment.SmoothText = false;
-            // FontSystemDefaults.FontResolutionFactor = 1f;
-            desktop = new Desktop();
-            desktop.Root = new Test.AllWidgets();
-            // Entities.Add(new StaticModelEntity("H", "Shaders/cube.gltf", null));
-            /*
-            Model mdl = new Model("Cube", "Shaders/cube.gltf", new Material("Base", new GraphicsShader("Shaders/MainMesh")), true, true);
-            int meshId = DrawMeshSys.GetMeshId(mdl.Meshes[0]);
-            Entity ent = Scene.CreateEntity();
-            ent.Set(new MeshData()
+            SkiaPlatform.Initialize();
+            Bitmap bitmap = HtmlRender.RenderToImage(File.ReadAllText("index.html"), new Size(RenderingGlobals.ViewSize.X, RenderingGlobals.ViewSize.Y));
             {
-                MeshId = DrawMeshSys.GetMeshId(mdl.Meshes[0]),
-                MaterialId = DrawMeshSys.GetMaterialId(mdl.InternalMaterials[0]),
-            });
-            */
-            // tex = new Texture2D("Bitmap", ms.GetBuffer());
+                bitmap.Save("test.png");
+                using (var ms = new MemoryStream())
+                {
+                    bitmap.Save(ms);
+                    byte[] arr = ms.ToArray();
+                    tex = new Texture2D("UI", arr);
+                }
+            }
         }
 
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            desktop.Render();
-            // Renderer.Current.Blit(tex);
+            Renderer.Current.Blit(tex);
         }
 
         public override void Tick(double dt)
