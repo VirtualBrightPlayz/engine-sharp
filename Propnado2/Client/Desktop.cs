@@ -29,7 +29,7 @@ public static class DesktopEntry
     public static int Init()
     {
         Console.WriteLine("Starting...");
-        RenderingGlobals.InitGameGraphics(GraphicsBackend.Vulkan);
+        RenderingGlobals.InitGameGraphics(GraphicsBackend.Direct3D11);
         RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
@@ -99,6 +99,7 @@ public static class DesktopEntry
         if (RenderingGlobals.GameGraphics == null)
             return;
         size = new Vector2(RenderingGlobals.Window.Width, RenderingGlobals.Window.Height);
+        // RenderingGlobals.Resize((uint)size?.X, (uint)size?.Y);
     }
 
     public static int Frame(double time)

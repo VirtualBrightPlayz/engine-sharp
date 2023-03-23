@@ -26,10 +26,12 @@ public class VeldridDrawCtx : IMyraRenderer
             UV0 = og.TextureCoordinate;
         }
 
-        public Vertex(VertexPositionColorTexture og, Vector2 scalePos)
+        public Vertex(VertexPositionColorTexture og, Matrix4x4 mat)
         {
-            // Position = og.Position;// / new Vector3(scalePos.X, scalePos.Y, 1f);
-            Position = (og.Position / new Vector3(scalePos.X, scalePos.Y * 0.5f, 1f) - new Vector3(1f, 0.5f, 0f)) * new Vector3(2f, -1f, 1f) + new Vector3(1f, 0.5f, 0f);
+            Position = Vector3.Transform(og.Position, mat);
+            // Position.Z = 1f;
+            // Position = mat * og.Position;// / new Vector3(scalePos.X, scalePos.Y, 1f);
+            // Position = (og.Position / new Vector3(scalePos.X, scalePos.Y * 0.5f, 1f) - new Vector3(1f, 0.5f, 0f)) * new Vector3(2f, -1f, 1f) + new Vector3(1f, 0.5f, 0f);
             Color = new Vector4(og.Color.R, og.Color.G, og.Color.B, og.Color.A) / 255f;
             UV0 = og.TextureCoordinate;
         }
@@ -45,7 +47,8 @@ public class VeldridDrawCtx : IMyraRenderer
         {
             rect = value;
             Flush();
-            rend.CommandList.SetScissorRect(0, (uint)rect.X, (uint)rect.Y, (uint)rect.Width, (uint)rect.Height);
+            if (rend.IsDrawing)
+                rend.CommandList.SetScissorRect(0, (uint)rect.X, (uint)rect.Y, (uint)rect.Width, (uint)rect.Height);
         }
     }
     public Mesh mesh;
@@ -65,11 +68,13 @@ public class VeldridDrawCtx : IMyraRenderer
             3, 1, 2,
         });
         */
+        // /*
         mesh.Indices.AddRange(new uint[]
         {
             0, 1, 2,
             2, 1, 3,
         });
+        // */
         rend = new Renderer("UI_Renderer");
         rt = new RenderTexture2D("UI_RenderTexture", (uint)RenderingGlobals.ViewSize.X, (uint)RenderingGlobals.ViewSize.Y);
         mat.ClearUniforms(0);
@@ -78,6 +83,10 @@ public class VeldridDrawCtx : IMyraRenderer
 
     public void Begin(TextureFiltering textureFiltering)
     {
+        foreach (var tex in ((VeldridTexMan)TextureManager).textures)
+        {
+            tex.UpdateSamplerInfo(textureFiltering == TextureFiltering.Nearest ? Engine.Assets.Textures.SamplerInfo.Point : Engine.Assets.Textures.SamplerInfo.Linear);
+        }
         Begin();
         rend.Clear();
     }
@@ -90,6 +99,7 @@ public class VeldridDrawCtx : IMyraRenderer
         Renderer.Current = rend;
         rend.SetRenderTarget(rt);
         rend.Begin();
+        rend.CommandList.SetViewport(0, new Viewport(0f, 0f, RenderingGlobals.ViewSize.X, RenderingGlobals.ViewSize.Y, 0f, 1f));
         // rend.Clear();
         var man = (VeldridTexMan)TextureManager;
         for (int i = 0; i < man.textures.Count; i++)
@@ -116,13 +126,15 @@ public class VeldridDrawCtx : IMyraRenderer
         var mat = man.mats[(int)texture];
 
         mesh.ClearVertexList();
-        mesh.AddVertex(new Vertex(topLeft, RenderingGlobals.ViewSize));
-        mesh.AddVertex(new Vertex(topRight, RenderingGlobals.ViewSize));
-        mesh.AddVertex(new Vertex(bottomLeft, RenderingGlobals.ViewSize));
-        mesh.AddVertex(new Vertex(bottomRight, RenderingGlobals.ViewSize));
+        var matrix = Matrix4x4.CreateOrthographicOffCenter(0, RenderingGlobals.ViewSize.X, RenderingGlobals.ViewSize.Y, 0f, 0f, 1f);
+        mesh.AddVertex(new Vertex(topLeft, matrix));
+        mesh.AddVertex(new Vertex(topRight, matrix));
+        mesh.AddVertex(new Vertex(bottomLeft, matrix));
+        mesh.AddVertex(new Vertex(bottomRight, matrix));
         mesh.UploadData<Vertex>(Renderer.Current);
 
-        mat.Bind(Renderer.Current, "alpha");
+        mat.Bind(Renderer.Current, "main");
+        // rend.CommandList.SetScissorRect(0, (uint)rect.X, (uint)rect.Y, (uint)rect.Width, (uint)rect.Height);
         mesh.DrawNow(Renderer.Current);
     }
 
@@ -145,8 +157,11 @@ public class VeldridDrawCtx : IMyraRenderer
         // return;
         if (temp == null)
             return;
-        rend.End();
-        rend.Submit();
+        if (rend.IsDrawing)
+        {
+            rend.End();
+            rend.Submit();
+        }
         Renderer.Current = temp;
         temp = null;
         // Renderer.Current.Blit(mat);

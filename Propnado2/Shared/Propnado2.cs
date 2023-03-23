@@ -10,6 +10,7 @@ using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using Engine.Game;
 using Engine.Game.Components;
+using FontStashSharp;
 using Myra;
 using Myra.Graphics2D.UI;
 
@@ -27,6 +28,8 @@ namespace Propnado
         {
             base.Setup();
             MyraEnvironment.Platform = new VeldridSurface();
+            // MyraEnvironment.SmoothText = false;
+            // FontSystemDefaults.FontResolutionFactor = 1f;
             desktop = new Desktop();
             desktop.Root = new Test.AllWidgets();
             // Entities.Add(new StaticModelEntity("H", "Shaders/cube.gltf", null));

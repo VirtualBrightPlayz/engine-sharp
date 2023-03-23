@@ -167,7 +167,7 @@ namespace Engine.Assets.Rendering
         public void Blit(Material mat)
         {
             mat.PreDraw(this);
-            mat.Bind(this, "alpha");
+            mat.Bind(this, "main");
             BlitMesh.DrawNow(this);
         }
 
