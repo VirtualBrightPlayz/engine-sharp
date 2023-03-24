@@ -9,6 +9,7 @@ using Engine.Assets.Audio;
 using Engine.Assets;
 using Engine.Assets.Textures;
 using Engine.Game;
+using System.Diagnostics;
 
 public static class AndroidEntry
 {
@@ -21,90 +22,68 @@ public static class AndroidEntry
     private static TimeSpan startTime;
     private static TimeSpan currentTime => new TimeSpan(DateTime.UtcNow.Ticks);
 
-    public static int Init()
+    public static void Init()
     {
         Console.WriteLine("Starting...");
-        // RenderingGlobals.InitGameGraphics(GraphicsBackend.Direct3D11);
-        // RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
-        RenderTexture2D mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
+        RenderTexture2D mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.MainSwapchain);
         renderer.SetRenderTarget(mainRT);
         renderer.InternalRenderTexture.ReCreate();
-        AudioGlobals.InitGameAudio();
+        // AudioGlobals.InitGameAudio();
         MiscGlobals.InitGameMisc();
         game = new Propnado.Propnado2();
         game.Setup();
         ResourceManager.Update();
         startTime = currentTime;
-        while (!MiscGlobals.IsClosing)
-        {
-            MiscGlobals.Snapshot = RenderingGlobals.Window.PumpEvents();
-            if (MiscGlobals.ReCreateAllNextFrame)
-            {
-                ResourceManager.UnloadAll();
-                ResourceManager.ReCreateAll();
-                ResourceManager.Update();
-            }
-            if (RenderingGlobals.NextFrameBackend.HasValue)
-            {
-                ResourceManager.UnloadAll();
-                game.Unload();
-                mainRT.Dispose();
-                // AudioGlobals.DisposeGameAudio();
-                RenderingGlobals.DisposeGameGraphics();
-                RenderingGlobals.InitGameGraphics(RenderingGlobals.NextFrameBackend.Value);
-                // AudioGlobals.InitGameAudio();
-                Renderer.Current = renderer;
-                mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
-                renderer.SetRenderTarget(mainRT);
-                game.ReCreate();
-                ResourceManager.ReCreateAll();
-                ResourceManager.Update();
-            }
-            MiscGlobals.ReCreateAllNextFrame = false;
-            RenderingGlobals.NextFrameBackend = null;
-            FrameLoop();
-            if (!RenderingGlobals.Window.Exists)
-                break;
-        }
-        AudioGlobals.DisposeGameAudio();
-        RenderingGlobals.DisposeGameGraphics();
+    }
+
+    public static void DeInit()
+    {
+        // ResourceManager.Update();
+        // ResourceManager.UnloadAll();
+        // AudioGlobals.DisposeGameAudio();
+        game = null;
         Console.WriteLine("Exit.");
-        return 0;
+    }
+
+    public static void MainLoopTick()
+    {
+        if (MiscGlobals.ReCreateAllNextFrame)
+        {
+            ResourceManager.UnloadAll();
+            ResourceManager.ReCreateAll();
+            ResourceManager.Update();
+        }
+        MiscGlobals.ReCreateAllNextFrame = false;
+        RenderingGlobals.NextFrameBackend = null;
+        FrameLoop();
     }
 
     public static void FrameLoop()
     {
-        try
+        // if (!isBusy)
         {
-            if (!isBusy)
-            {
-                Frame((double)(currentTime - startTime).TotalSeconds);
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.ToString());
+            Frame((double)(currentTime - startTime).TotalSeconds);
         }
     }
 
-    public static void OnWindowResize()
+    public static void Resize(int w, int h)
     {
-        if (RenderingGlobals.GameGraphics == null)
-            return;
-        size = new Vector2(RenderingGlobals.Window.Width, RenderingGlobals.Window.Height);
-        // RenderingGlobals.Resize((uint)size?.X, (uint)size?.Y);
+        size = new Vector2(w, h);
     }
 
     public static int Frame(double time)
     {
         isBusy = true;
+        Debug.Assert(renderer != null, "h1");
+        Debug.Assert(RenderingGlobals.SwapchainFramebuffer != null, "h2");
+        Debug.Assert(RenderingGlobals.GameImGui != null, "h4");
         if (size.HasValue)
         {
             RenderingGlobals.Resize((uint)size?.X, (uint)size?.Y);
-            renderer.InternalRenderTexture.Dispose();
-            renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain));
+            renderer.InternalRenderTexture?.Dispose();
+            renderer.SetRenderTarget(new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.MainSwapchain));
             renderer.InternalRenderTexture.ReCreate();
         }
         size = null;
@@ -112,7 +91,7 @@ public static class AndroidEntry
         MiscGlobals.FPS = 1d / Math.Max(delta, 0.001d);
         delta = Math.Min(delta, 0.5d);
         ResourceManager.Update();
-        RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Width, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Height);
+        RenderingGlobals.ImGuiSetTarget(RenderingGlobals.SwapchainFramebuffer.OutputDescription, (int)RenderingGlobals.SwapchainFramebuffer.Width, (int)RenderingGlobals.SwapchainFramebuffer.Height);
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputHandler);
         renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.1f, 1000f);
         Renderer.Current = renderer;
@@ -121,12 +100,12 @@ public static class AndroidEntry
         renderer.Clear();
         Renderer.Current = renderer;
         game.Draw(renderer, delta);
-        // DebugGlobals.DrawDebugWindow();
+        DebugGlobals.DrawDebugWindow();
         ImGuiNET.ImGui.EndFrame();
         RenderingGlobals.GameImGui.Render(RenderingGlobals.GameGraphics, renderer.CommandList);
         renderer.End();
         renderer.Submit();
-        RenderingGlobals.GameGraphics.SwapBuffers();
+        RenderingGlobals.SwapMainBuffer();
         MiscGlobals.GameInputHandler.Update();
         game.Tick(delta);
         lastTime = time;

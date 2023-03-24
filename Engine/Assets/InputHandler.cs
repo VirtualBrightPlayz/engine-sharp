@@ -89,7 +89,7 @@ namespace Engine.Assets
         #if WEBGL
             UpdateMouse();
         #else
-            MiscGlobals.IsFocused = RenderingGlobals.Window.Focused;
+            MiscGlobals.IsFocused = RenderingGlobals.Window == null ? true : RenderingGlobals.Window.Focused;
             _mouseDelta = new Vector2((int)_mouseDeltaOffset.X, (int)_mouseDeltaOffset.Y);
             _mouseDeltaOffset = Vector2.Zero;
             _mousePosition = MousePosition;

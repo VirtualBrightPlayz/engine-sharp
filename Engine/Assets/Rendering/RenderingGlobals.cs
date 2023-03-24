@@ -14,28 +14,20 @@ namespace Engine.Assets.Rendering
         public static GraphicsBackend? NextFrameBackend { get; set; }
         public static RenderDoc RenderDocInstance { get; set; }
         public static Vector2 ViewSize { get; private set; }
+        public static Swapchain MainSwapchain { get; private set; }
+        public static Framebuffer SwapchainFramebuffer => MainSwapchain.Framebuffer;
 #if !WEBGL
         public static Veldrid.Sdl2.Sdl2Window Window { get; private set; }
 #endif
 
-        public static void InitGameGraphicsFrom(GraphicsBackend api, SwapchainSource swapchainSource, int w, int h)
+        public static void InitGameGraphicsFrom(GraphicsBackend api, GraphicsDevice device, Swapchain swapchain, int w, int h)
         {
             APIBackend = api;
             ViewSize = new Vector2(w, h);
-            var desc = new SwapchainDescription(swapchainSource, (uint)ViewSize.X, (uint)ViewSize.Y, Veldrid.PixelFormat.D32_Float_S8_UInt, true);
-            switch (api)
-            {
-                case GraphicsBackend.Vulkan:
-                    GameGraphics = GraphicsDevice.CreateVulkan(new GraphicsDeviceOptions()
-                    {
-                        // SingleThreaded = false,
-                        PreferDepthRangeZeroToOne = true,
-                        PreferStandardClipSpaceYDirection = true,
-                    }, desc);
-                    break;
-            }
+            GameGraphics = device;
+            MainSwapchain = swapchain;
             Window = null;
-            GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+            GameImGui = new ImGuiRenderer(GameGraphics, SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
         }
 
         public static void InitGameGraphics(GraphicsBackend api)
@@ -61,7 +53,13 @@ namespace Engine.Assets.Rendering
             Window = win;
             GameGraphics = gfx;
             APIBackend = gfx.BackendType;
-            GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+            MainSwapchain = gfx.MainSwapchain;
+            GameImGui = new ImGuiRenderer(GameGraphics, SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+        }
+
+        public static void SwapMainBuffer()
+        {
+            GameGraphics.SwapBuffers(MainSwapchain);
         }
 
         public static void ImGuiSetTarget(OutputDescription desc, int w, int h)
@@ -85,15 +83,20 @@ namespace Engine.Assets.Rendering
         public static void Resize(uint w, uint h)
         {
             ViewSize = new Vector2(w, h);
-            GameGraphics.ResizeMainWindow((uint)w, (uint)h);
+            MainSwapchain.Resize((uint)w, (uint)h);
             GameImGui.WindowResized((int)w, (int)h);
         }
 
-        public static void DisposeGameGraphicsSkipWindow()
+        public static void Pause()
         {
             GameImGui.Dispose();
             GameImGui = null;
-            GameGraphics.Dispose();
+        }
+
+        public static void NullGameGraphics()
+        {
+            GameImGui = null;
+            Window = null;
             GameGraphics = null;
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -12,12 +13,15 @@ namespace Engine.Assets
         public static Stream LoadStream(string path)
         {
             var stream = typeof(FileManager).Assembly.GetManifestResourceStream(typeof(FileManager).Assembly.FullName + "." + path.Replace("/", "."));
+            if (stream == null)
+                stream = typeof(FileManager).Assembly.GetManifestResourceStream(path.Replace("/", "."));
             string filepath = Path.Combine(typeof(FileManager).Assembly.Location, "..", path);
             if (stream == null && File.Exists(filepath))
                 stream = File.OpenRead(filepath);
             filepath = Path.Combine(Directory.GetCurrentDirectory(), path);
             if (stream == null && File.Exists(filepath))
                 stream = File.OpenRead(filepath);
+            Debug.Assert(stream != null, path);
             return stream;
         }
 

@@ -15,6 +15,9 @@
     <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj" />
     <ProjectReference Include="..\..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
     <ProjectReference Include="..\..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
+    <!-- <EmbeddedResource Include="../../Shaders/Blit.glsl">
+      <LogicalName>Shaders.Blit.glsl</LogicalName>
+    </EmbeddedResource> -->
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +26,7 @@
     <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0026" />
     <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0026" />
     <PackageReference Include="DefaultEcs" Version="0.17.2" />
+    <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
   </ItemGroup>
 
   <ItemGroup>

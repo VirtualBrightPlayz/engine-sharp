@@ -28,6 +28,7 @@ namespace Propnado
         public override void Setup()
         {
             base.Setup();
+            /*
             SkiaPlatform.Initialize();
             Bitmap bitmap = HtmlRender.RenderToImage(File.ReadAllText("index.html"), new Size(RenderingGlobals.ViewSize.X, RenderingGlobals.ViewSize.Y));
             {
@@ -39,12 +40,13 @@ namespace Propnado
                     tex = new Texture2D("UI", arr);
                 }
             }
+            */
         }
 
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            Renderer.Current.Blit(tex);
+            // Renderer.Current.Blit(tex);
         }
 
         public override void Tick(double dt)
