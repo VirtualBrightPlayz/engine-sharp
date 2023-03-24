@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
+    <TargetFramework>net7.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <ApplicationId>com.companyname.AndroidGame</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <AndroidSdkDirectory>$(ANDROID_HOME)</AndroidSdkDirectory>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,5 +38,4 @@
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.0-preview5" />
     <PackageReference Include="XamlNameReferenceGenerator" Version="1.6.1" />
   </ItemGroup>
-
 </Project>

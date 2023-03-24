@@ -14,27 +14,33 @@ namespace Engine.Assets.Rendering
         public static GraphicsBackend? NextFrameBackend { get; set; }
         public static RenderDoc RenderDocInstance { get; set; }
         public static Vector2 ViewSize { get; private set; }
-    #if !WEBGL
+#if !WEBGL
         public static Veldrid.Sdl2.Sdl2Window Window { get; private set; }
-    #endif
+#endif
 
-        #if WEBGL
-        public static void InitGameGraphics(GraphicsBackend api, SwapchainSource swapchainSource)
-        #else
-        public static void InitGameGraphics(GraphicsBackend api)
-        #endif
+        public static void InitGameGraphicsFrom(GraphicsBackend api, SwapchainSource swapchainSource, int w, int h)
         {
             APIBackend = api;
-        #if WEBGL
-            ViewSize = new Vector2(600, 400);
-            var desc = new SwapchainDescription(swapchainSource, (uint)ViewSize.X, (uint)ViewSize.Y, Veldrid.PixelFormat.R32_Float, true);
-            GameGraphics = GraphicsDevice.CreateOpenGLES(new GraphicsDeviceOptions()
+            ViewSize = new Vector2(w, h);
+            var desc = new SwapchainDescription(swapchainSource, (uint)ViewSize.X, (uint)ViewSize.Y, Veldrid.PixelFormat.D32_Float_S8_UInt, true);
+            switch (api)
             {
-                SingleThreaded = true,
-                PreferDepthRangeZeroToOne = true,
-                PreferStandardClipSpaceYDirection = true,
-            }, desc);
-        #else
+                case GraphicsBackend.Vulkan:
+                    GameGraphics = GraphicsDevice.CreateVulkan(new GraphicsDeviceOptions()
+                    {
+                        // SingleThreaded = false,
+                        PreferDepthRangeZeroToOne = true,
+                        PreferStandardClipSpaceYDirection = true,
+                    }, desc);
+                    break;
+            }
+            Window = null;
+            GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+        }
+
+        public static void InitGameGraphics(GraphicsBackend api)
+        {
+            APIBackend = api;
             Veldrid.Sdl2.Sdl2Window win = null;
             GraphicsDevice gfx = null;
             ViewSize = new Vector2(600, 400);
@@ -46,16 +52,15 @@ namespace Engine.Assets.Rendering
                 WindowHeight = (int)ViewSize.Y,
             }, new GraphicsDeviceOptions()
             {
-                SingleThreaded = false,
+                // SingleThreaded = false,
                 PreferDepthRangeZeroToOne = true,
                 PreferStandardClipSpaceYDirection = true,
                 SyncToVerticalBlank = true,
-                SwapchainDepthFormat = PixelFormat.R32_Float,
+                SwapchainDepthFormat = PixelFormat.D32_Float_S8_UInt,
             }, api, out win, out gfx);
             Window = win;
             GameGraphics = gfx;
             APIBackend = gfx.BackendType;
-        #endif
             GameImGui = new ImGuiRenderer(GameGraphics, GameGraphics.SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
         }
 
@@ -84,14 +89,22 @@ namespace Engine.Assets.Rendering
             GameImGui.WindowResized((int)w, (int)h);
         }
 
+        public static void DisposeGameGraphicsSkipWindow()
+        {
+            GameImGui.Dispose();
+            GameImGui = null;
+            GameGraphics.Dispose();
+            GameGraphics = null;
+        }
+
         public static void DisposeGameGraphics()
         {
             GameImGui.Dispose();
             GameImGui = null;
-        #if !WEBGL
+#if !WEBGL
             Window.Close();
             Window = null;
-        #endif
+#endif
             GameGraphics.Dispose();
             GameGraphics = null;
         }
