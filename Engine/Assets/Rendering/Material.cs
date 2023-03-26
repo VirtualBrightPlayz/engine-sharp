@@ -30,7 +30,7 @@ namespace Engine.Assets.Rendering
         public GraphicsShader Shader { get; private set; }
         private Dictionary<string, Dictionary<Renderer, Pipeline>> _pipelines = new Dictionary<string, Dictionary<Renderer, Pipeline>>();
         private Dictionary<uint, List<Resource>> _uniformResources = new Dictionary<uint, List<Resource>>();
-        private Dictionary<uint, UniformLayout[]> _uniformLayouts = new Dictionary<uint, UniformLayout[]>();
+        internal Dictionary<uint, UniformLayout[]> _uniformLayouts = new Dictionary<uint, UniformLayout[]>();
         private Dictionary<uint, ResourceSet> _resourceSets = new Dictionary<uint, ResourceSet>();
         private Dictionary<uint, CompoundBuffer> _compoundBuffers = new Dictionary<uint, CompoundBuffer>();
         private Dictionary<uint, ResourceLayout> layouts = new Dictionary<uint, ResourceLayout>();

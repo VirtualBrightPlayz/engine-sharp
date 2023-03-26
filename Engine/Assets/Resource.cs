@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Engine.Assets
 {
-    public abstract class Resource //: IDisposable
+    public abstract class Resource
     {
         public abstract bool IsValid { get; }
         public string Name { get; set; }

@@ -18,15 +18,15 @@ namespace Engine.Assets
     public static class ResourceManager
     {
         public static ResourceFactory GraphicsFactory => RenderingGlobals.GameGraphics.ResourceFactory;
-        public static List<Resource> AllResources { get; private set; } = new List<Resource>();
+        public static List<WeakReference<Resource>> AllResources { get; private set; } = new List<WeakReference<Resource>>();
         private static List<Resource> StagedResources = new List<Resource>();
         private static List<Resource> UnStagedResources = new List<Resource>();
         public static Dictionary<ImGuiRenderer, Dictionary<string, ImFontPtr>> Fonts { get; private set; } = new Dictionary<ImGuiRenderer, Dictionary<string, ImFontPtr>>();
 
         public static void Update()
         {
-            AllResources.AddRange(StagedResources);
-            AllResources.RemoveAll(x => UnStagedResources.Contains(x));
+            AllResources.AddRange(StagedResources.Select(x => new WeakReference<Resource>(x)));
+            AllResources.RemoveAll(x => !x.TryGetTarget(out _));
             StagedResources.Clear();
             UnStagedResources.Clear();
         }
@@ -36,7 +36,8 @@ namespace Engine.Assets
             var res = AllResources;//.ToArray();
             foreach (var item in res)
             {
-                item.HasBeenInitialized = false;
+                if (item.TryGetTarget(out var t))
+                    t.HasBeenInitialized = false;
             }
             ImGuiIOPtr io = ImGui.GetIO();
             foreach (var item in Fonts)
@@ -49,12 +50,15 @@ namespace Engine.Assets
             Fonts.Clear();
             foreach (var item in res)
             {
-                item.ReCreate();
+                if (item.TryGetTarget(out var t))
+                    t.ReCreate();
             }
         }
 
         public static T FindByName<T>(string name) where T : Resource
         {
+            throw new NotImplementedException();
+            /*
             if (AllResources.Any(x => x.Name == name && x is T))
             {
                 var y = AllResources.First(x => x.Name == name && x is T) as T;
@@ -70,6 +74,7 @@ namespace Engine.Assets
                 return y;
             }
             return null;
+            */
         }
 
         public static ImFontPtr LoadImGuiFont(ImGuiRenderer renderer, string path, float size = 24f)
@@ -156,7 +161,8 @@ namespace Engine.Assets
         {
             foreach (var item in AllResources)
             {
-                item.Dispose();
+                if (item.TryGetTarget(out var t))
+                    t.Dispose();
             }
         }
 

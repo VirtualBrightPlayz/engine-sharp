@@ -17,10 +17,11 @@ namespace Engine.Assets.Rendering
     {
         public override bool IsValid => _shaders != null;
         private string _path;
+        private List<ShaderPass> _passes = new List<ShaderPass>();
         public Dictionary<string, Shader[]> _shaders { get; private set; } = new Dictionary<string, Shader[]>();
         public SpirvReflection _compileResult { get; private set; }
         public List<ResourceLayout> _reflResourceLayouts { get; private set; } = new List<ResourceLayout>();
-        public List<ShaderPass> Passes { get; private set; } = new List<ShaderPass>();
+        public IReadOnlyList<ShaderPass> Passes => _passes;
 
         public GraphicsShader(string path) : this(path, path)
         {
@@ -57,7 +58,8 @@ namespace Engine.Assets.Rendering
                 string shaderCode = FileManager.LoadStringASCII($"{_path}.glsl");
                 var processor = new ShaderProcessor();
                 processor.CreateShaders(_path, shaderCode, CreateShaders);
-                Passes = processor.Passes.ToList();
+                _passes = processor.Passes.ToList();
+                // Passes = processor.Passes.ToList();
             }
             else
             {
