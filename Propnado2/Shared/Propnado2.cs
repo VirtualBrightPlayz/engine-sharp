@@ -22,49 +22,30 @@ namespace Propnado
     {
         public override string Name => "Propnado2";
 
-        // public Entity Player;
-        private Texture2D tex;
-
         public override void Setup()
         {
             base.Setup();
-            var shader = new GraphicsShader("Shaders/MainMesh");
+            var shader = new GraphicsShader("Shaders/Main");
             var mat = new Material("Test", shader);
             var mesh = new Model("cube", "Shaders/cube.gltf", mat, false, true);
+            var tex = new Texture2D("Shaders/white.bmp");
+            mat.SetUniforms(1, new UniformLayout("Diffuse", tex, false, true));
             Entity ent = Scene.CreateEntity();
             ent.Set(new MeshData()
             {
                 MaterialId = DrawMeshSys.GetMaterialId(mat),
                 MeshId = DrawMeshSys.GetMeshId(mesh.Meshes[0]),
+                MaterialPass = "main",
             });
-            /*
-            SkiaPlatform.Initialize();
-            Bitmap bitmap = HtmlRender.RenderToImage(File.ReadAllText("index.html"), new Size(RenderingGlobals.ViewSize.X, RenderingGlobals.ViewSize.Y));
-            {
-                bitmap.Save("test.png");
-                using (var ms = new MemoryStream())
-                {
-                    bitmap.Save(ms);
-                    byte[] arr = ms.ToArray();
-                    tex = new Texture2D("UI", arr);
-                }
-            }
-            */
         }
 
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            // Renderer.Current.Blit(tex);
         }
 
         public override void Tick(double dt)
         {
-            // if (Player == null)
-            {
-                // Player = new NoClipPlayer();
-                // Entities.Add(Player);
-            }
             base.Tick(dt);
         }
     }

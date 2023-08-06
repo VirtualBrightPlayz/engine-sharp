@@ -2,6 +2,11 @@ using Engine.Assets.Rendering;
 using Engine;
 using Veldrid;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Reflection;
+using System;
+using OpenAL;
+using Engine.Assets.Logging;
 #if WEBGL
 using Microsoft.JSInterop.WebAssembly;
 #endif
@@ -27,6 +32,37 @@ namespace Engine.Assets
         #if WEBGL
             IsFocused = true;
         #endif
+        }
+
+        public static void Init()
+        {
+            ConsoleLog log = new ConsoleLog()
+            {
+                ExitOnFatal = true,
+            };
+            Log.LogInterface = log;
+            Log.ErrorHandler = log;
+            NativeLibrary.SetDllImportResolver(typeof(Vulkan.VulkanNative).Assembly, DLResolver);
+            NativeLibrary.SetDllImportResolver(typeof(Assimp.AssimpContext).Assembly, DLResolver);
+            NativeLibrary.SetDllImportResolver(typeof(OpenAL.ALC10).Assembly, OALResolver);
+        }
+
+        private static nint DLResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName.StartsWith("libdl") && OperatingSystem.IsLinux())
+            {
+                libraryName = "libdl.so.2";
+            }
+            return NativeLibrary.Load(libraryName, assembly, searchPath);
+        }
+
+        private static IntPtr OALResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName.Equals("soft_oal.dll") && OperatingSystem.IsLinux())
+            {
+                libraryName = "libopenal.so.1";
+            }
+            return NativeLibrary.Load(libraryName, assembly, searchPath);
         }
     }
 }

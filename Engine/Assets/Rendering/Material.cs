@@ -250,7 +250,7 @@ namespace Engine.Assets.Rendering
         #endif
         }
 
-        public void CreatePipeline(Renderer renderer, ShaderPass pass, bool dispose = true)
+        internal void CreatePipeline(Renderer renderer, ShaderPass pass, bool dispose = true)
         {
             /*if (_pipeline != null && !_pipeline.IsDisposed && dispose)
                 _pipeline.Dispose();*/
@@ -308,7 +308,7 @@ namespace Engine.Assets.Rendering
             _pipelines[pass.PassName].Add(renderer, newPipeline);
         }
 
-        public void PreDraw(Renderer renderer)
+        internal void PreDraw(Renderer renderer)
         {
             Pipeline pipeline = _pipelines.FirstOrDefault().Value?.FirstOrDefault(x => x.Key == renderer).Value;
             if (_pipelines.Count == 0 || pipeline == null)
@@ -318,9 +318,9 @@ namespace Engine.Assets.Rendering
             }
         }
 
-        public void Bind(Renderer renderer, string passName = "")
+        internal void Bind(Renderer renderer, string passName = "")
         {
-            Pipeline pipeline = _pipelines.FirstOrDefault().Value?.FirstOrDefault(x => x.Key == renderer).Value;
+            Pipeline pipeline = null;//_pipelines.FirstOrDefault().Value?.FirstOrDefault(x => x.Key == renderer).Value;
             if (!string.IsNullOrEmpty(passName))
             {
                 if (!_pipelines.ContainsKey(passName) || pipeline == null)
@@ -329,31 +329,31 @@ namespace Engine.Assets.Rendering
             }
             if (pipeline == null)
             {
-                throw new Exception($"{Name} Missing a pipeline");
+                Log.Error(nameof(Material), $"{Name} Missing a pipeline");
             }
             if (renderer == null || renderer.CommandList == null)
             {
-                throw new Exception($"{Name} Missing renderer.CommandList");
+                Log.Error(nameof(Material), $"{Name} Missing renderer.CommandList");
             }
             renderer.CommandList.SetPipeline(pipeline);
             uint maxId = 0;
             foreach (var resSet in _resourceSets.OrderBy(x => x.Key))
             {
                 if (resSet.Value == null || resSet.Value.IsDisposed)
-                    throw new Exception($"{Name} {resSet.Key} is null/disposed!");
+                    Log.Error(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
                 maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value);
             }
             foreach (var resSet in _compoundBuffers.OrderBy(x => x.Key))
             {
                 if (resSet.Value.InternalResourceSet == null || resSet.Value.InternalResourceSet.IsDisposed)
-                    throw new Exception($"{Name} {resSet.Key} is null/disposed!");
+                    Log.Error(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
                 maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value.InternalResourceSet);
             }
-            // if (maxId != Shader._reflResourceLayouts.Count)
+            if (maxId != Shader._reflResourceLayouts.Count)
             {
-                // throw new Exception($"{Name} Missing a resource set, found {maxId}, {Shader._reflResourceLayouts.Count} required");
+                Log.Error(nameof(Material), $"{Name} Missing a resource set, found {maxId}, {Shader._reflResourceLayouts.Count} required");
             }
         }
 

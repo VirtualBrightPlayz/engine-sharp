@@ -6,5 +6,6 @@ namespace Engine.Game.Components
     {
         public int MeshId;
         public int MaterialId;
+        public string MaterialPass;
     }
 }

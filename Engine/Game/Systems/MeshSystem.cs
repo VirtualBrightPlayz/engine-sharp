@@ -42,10 +42,8 @@ namespace Engine.Game.Systems
         {
             if (MaterialLookup[component.MaterialId].TryGetTarget(out Material mat) && MeshLookup[component.MeshId].TryGetTarget(out Mesh mesh))
             {
-                mat.PreDraw(Renderer.Current);
-                mat.Bind(Renderer.Current);
-                mesh.SetWorldMatrix(Renderer.Current, System.Numerics.Matrix4x4.Identity);
-                mesh.DrawNow(Renderer.Current);
+                Renderer.Current.BindMaterial(mat, component.MaterialPass);
+                Renderer.Current.DrawMeshNow(mesh);
             }
         }
     }

@@ -19,14 +19,18 @@ namespace Engine.Assets.Rendering
         public CommandList CommandList => _commandList;
         public Matrix4x4 ViewMatrix { get; set; }
         public Matrix4x4 ProjectionMatrix { get; set; }
+        public Matrix4x4 WorldMatrix { get; set; }
         public Vector3 ViewPosition { get; set; }
         public UniformBuffer ViewMatrixResource { get; private set; }
         public UniformBuffer ProjMatrixResource { get; private set; }
+        public UniformBuffer WorldMatrixResource { get; private set; }
         public UniformBuffer WorldInfoResource { get; private set; }
         public Dictionary<GraphicsShader, CompoundBuffer> MatrixBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
         public Dictionary<GraphicsShader, CompoundBuffer> WorldInfoBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
+        public Material BoundMaterial { get; private set; }
         public RenderTexture2D InternalRenderTexture { get; private set; }
         private Mesh BlitMesh;
+        private Material BlitMaterial;
         private GraphicsShader BlitShader = new GraphicsShader("Shaders/Blit");
         public bool IsDrawing { get; private set; } = false;
 
@@ -49,12 +53,6 @@ namespace Engine.Assets.Rendering
         {
             ViewMatrix = Matrix4x4.Identity;
             ReCreate();
-            // ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
-            // ViewMatrixResource.UploadData(ViewMatrix);
-            // ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
-            // ProjMatrixResource.UploadData(ProjectionMatrix);
-            // WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
-            // WorldInfoResource.UploadData(ViewPosition);
         }
 
         protected override void ReCreateInternal()
@@ -63,6 +61,7 @@ namespace Engine.Assets.Rendering
                 _commandList.Dispose();
             ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
             ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
+            WorldMatrixResource = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
             WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
             foreach (var item in MatrixBuffers)
             {
@@ -74,7 +73,8 @@ namespace Engine.Assets.Rendering
             }
             _commandList = ResourceManager.GraphicsFactory.CreateCommandList();
             _commandList.Name = Name;
-            BlitMesh = new Mesh("BlitMesh", false, new Material("BlitMaterial", BlitShader));
+            BlitMesh = new Mesh("BlitMesh", false);
+            BlitMaterial = new Material("BlitMaterial", BlitShader);
             BlitVertex[] blitVertices = new BlitVertex[]
             {
                 new BlitVertex(new Vector3(-1f, -1f, 1f), new Vector2(0f, 1f), Vector4.One),
@@ -102,7 +102,6 @@ namespace Engine.Assets.Rendering
             IsDrawing = true;
             _commandList.Begin();
             _commandList.SetFramebuffer(InternalRenderTexture.InternalFramebuffer ?? InternalRenderTexture.InternalSwapchain.Framebuffer);
-            // _commandList.SetFramebuffer(Program.GameGraphics.SwapchainFramebuffer);
             ViewMatrixResource.UploadData(this, ViewMatrix);
             ProjMatrixResource.UploadData(this, ProjectionMatrix);
             WorldInfoResource.UploadData(this, ViewPosition);
@@ -112,7 +111,7 @@ namespace Engine.Assets.Rendering
         {
             if (!MatrixBuffers.ContainsKey(material.Shader))
             {
-                MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewMatrixName, ViewMatrixResource, ProjMatrixResource);
+                MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewMatrixName, ViewMatrixResource, ProjMatrixResource, WorldMatrixResource);
                 MatrixBuffers[material.Shader].ReCreate();
             }
             material.SetUniforms(UniformConsts.ViewProjectionMatrixBufferSet, MatrixBuffers[material.Shader]);
@@ -158,17 +157,17 @@ namespace Engine.Assets.Rendering
 
         public void Blit(Texture2D tex)
         {
-            BlitMesh.InternalMaterial.ClearUniforms(0);
-            BlitMesh.InternalMaterial.SetUniforms(0, new UniformLayout("Diffuse", tex, false, true));
-            BlitMesh.InternalMaterial.PreDraw(this);
-            BlitMesh.Draw(this, "main");
+            BlitMaterial.ClearUniforms(0);
+            BlitMaterial.SetUniforms(0, new UniformLayout("Diffuse", tex, false, true));
+            BlitMaterial.PreDraw(this);
+            BlitMaterial.Bind(this, "main");
+            DrawMeshNow(BlitMesh);
         }
 
         public void Blit(Material mat)
         {
-            mat.PreDraw(this);
-            mat.Bind(this, "main");
-            BlitMesh.DrawNow(this);
+            BindMaterial(mat);
+            DrawMeshNow(BlitMesh);
         }
 
         public void NewPass()
@@ -176,6 +175,22 @@ namespace Engine.Assets.Rendering
             End();
             Submit();
             Begin();
+        }
+
+        public void BindMaterial(Material material, string pass = "main")
+        {
+            BoundMaterial = material;
+            SetupStandardMatrixUniforms(material);
+            material.PreDraw(this);
+            material.Bind(this, pass);
+        }
+
+        public void DrawMeshNow(Mesh mesh)
+        {
+            WorldMatrixResource.UploadData(this, WorldMatrix);
+            if (!mesh.IsValidForRenderer(this))
+                mesh.UploadToRenderer(this);
+            mesh.Bind(this);
         }
 
         protected override void DisposeInternal()
@@ -194,6 +209,7 @@ namespace Engine.Assets.Rendering
             // ViewMatrixResource = null;
             ProjMatrixResource?.Dispose();
             // ProjMatrixResource = null;
+            WorldMatrixResource?.Dispose();
             WorldInfoResource?.Dispose();
             // WorldInfoResource = null;
             _commandList.Dispose();

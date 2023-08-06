@@ -7,7 +7,6 @@ using BepuUtilities.Memory;
 using DefaultEcs;
 using DefaultEcs.System;
 using Engine.Assets.Rendering;
-using Engine.Game.Entities;
 using Engine.Game.Systems;
 
 namespace Engine.Game

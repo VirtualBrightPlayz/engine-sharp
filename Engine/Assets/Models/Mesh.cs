@@ -68,38 +68,24 @@ namespace Engine.Assets.Models
     {
     }
 
-    public class Mesh : Resource
+    public class Mesh : GraphicsResource
     {
         public override bool IsValid => _vertexBuffer != null && _indexBuffer != null && !_vertexBuffer.IsDisposed && !_indexBuffer.IsDisposed;
 
         private DeviceBuffer _vertexBuffer;
         private DeviceBuffer _indexBuffer;
         private uint _indexCount;
-        public Material InternalMaterial { get; private set; }
-        public CompoundBuffer InternalWorldBuffer { get; private set; }
-        public UniformBuffer InternalWorldUniform { get; private set; }
+        private List<Renderer> _hasDrawn = new List<Renderer>();
+
         public List<uint> Indices { get; set; } = new List<uint>();
         public IReadOnlyList<IVertex> VertexList => _vertexList;
         private List<IVertex> _vertexList = new List<IVertex>();
         public bool IsBigMesh { get; private set; }
 
-        public Mesh(string name, bool isBigMesh, Material material) : base(name)
+        public Mesh(string name, bool isBigMesh) : base(name)
         {
             IsBigMesh = isBigMesh;
-            SetMaterial(material);
             ReCreate();
-        }
-
-        public void SetMaterial(Material mat)
-        {
-            InternalWorldUniform?.Dispose();
-            InternalWorldBuffer?.Dispose();
-            InternalMaterial = mat;
-            if (InternalMaterial.Shader.HasSet(UniformConsts.WorldMatrixName))
-            {
-                InternalWorldUniform = new UniformBuffer("WorldUniform", (uint)16 * 4);
-                InternalWorldBuffer = new CompoundBuffer("WorldBuffer", InternalMaterial.Shader, UniformConsts.WorldMatrixName, InternalWorldUniform);
-            }
         }
 
         protected override void ReCreateInternal()
@@ -108,13 +94,7 @@ namespace Engine.Assets.Models
                 _vertexBuffer.Dispose();
             if (_indexBuffer != null && !_indexBuffer.IsDisposed)
                 _indexBuffer.Dispose();
-            if (InternalMaterial != null)
-                InternalMaterial.ReCreate();
-            if (InternalWorldUniform != null)
-                InternalWorldUniform.ReCreate();
-            if (InternalWorldBuffer != null)
-                InternalWorldBuffer.ReCreate();
-            UploadDataSkipChecks();
+            _hasDrawn.Clear();
         }
 
         protected override Resource CloneInternal(string cloneName)
@@ -151,7 +131,63 @@ namespace Engine.Assets.Models
         public void UploadData<T>(T[] vertices) where T : unmanaged, IVertex
         {
             SetVertexList<T>(vertices);
-            UploadData<T>((Renderer)null);
+        }
+
+        public void ClearVertexList()
+        {
+            _vertexList.Clear();
+        }
+
+        public void SetVertexList<T>(T[] vertices) where T : struct, IVertex
+        {
+            ClearVertexList();
+            AddVertexList<T>(vertices);
+        }
+
+        public void AddVertexList<T>(T[] vertices) where T : struct, IVertex
+        {
+            var v = vertices.Cast<IVertex>();
+            if (_vertexList.Count == 0 || _vertexList[^1] is T)
+                _vertexList.AddRange(vertices.Cast<IVertex>());
+            else
+                throw new InvalidOperationException($"{typeof(T).FullName} is not valid in the current VertexList");
+        }
+
+        public void AddVertex<T>(T vertex) where T : struct, IVertex
+        {
+            if (_vertexList.Count == 0 || _vertexList[^1] is T)
+                _vertexList.Add(vertex);
+            else
+                throw new InvalidOperationException($"{typeof(T).FullName} is not valid in the current VertexList");
+        }
+
+        protected override void DisposeInternal()
+        {
+            if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
+                _vertexBuffer.Dispose();
+            _vertexBuffer = null;
+            if (_indexBuffer != null && !_indexBuffer.IsDisposed)
+                _indexBuffer.Dispose();
+            _indexBuffer = null;
+        }
+
+        protected override void BindInternal(Renderer renderer)
+        {
+            renderer.CommandList.SetVertexBuffer(0, _vertexBuffer);
+            renderer.CommandList.SetIndexBuffer(_indexBuffer, IsBigMesh ? IndexFormat.UInt32 : IndexFormat.UInt16);
+            renderer.CommandList.DrawIndexed(_indexCount, 1, 0, 0, 0);
+        }
+
+        protected override void UploadInternal(Renderer renderer)
+        {
+            if (!_hasDrawn.Contains(renderer))
+                _hasDrawn.Add(renderer);
+            UploadDataSkipChecks(renderer);
+        }
+
+        protected override bool IsValidForInternal(Renderer renderer)
+        {
+            return _hasDrawn.Contains(renderer);
         }
 
         public void UploadData<T>(Renderer renderer) where T : unmanaged, IVertex
@@ -160,9 +196,9 @@ namespace Engine.Assets.Models
                 throw new InvalidOperationException("VertexList contains no values");
             if (_vertexList[^1] is not T)
                 throw new InvalidOperationException($"{typeof(T).FullName} is not valid in the current VertexList");
-            for (int i = 0; i < InternalMaterial.Shader._compileResult.VertexElements.Length; i++)
+            for (int i = 0; i < renderer.BoundMaterial.Shader._compileResult.VertexElements.Length; i++)
             {
-                VertexElementDescription elem = InternalMaterial.Shader._compileResult.VertexElements[i];
+                VertexElementDescription elem = renderer.BoundMaterial.Shader._compileResult.VertexElements[i];
                 string elemName = elem.Name;
                 FieldInfo info = typeof(T).GetField(elemName, BindingFlags.Instance | BindingFlags.Public);
                 if (info == null)
@@ -208,7 +244,7 @@ namespace Engine.Assets.Models
             _indexCount = (uint)Indices.Count;
         }
 
-        private unsafe void UploadDataSkipChecks()
+        private unsafe void UploadDataSkipChecks(Renderer renderer)
         {
             if (_vertexList.Count == 0)
                 return;
@@ -233,80 +269,24 @@ namespace Engine.Assets.Models
             _indexBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription((uint)Indices.Count * (uint)(IsBigMesh ? sizeof(uint) : sizeof(ushort)), BufferUsage.IndexBuffer));
             _vertexBuffer.Name = $"{Name}_VertexBuffer";
             _indexBuffer.Name = $"{Name}_IndexBuffer";
-            ModelGlobals.GameGraphics.UpdateBuffer(_vertexBuffer, 0, ptr, (uint)data.Length * size);
+            if (renderer != null)
+            {
+                renderer.CommandList.UpdateBuffer(_vertexBuffer, 0, ptr, (uint)data.Length * size);
+                if (IsBigMesh)
+                    renderer.CommandList.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
+                else
+                    renderer.CommandList.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
+            }
+            else
+            {
+                ModelGlobals.GameGraphics.UpdateBuffer(_vertexBuffer, 0, ptr, (uint)data.Length * size);
+                if (IsBigMesh)
+                    ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
+                else
+                    ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
+            }
             Marshal.FreeHGlobal(ptr);
-            if (IsBigMesh)
-                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.ToArray());
-            else
-                ModelGlobals.GameGraphics.UpdateBuffer(_indexBuffer, 0, Indices.Select(x => (ushort)x).ToArray());
             _indexCount = (uint)Indices.Count;
-        }
-
-        public void ClearVertexList()
-        {
-            _vertexList.Clear();
-        }
-
-        public void SetVertexList<T>(T[] vertices) where T : struct, IVertex
-        {
-            ClearVertexList();
-            AddVertexList<T>(vertices);
-        }
-
-        public void AddVertexList<T>(T[] vertices) where T : struct, IVertex
-        {
-            var v = vertices.Cast<IVertex>();
-            if (_vertexList.Count == 0 || _vertexList[^1] is T)
-                _vertexList.AddRange(vertices.Cast<IVertex>());
-            else
-                throw new InvalidOperationException($"{typeof(T).FullName} is not valid in the current VertexList");
-        }
-
-        public void AddVertex<T>(T vertex) where T : struct, IVertex
-        {
-            if (_vertexList.Count == 0 || _vertexList[^1] is T)
-                _vertexList.Add(vertex);
-            else
-                throw new InvalidOperationException($"{typeof(T).FullName} is not valid in the current VertexList");
-        }
-
-        public void SetWorldMatrix(Renderer renderer, Matrix4x4 worldBuffer)
-        {
-            InternalWorldUniform.UploadData(renderer, worldBuffer);
-            InternalMaterial.SetUniforms(UniformConsts.WorldMatrixBufferSet, InternalWorldBuffer);
-        }
-
-        public void PreDraw(Renderer renderer)
-        {
-            renderer.SetupStandardMatrixUniforms(InternalMaterial);
-            InternalMaterial.PreDraw(renderer);
-        }
-
-        public void Draw(Renderer renderer, string pass = "")
-        {
-            InternalMaterial.Bind(renderer, pass);
-            renderer.CommandList.SetVertexBuffer(0, _vertexBuffer);
-            renderer.CommandList.SetIndexBuffer(_indexBuffer, IsBigMesh ? IndexFormat.UInt32 : IndexFormat.UInt16);
-            renderer.CommandList.DrawIndexed(_indexCount, 1, 0, 0, 0);
-        }
-
-        public void DrawNow(Renderer renderer)
-        {
-            renderer.CommandList.SetVertexBuffer(0, _vertexBuffer);
-            renderer.CommandList.SetIndexBuffer(_indexBuffer, IsBigMesh ? IndexFormat.UInt32 : IndexFormat.UInt16);
-            renderer.CommandList.DrawIndexed(_indexCount, 1, 0, 0, 0);
-        }
-
-        protected override void DisposeInternal()
-        {
-            InternalWorldBuffer?.Dispose();
-            InternalWorldUniform?.Dispose();
-            if (_vertexBuffer != null && !_vertexBuffer.IsDisposed)
-                _vertexBuffer.Dispose();
-            _vertexBuffer = null;
-            if (_indexBuffer != null && !_indexBuffer.IsDisposed)
-                _indexBuffer.Dispose();
-            _indexBuffer = null;
         }
     }
 }
