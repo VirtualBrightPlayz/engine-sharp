@@ -48,12 +48,12 @@ public static class ShaderCompiler
             {
                 var processor = new ShaderProcessor();
                 processor.CreateShaders(shader, File.ReadAllText(shader), CreateShaders).Wait();
-                Console.WriteLine($"Compiling {shader}.json");
+                Log.Info(nameof(ShaderCompiler), $"Compiling {shader}.json");
                 File.WriteAllText($"{shader}.json", JsonConvert.SerializeObject(processor.Passes));
             }
             else
             {
-                Console.WriteLine($"Compiling {shader}.glb");
+                Log.Info(nameof(ShaderCompiler), $"Compiling {shader}.glb");
                 var scene = ctx.ImportFile(shader, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs);
                 var root = ModelRoot.CreateModel();
                 var glScene = root.UseScene("default");
@@ -320,7 +320,7 @@ public static class ShaderCompiler
                 {
                     lst.Add(lookup[aiScene.Meshes[aiNode.MeshIndices[0]].Bones[i].Name]);
                 }
-                // Console.WriteLine("Skinned Mesh");
+                // Log.Debug(nameof(ShaderCompiler), "Skinned Mesh");
                 // lst2.Add((n, n.WorldMatrix));
                 foreach (var node in ns)
                 {
@@ -377,7 +377,7 @@ public static class ShaderCompiler
     private static void CreateShaders(string vertCode, string fragCode, string pass, string path)
     {
         var compileResult = SpirvCompilation.CompileVertexFragment(Encoding.ASCII.GetBytes(vertCode), Encoding.ASCII.GetBytes(fragCode), CrossCompileTarget.ESSL, new CrossCompileOptions(true, false, false));
-        Console.WriteLine($"Compiling {path}.{pass}.json");
+        Log.Info(nameof(ShaderCompiler), $"Compiling {path}.{pass}.json");
         File.WriteAllText($"{path}.{pass}.json", JsonConvert.SerializeObject(compileResult));
     }
 }

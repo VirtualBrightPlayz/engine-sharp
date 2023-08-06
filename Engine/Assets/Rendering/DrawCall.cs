@@ -6,7 +6,7 @@ using Veldrid;
 
 namespace Engine.Assets.Rendering
 {
-    public sealed class RenderPass : Resource
+    public sealed class DrawCall : Resource
     {
         public override bool IsValid => _commandList != null && !_commandList.IsDisposed;
         public CommandList CommandList => _commandList;
@@ -16,7 +16,7 @@ namespace Engine.Assets.Rendering
         private Material _material;
         private Dictionary<uint, ResourceSet> _resSets = new Dictionary<uint, ResourceSet>();
 
-        public RenderPass(RenderTexture2D renderer, string name) : base(name)
+        public DrawCall(RenderTexture2D renderer, string name) : base(name)
         {
             _renderer = renderer;
         }

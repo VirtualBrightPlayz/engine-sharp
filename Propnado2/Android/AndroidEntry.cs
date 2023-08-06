@@ -24,7 +24,7 @@ public static class AndroidEntry
 
     public static void Init()
     {
-        Console.WriteLine("Starting...");
+        Log.Info(nameof(AndroidEntry), "Starting...");
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
         RenderTexture2D mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.MainSwapchain);
@@ -44,7 +44,7 @@ public static class AndroidEntry
         // ResourceManager.UnloadAll();
         // AudioGlobals.DisposeGameAudio();
         game = null;
-        Console.WriteLine("Exit.");
+        Log.Info(nameof(AndroidEntry), "Exit.");
     }
 
     public static void MainLoopTick()

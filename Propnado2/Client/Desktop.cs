@@ -28,8 +28,8 @@ public static class DesktopEntry
 
     public static int Init()
     {
-        Console.WriteLine("Starting...");
-        RenderingGlobals.InitGameGraphics(GraphicsBackend.Direct3D11);
+        Log.Info(nameof(DesktopEntry), "Starting...");
+        RenderingGlobals.InitGameGraphics(GraphicsBackend.Vulkan);
         RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
@@ -75,7 +75,7 @@ public static class DesktopEntry
         }
         AudioGlobals.DisposeGameAudio();
         RenderingGlobals.DisposeGameGraphics();
-        Console.WriteLine("Exit.");
+        Log.Info(nameof(DesktopEntry), "Exit.");
         return 0;
     }
 
@@ -90,7 +90,7 @@ public static class DesktopEntry
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.ToString());
+            Log.Error(nameof(DesktopEntry), e.ToString());
         }
     }
 

@@ -28,6 +28,15 @@ namespace Propnado
         public override void Setup()
         {
             base.Setup();
+            var shader = new GraphicsShader("Shaders/MainMesh");
+            var mat = new Material("Test", shader);
+            var mesh = new Model("cube", "Shaders/cube.gltf", mat, false, true);
+            Entity ent = Scene.CreateEntity();
+            ent.Set(new MeshData()
+            {
+                MaterialId = DrawMeshSys.GetMaterialId(mat),
+                MeshId = DrawMeshSys.GetMeshId(mesh.Meshes[0]),
+            });
             /*
             SkiaPlatform.Initialize();
             Bitmap bitmap = HtmlRender.RenderToImage(File.ReadAllText("index.html"), new Size(RenderingGlobals.ViewSize.X, RenderingGlobals.ViewSize.Y));

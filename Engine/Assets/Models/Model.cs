@@ -614,7 +614,7 @@ namespace Engine.Assets.Models
                 if (CompoundBuffers.Count == _meshes.Length)
                     _meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
                 else
-                    Console.WriteLine($"{Name} has missing CompoundBuffers, {CompoundBuffers.Count} found, {_meshes.Length} required.");
+                    Log.Warn(nameof(Model), $"{Name} has missing CompoundBuffers, {CompoundBuffers.Count} found, {_meshes.Length} required.");
                 _meshes[i].InternalMaterial.SetUniforms(ShaderForwardSetId, LightBuffer);
                 renderer.SetupStandardWorldInfoUniforms(_meshes[i].InternalMaterial, ShaderWorldInfoSetId);
                 renderer.SetupStandardMatrixUniforms(_meshes[i].InternalMaterial);

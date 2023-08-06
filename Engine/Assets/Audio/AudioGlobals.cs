@@ -34,9 +34,10 @@ namespace Engine.Assets.Audio
             int err = AL10.alGetError();
             if (err != AL10.AL_NO_ERROR)
             {
-                Console.WriteLine($"AL AudioError: 0x{err.ToString("X4")} at {id}");
                 if (errThrow)
-                    throw new InvalidOperationException($"AL AudioError: 0x{err.ToString("X4")} at {id}");
+                    Log.Fatal(nameof(AudioGlobals), $"AL AudioError: 0x{err.ToString("X4")} at {id}");
+                else
+                    Log.Error(nameof(AudioGlobals), $"AL AudioError: 0x{err.ToString("X4")} at {id}");
             }
         }
 
@@ -46,7 +47,7 @@ namespace Engine.Assets.Audio
             GameAudioCtx = ALC10.alcCreateContext(GameAudioDevice, null);
             if (!ALC10.alcMakeContextCurrent(GameAudioCtx))
             {
-                throw new Exception("ALC AudioError");
+                Log.Fatal(nameof(AudioGlobals), "ALC AudioError");
             }
             CheckALError("Init");
             // AL10.alDistanceModel(AL11.AL_LINEAR_DISTANCE_CLAMPED);

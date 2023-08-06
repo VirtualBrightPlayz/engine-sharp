@@ -19,33 +19,33 @@ namespace Engine.Assets
         {
             if (!HasBeenInitialized)
                 return;
-            Console.WriteLine($"Dispose {Name} ({GetType().Name})");
+            Log.Debug(nameof(Resource), $"Dispose {Name} ({GetType().Name})");
             HasBeenInitialized = false;
             DisposeInternal();
             ResourceManager.UnloadInternal(this);
         }
         public Resource Clone(string cloneName)
         {
-            Console.WriteLine($"Clone {Name} ({GetType().Name})");
+            Log.Debug(nameof(Resource), $"Clone {Name} ({GetType().Name})");
             return CloneInternal(cloneName);
         }
         public T Clone<T>(string cloneName) where T : Resource
         {
-            Console.WriteLine($"Clone {Name} ({GetType().Name})");
+            Log.Debug(nameof(Resource), $"Clone {Name} ({GetType().Name})");
             return (T)CloneInternal(cloneName);
         }
         public void ReCreate()
         {
             if (HasBeenInitialized)
                 return;
-            Console.WriteLine($"ReCreate {Name} ({GetType().Name})");
+            Log.Debug(nameof(Resource), $"ReCreate {Name} ({GetType().Name})");
             HasBeenInitialized = true;
             ReCreateInternal();
             ResourceManager.AddInternal(this);
         }
         ~Resource()
         {
-            Console.WriteLine($"~ctor {Name} ({GetType().Name})");
+            Log.Debug(nameof(Resource), $"~ctor {Name} ({GetType().Name})");
             Dispose();
         }
     }

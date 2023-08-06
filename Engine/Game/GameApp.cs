@@ -35,6 +35,7 @@ namespace Engine.Game
         {
             DrawMeshSys = new MeshSystem(Scene);
             DrawSystems.Add(DrawMeshSys);
+
             BufferPool = new BufferPool();
             var targetThreadCount = Math.Max(1, Environment.ProcessorCount > 4 ? Environment.ProcessorCount - 2 : Environment.ProcessorCount - 1);
             Simulation = Simulation.Create(BufferPool, new Physics.NarrowPhaseCallbacks(), new Physics.PoseIntegratorCallbacks(new System.Numerics.Vector3(0, -10, 0)), new SolveDescription(8, 1));
