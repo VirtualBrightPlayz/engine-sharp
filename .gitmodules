@@ -9,7 +9,7 @@
 	url = https://github.com/assimp/assimp.git
 [submodule "veldrid"]
 	path = veldrid
-	url = https://github.com/mellinoe/veldrid.git
+	url = https://github.com/veldrid/veldrid.git
 [submodule "ImGui.NET"]
 	path = ImGui.NET
 	url = https://github.com/mellinoe/ImGui.NET.git
