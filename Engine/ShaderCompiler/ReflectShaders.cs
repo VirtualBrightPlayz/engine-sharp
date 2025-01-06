@@ -53,11 +53,12 @@ namespace Engine.Assets.Rendering
             return true;
         }
 
-        private void CreateShaders(string vertCode, string fragCode, string pass, string path)
+        private System.Threading.Tasks.Task CreateShaders(string vertCode, string fragCode, string pass, string path)
         {
             var compileResult = SpirvCompilation.CompileVertexFragment(Encoding.ASCII.GetBytes(vertCode), Encoding.ASCII.GetBytes(fragCode), CrossCompileTarget.GLSL).Reflection;
             Log.LogMessage($"{path}.{pass}.json");
             File.WriteAllText($"{path}.{pass}.json", JsonConvert.SerializeObject(compileResult));
+            return System.Threading.Tasks.Task.CompletedTask;
         }
     }
 }

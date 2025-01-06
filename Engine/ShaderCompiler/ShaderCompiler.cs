@@ -7,7 +7,6 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Assimp;
 using Engine.Assets.Rendering;
 using Newtonsoft.Json;
 using SharpGLTF.Geometry;
@@ -16,6 +15,8 @@ using SharpGLTF.Materials;
 using SharpGLTF.Memory;
 using SharpGLTF.Schema2;
 using Veldrid.SPIRV;
+using File = System.IO.File;
+using Assimp = Silk.NET.Assimp;
 
 public static class ShaderCompiler
 {
@@ -39,9 +40,23 @@ public static class ShaderCompiler
         public Vector4 ToVec4() => new Vector4(X, Y, Z, W);
     }
 
-    public static async Task Main(string[] args)
+    public struct TextureSlot
     {
-        using AssimpContext ctx = new AssimpContext();
+        public string FilePath;
+        public Assimp.TextureType TextureType;
+        public int TextureIndex;
+        public Assimp.TextureMapping Mapping;
+        public int UVIndex;
+        public float BlendFactor;
+        public Assimp.TextureOp Operation;
+        public Assimp.TextureWrapMode WrapModeU;
+        public Assimp.TextureWrapMode WrapModeV;
+        public int Flags;
+    }
+
+    public static unsafe async Task Main(string[] args)
+    {
+        using Assimp.Assimp ctx = Assimp.Assimp.GetApi();
         foreach (var shader in args)
         {
             if (shader.Contains("glsl"))
@@ -60,7 +75,12 @@ public static class ShaderCompiler
                 // var anim = root.CreateAnimation();
                 SharpGLTF.Schema2.Animation anim = null;
                 var lookup = new Dictionary<string, SharpGLTF.Schema2.Node>();
-                ProcessNode(scene.RootNode, ref anim, scene, ref root, null, ref lookup, Path.GetDirectoryName(shader));
+                ProcessNode(scene->MRootNode, ref anim, scene, ref root, null, ref lookup, Path.GetDirectoryName(shader));
+                foreach (var node in root.LogicalNodes)
+                {
+                    // if (node.Skin == null)
+                    //     node.LocalMatrix = Matrix4x4.Identity;
+                }
                 root.SaveGLB($"{shader}.glb", new WriteSettings()
                 {
                     Validation = SharpGLTF.Validation.ValidationMode.Skip,
@@ -69,18 +89,101 @@ public static class ShaderCompiler
         }
     }
 
-    private static (SharpGLTF.Schema2.Mesh, Skin) ProcessMesh(Assimp.Mesh aiMesh, Assimp.Scene aiScene, ref ModelRoot root, string dir)
+    // https://github.com/assimp/assimp-net/blob/master/AssimpNet/Material.cs
+    private static string FullyQualifyTextureName(string baseName, Assimp.TextureType type, int texIndex)
     {
-        var aiMaterial = aiScene.Materials[aiMesh.MaterialIndex];
-        var material = root.CreateMaterial(aiMaterial.Name);
+        if (string.IsNullOrEmpty(baseName))
+            return string.Empty;
+        return string.Format("{0},{1},{2}", baseName, (int)type, texIndex);
+    }
 
-        if (aiMaterial.GetMaterialTexture(TextureType.BaseColor, 0, out var slot))
+    private static unsafe Assimp.MaterialProperty* GetProperty(Assimp.Material* material, string fqn)
+    {
+        for (int i = 0; i < material->MNumProperties; i++)
+        {
+            if (material->MProperties[i]->MKey == fqn)
+            {
+                return material->MProperties[i];
+            }
+        }
+        return null;
+    }
+
+    private static unsafe string PropGetStringValue(Assimp.MaterialProperty* prop)
+    {
+        if (prop->MType != Assimp.PropertyTypeInfo.String)
+            return null;
+        return Encoding.UTF8.GetString(prop->MData, (int)prop->MDataLength); // TODO: does this work?
+    }
+
+    private static unsafe int PropGetInt32Value(Assimp.MaterialProperty* prop)
+    {
+        if (prop->MType != Assimp.PropertyTypeInfo.Integer && prop->MType != Assimp.PropertyTypeInfo.Float)
+            return default;
+        return BitConverter.ToInt32(new ReadOnlySpan<byte>(prop->MData, (int)prop->MDataLength));
+    }
+
+    private static unsafe float PropGetSingleValue(Assimp.MaterialProperty* prop)
+    {
+        if (prop->MType != Assimp.PropertyTypeInfo.Integer && prop->MType != Assimp.PropertyTypeInfo.Float)
+            return default;
+        return BitConverter.ToSingle(new ReadOnlySpan<byte>(prop->MData, (int)prop->MDataLength));
+    }
+
+    private static unsafe bool GetMaterialTexture(Assimp.Material* material, Assimp.TextureType type, int index, out TextureSlot texture)
+    {
+        string texName = FullyQualifyTextureName(Assimp.Assimp.MatkeyTextureBase, type, index);
+        var texNameProp = GetProperty(material, texName);
+        if (texNameProp == null)
+        {
+            texture = new TextureSlot();
+            return false;
+        }
+
+        string mappingName = FullyQualifyTextureName(Assimp.Assimp.MatkeyMappingBase, type, index);
+        string uvIndexName = FullyQualifyTextureName(Assimp.Assimp.MatkeyUvwsrcBase, type, index);
+        string blendFactorName = FullyQualifyTextureName(Assimp.Assimp.MatkeyTexblendBase, type, index);
+        string texOpName = FullyQualifyTextureName(Assimp.Assimp.MatkeyTexopBase, type, index);
+        string uMapModeName = FullyQualifyTextureName(Assimp.Assimp.MatkeyMappingmodeUBase, type, index);
+        string vMapModeName = FullyQualifyTextureName(Assimp.Assimp.MatkeyMappingmodeVBase, type, index);
+        string texFlagsName = FullyQualifyTextureName(Assimp.Assimp.MatkeyTexflagsBase, type, index);
+
+        var mapping = GetProperty(material, mappingName);
+        var uvIndex = GetProperty(material, uvIndexName);
+        var blendFactor = GetProperty(material, blendFactorName);
+        var texOp = GetProperty(material, texOpName);
+        var uMapMode = GetProperty(material, uMapModeName);
+        var vMapMode = GetProperty(material, vMapModeName);
+        var texFlags = GetProperty(material, texFlagsName);
+
+        texture = new TextureSlot();
+
+        texture.FilePath = PropGetStringValue(texNameProp);
+        texture.TextureType = type;
+        texture.TextureIndex = index;
+        texture.Mapping = (mapping != null) ? (Assimp.TextureMapping)PropGetInt32Value(mapping) : Assimp.TextureMapping.UV;
+        texture.UVIndex = (uvIndex != null) ? PropGetInt32Value(uvIndex) : 0;
+        texture.BlendFactor = (blendFactor != null) ? PropGetSingleValue(blendFactor) : 0f;
+        texture.Operation = (texOp != null) ? (Assimp.TextureOp)PropGetSingleValue(texOp) : Assimp.TextureOp.Multiply;
+        texture.WrapModeU = (uMapMode != null) ? (Assimp.TextureWrapMode)PropGetInt32Value(uMapMode) : Assimp.TextureWrapMode.Wrap;
+        texture.WrapModeV = (vMapMode != null) ? (Assimp.TextureWrapMode)PropGetInt32Value(vMapMode) : Assimp.TextureWrapMode.Wrap;
+        texture.Flags = (texFlags != null) ? PropGetInt32Value(texFlags) : 0;
+
+        return true;
+    }
+
+    private static unsafe (SharpGLTF.Schema2.Mesh, Skin) ProcessMesh(Assimp.Mesh* aiMesh, Assimp.Scene* aiScene, Node node, ref ModelRoot root, string dir)
+    {
+        var aiMaterial = aiScene->MMaterials[aiMesh->MMaterialIndex];
+        var material = root.CreateMaterial(/*aiMaterial.Name*/);//TODO: re-add material names
+
+        if (GetMaterialTexture(aiMaterial, Assimp.TextureType.BaseColor, 0, out var slot))
         {
             string path = Path.Combine(dir, slot.FilePath);
             if (File.Exists(path))
                 material = material.WithPBRMetallicRoughness().WithChannelTexture("BaseColor", 0, path);
         }
-        if (aiMaterial.GetMaterialTexture(TextureType.Diffuse, 0, out var slot2))
+        if (GetMaterialTexture(aiMaterial, Assimp.TextureType.Diffuse, 0, out var slot2))
         {
             string path = Path.Combine(dir, slot2.FilePath);
             if (File.Exists(path))
@@ -88,16 +191,23 @@ public static class ShaderCompiler
         }
             // material = material.WithChannelTexture("Diffuse", 0, slot.FilePath);
 
-        Vector4[] bWeights = new Vector4[aiMesh.VertexCount];
-        UInt4[] bInds = new UInt4[aiMesh.VertexCount];
-        if (aiMesh.BoneCount > 0)
+        Matrix4x4[] bOffsets = new Matrix4x4[aiMesh->MNumVertices];
+        // Array.Fill(bOffsets, new Matrix4x4());
+        Array.Fill(bOffsets, Matrix4x4.Identity);
+        Vector4[] bWeights = new Vector4[aiMesh->MNumVertices];
+        UInt4[] bInds = new UInt4[aiMesh->MNumVertices];
+        if (aiMesh->MNumBones > 0)
         {
-            for (int j = 0; j < aiMesh.BoneCount; j++)
+            for (int j = 0; j < aiMesh->MNumBones; j++)
             {
-                for (int k = 0; k < aiMesh.Bones[j].VertexWeightCount; k++)
+                Matrix4x4 mat = ToNum(aiMesh->MBones[j]->MOffsetMatrix);
+                // mat = node.WorldMatrix * mat;
+                // Matrix4x4.Invert(mat, out mat);
+                for (int k = 0; k < aiMesh->MBones[j]->MNumWeights; k++)
                 {
-                    float weight = aiMesh.Bones[j].VertexWeights[k].Weight;
-                    int vertId = aiMesh.Bones[j].VertexWeights[k].VertexID;
+                    float weight = aiMesh->MBones[j]->MWeights[k].MWeight;
+                    uint vertId = aiMesh->MBones[j]->MWeights[k].MVertexId;
+                    // bOffsets[vertId] = Matrix4x4.Add(bOffsets[vertId], mat * weight);
                     if (bWeights[vertId].X == 0f)
                     {
                         bWeights[vertId].X = weight;
@@ -122,17 +232,17 @@ public static class ShaderCompiler
             }
         }
 
-        var verts = new GLTF_VERTEX[aiMesh.VertexCount];
-        for (int i = 0; i < aiMesh.VertexCount; i++)
+        var verts = new GLTF_VERTEX[aiMesh->MNumVertices];
+        for (int i = 0; i < aiMesh->MNumVertices; i++)
         {
             verts[i] = new GLTF_VERTEX()
             {
-                POSITION = ToNum3(aiMesh.Vertices[i]),
-                NORMAL = ToNum3(aiMesh.HasNormals ? aiMesh.Normals[i] : new Vector3D()),
-                TANGENT = ToNum4(aiMesh.HasTangentBasis ? aiMesh.Tangents[i] : new Vector3D()),
-                COLOR_0 = ToNumCol(aiMesh.HasVertexColors(0) ? aiMesh.VertexColorChannels[0][i] : new Color4D(1f, 1f, 1f, 1f)),
-                TEXCOORD_0 = ToNum2(aiMesh.HasTextureCoords(0) ? aiMesh.TextureCoordinateChannels[0][i] : new Vector3D()),
-                TEXCOORD_1 = ToNum2(aiMesh.HasTextureCoords(1) ? aiMesh.TextureCoordinateChannels[1][i] : new Vector3D()),
+                POSITION = Vector3.Transform(ToNum3(aiMesh->MVertices[i]), bOffsets[i]),
+                NORMAL = Vector3.TransformNormal(ToNum3(aiMesh->MNormals != null ? aiMesh->MNormals[i] : new Vector3()), bOffsets[i]),
+                TANGENT = ToNum4(Vector3.TransformNormal(aiMesh->MTangents != null ? aiMesh->MTangents[i] : new Vector3(), bOffsets[i])),
+                COLOR_0 = ToNumCol(aiMesh->MColors.Element0 != null ? aiMesh->MColors.Element0[i] : new Vector4(1f, 1f, 1f, 1f)),
+                TEXCOORD_0 = ToNum2(aiMesh->MTextureCoords.Element0 != null ? aiMesh->MTextureCoords.Element0[i] : new Vector3()),
+                TEXCOORD_1 = ToNum2(aiMesh->MTextureCoords.Element1 != null ? aiMesh->MTextureCoords.Element1[i] : new Vector3()),
                 JOINTS_0 = bInds[i],
                 WEIGHTS_0 = bWeights[i],
             };
@@ -141,7 +251,7 @@ public static class ShaderCompiler
         // var matBuilder = new MaterialBuilder(aiMaterial.Name);
         // var builder = new MeshBuilder<VertexPositionNormalTangent, VertexColor1Texture2, VertexJoints4>(aiMesh.Name);
         // builder.UsePrimitive(matBuilder).AddTriangle();
-        var mesh = root.CreateMesh(aiMesh.Name);
+        var mesh = root.CreateMesh(aiMesh->MName);
         var prim = mesh.CreatePrimitive();
         prim.DrawPrimitiveType = SharpGLTF.Schema2.PrimitiveType.TRIANGLES;
 
@@ -161,7 +271,13 @@ public static class ShaderCompiler
         prim = prim.WithVertexAccessor(nameof(GLTF_VERTEX.TEXCOORD_1), verts.Select(x => x.TEXCOORD_1).ToArray());
         prim = prim.WithVertexAccessor(nameof(GLTF_VERTEX.JOINTS_0), verts.Select(x => x.JOINTS_0).ToArray());
         prim = prim.WithVertexAccessor(nameof(GLTF_VERTEX.WEIGHTS_0), verts.Select(x => x.WEIGHTS_0).ToArray());
-        prim = prim.WithIndicesAccessor(SharpGLTF.Schema2.PrimitiveType.TRIANGLES, aiMesh.GetIndices());
+
+        var inds = new List<int>();
+        for (int i = 0; i < aiMesh->MNumFaces; i++)
+            for (int j = 0; j < aiMesh->MFaces[i].MNumIndices; j++)
+                inds.Add((int)aiMesh->MFaces[i].MIndices[j]);
+
+        prim = prim.WithIndicesAccessor(SharpGLTF.Schema2.PrimitiveType.TRIANGLES, inds);
         prim = prim.WithMaterial(material);
 
         return (mesh, null);
@@ -243,130 +359,218 @@ public static class ShaderCompiler
         return data;
     }
 
-    private static Vector2 ToNum2(Vector2D vector3D)
+    private static Vector2 ToNum2(Vector2 vector3D)
     {
         return new Vector2(vector3D.X, vector3D.Y);
     }
 
-    private static Vector2 ToNum2(Vector3D vector3D)
+    private static Vector2 ToNum2(Vector3 vector3D)
     {
         return new Vector2(vector3D.X, vector3D.Y);
     }
 
-    private static Vector4 ToNumCol(Color4D color4D)
+    private static Vector4 ToNumCol(Vector4 color4D)
     {
-        return new Vector4(color4D.R, color4D.G, color4D.B, color4D.A);
+        return new Vector4(color4D.X, color4D.Y, color4D.Z, color4D.W);
     }
 
-    private static Vector3 ToNum3(Vector3D vector3D)
+    private static Vector3 ToNum3(Vector3 vector3D)
     {
         return new Vector3(vector3D.X, vector3D.Y, vector3D.Z);
     }
 
-    private static Vector4 ToNum4(Vector3D vector3D)
+    private static Vector4 ToNum4(Vector3 vector3D)
     {
         return new Vector4(vector3D.X, vector3D.Y, vector3D.Z, 1f);
     }
 
-    private static SharpGLTF.Schema2.Node ProcessNode(Assimp.Node aiNode, ref SharpGLTF.Schema2.Animation anim, Assimp.Scene aiScene, ref ModelRoot root, SharpGLTF.Schema2.Node parent, ref Dictionary<string, SharpGLTF.Schema2.Node> lookup, string dir)
+    private static unsafe SharpGLTF.Schema2.Node ProcessNode(Assimp.Node* aiNode, ref SharpGLTF.Schema2.Animation anim, Assimp.Scene* aiScene, ref ModelRoot root, SharpGLTF.Schema2.Node parent, ref Dictionary<string, SharpGLTF.Schema2.Node> lookup, string dir)
     {
         SharpGLTF.Schema2.Node n = null;
         if (parent == null)
-            n = root.DefaultScene.CreateNode(aiNode.Name);
+            n = root.DefaultScene.CreateNode(aiNode->MName);
             // n = root.CreateLogicalNode();
         else
-            n = parent.CreateNode(aiNode.Name);
-        lookup.TryAdd(aiNode.Name, n);
-        for (int i = 0; i < aiNode.ChildCount; i++)
+            n = parent.CreateNode(aiNode->MName);
+        lookup.TryAdd(aiNode->MName, n);
+        for (int i = 0; i < aiNode->MNumChildren; i++)
         {
-            var n2 = ProcessNode(aiNode.Children[i], ref anim, aiScene, ref root, n, ref lookup, dir);
+            var n2 = ProcessNode(aiNode->MChildren[i], ref anim, aiScene, ref root, n, ref lookup, dir);
         }
-        if (aiScene.HasAnimations)
+        n.LocalMatrix = ToNum(aiNode->MTransformation);
+        if (aiScene->MNumAnimations > 0)
         {
-            if (GetChannel(aiNode, aiScene.Animations[0], out var channel))
+            for (int i = 0; i < aiScene->MNumAnimations; i++)
             {
-                // var n2 = n.FindNode(x => x.Name == channel.NodeName);
-                var n2 = n;
-                // n2.WorldMatrix = ToNum(aiNode.Transform);
-                n2.LocalMatrix = ToNum(aiNode.Transform);
-                // n2.WithLocalTransform(new SharpGLTF.Transforms.AffineTransform(ToNum3(channel.PositionKeys.First().Value), ToNum(channel.RotationKeys.First().Value), ToNum3(channel.ScalingKeys.First().Value)));
-                if (channel.HasPositionKeys)
+                if (GetChannel(aiNode, aiScene->MAnimations[i], out var channel))
                 {
-                    n2.WithTranslationAnimation("Track" + aiScene.Animations[0].Name, channel.PositionKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum3(x.Value)));
-                }
-                if (channel.HasRotationKeys)
-                {
-                    n2.WithRotationAnimation("Track" + aiScene.Animations[0].Name, channel.RotationKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum(x.Value)));
-                    // anim.CreateRotationChannel(n, channel.RotationKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum(x.Value)));
-                }
-                if (channel.HasScalingKeys)
-                {
-                    n2.WithScaleAnimation("Track" + aiScene.Animations[0].Name, channel.ScalingKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum3(x.Value)));
-                    // anim.CreateScaleChannel(n, channel.ScalingKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum3(x.Value)));
+                    // var n2 = n.FindNode(x => x.Name == channel.NodeName);
+                    var n2 = n;
+                    // n2.WorldMatrix = ToNum(aiNode.Transform);
+                    n2.LocalMatrix = ToNum(aiNode->MTransformation);
+                    // Console.WriteLine(n.LocalMatrix);
+                    // n2.WithLocalTransform(new SharpGLTF.Transforms.AffineTransform(ToNum3(channel.PositionKeys.First().Value), ToNum(channel.RotationKeys.First().Value), ToNum3(channel.ScalingKeys.First().Value)));
+                    if (channel->MNumPositionKeys > 0)
+                    {
+                        var dict = ToPositionDict(aiScene, n2, aiScene->MAnimations[i], channel);
+                        if (dict.Count > 0)
+                            n2.WithTranslationAnimation("Track" + aiScene->MAnimations[i]->MName, dict);
+                    }
+                    if (channel->MNumRotationKeys > 0)
+                    {
+                        var dict = ToRotationDict(aiScene, n2, aiScene->MAnimations[i], channel);
+                        if (dict.Count > 0)
+                            n2.WithRotationAnimation("Track" + aiScene->MAnimations[i]->MName, dict);
+                        // anim.CreateRotationChannel(n, channel.RotationKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum(x.Value)));
+                    }
+                    if (channel->MNumScalingKeys > 0)
+                    {
+                        var dict = ToScaleDict(aiScene, n2, aiScene->MAnimations[i], channel);
+                        if (dict.Count > 0)
+                            n2.WithScaleAnimation("Track" + aiScene->MAnimations[i]->MName, dict);
+                        // anim.CreateScaleChannel(n, channel.ScalingKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum3(x.Value)));
+                    }
                 }
             }
         }
         SharpGLTF.Schema2.Mesh mesh = null;
         Skin skin = null;
-        if (aiNode.HasMeshes && aiNode.MeshCount > 0)
+        if (aiNode->MNumMeshes > 0)
         {
-            if (aiScene.Meshes[aiNode.MeshIndices[0]].HasBones)
+            if (false && aiScene->MMeshes[aiNode->MMeshes[0]]->MNumBones > 0)
             {
-                (mesh, skin) = ProcessMesh(aiScene.Meshes[aiNode.MeshIndices[0]], aiScene, ref root, dir);
+                (mesh, skin) = ProcessMesh(aiScene->MMeshes[aiNode->MMeshes[0]], aiScene, n, ref root, dir);
                 var ns = SharpGLTF.Schema2.Node.Flatten(n).ToList();
                 var lst2 = new List<(SharpGLTF.Schema2.Node, System.Numerics.Matrix4x4)>();
                 var lst = new List<SharpGLTF.Schema2.Node>();
-                for (int i = 0; i < aiScene.Meshes[aiNode.MeshIndices[0]].BoneCount; i++)
+                for (int i = 0; i < aiScene->MMeshes[aiNode->MMeshes[0]]->MNumBones; i++)
                 {
-                    lst.Add(lookup[aiScene.Meshes[aiNode.MeshIndices[0]].Bones[i].Name]);
+                    var bone = aiScene->MMeshes[aiNode->MMeshes[0]]->MBones[i];
+                    var bNode = lookup[bone->MName];
+                    var matrix = ToNum(bone->MOffsetMatrix);
+                    System.Numerics.Matrix4x4.Invert(matrix, out var inv);
+                    lst.Add(bNode);
+                    lst2.Add((bNode, inv));
                 }
                 // Log.Debug(nameof(ShaderCompiler), "Skinned Mesh");
                 // lst2.Add((n, n.WorldMatrix));
                 foreach (var node in ns)
                 {
-                    // System.Numerics.Matrix4x4.Invert(node.WorldMatrix, out var inv);
-                    var inv = node.LocalMatrix;
-                    inv = System.Numerics.Matrix4x4.Identity;
-                    lst2.Add((node, inv));
+                    // System.Numerics.Matrix4x4.Invert(Matrix4x4.Identity, out var inv);
+                    System.Numerics.Matrix4x4.Invert(node.WorldMatrix, out var inv);
+                    // var inv = node.LocalMatrix;
+                    // var inv = System.Numerics.Matrix4x4.Identity;
+                    // lst2.Add((node, inv));
                 }
                 // root.DefaultScene.CreateNode("Skinned Mesh").WithSkinnedMesh(mesh, n.WorldMatrix, lst.ToArray());
                 // root.CreateLogicalNode().WithSkinnedMesh(mesh, n.WorldMatrix, ns.ToArray());
                 // root.CreateLogicalNode().WithSkinnedMesh(mesh, lst2.ToArray());
-                root.DefaultScene.CreateNode().WithSkinnedMesh(mesh, lst2.ToArray());
+                // root.DefaultScene.CreateNode().WithSkinnedMesh(mesh, lst2.ToArray());
+                // n.LocalMatrix = Matrix4x4.Identity;
+
+                // n.WithSkinnedMesh(mesh, lst2.ToArray());
+                n.WithSkinnedMesh(mesh, Matrix4x4.Identity, lst.ToArray());
             }
             else
             {
-                for (int i = 0; i < aiNode.MeshCount; i++)
+                var ns = Node.Flatten(n).ToList();
+                for (int i = 0; i < aiNode->MNumMeshes; i++)
                 {
-                    (mesh, skin) = ProcessMesh(aiScene.Meshes[aiNode.MeshIndices[i]], aiScene, ref root, dir);
-                    n.CreateNode().WithMesh(mesh);
+                    (mesh, skin) = ProcessMesh(aiScene->MMeshes[aiNode->MMeshes[i]], aiScene, n, ref root, dir);
+                    if (aiScene->MMeshes[aiNode->MMeshes[i]]->MNumBones > 0)
+                    {
+                        ns.Clear();
+                        for (int j = 0; j < aiScene->MMeshes[aiNode->MMeshes[i]]->MNumBones; j++)
+                        {
+                            var bone = aiScene->MMeshes[aiNode->MMeshes[i]]->MBones[j];
+                            var bNode = lookup[bone->MName];
+                            ns.Add(bNode);
+                        }
+                        // if (skin == null)
+                        {
+                            skin = root.CreateSkin();
+                            skin.Skeleton = n;
+                            skin.BindJoints(Matrix4x4.Identity, ns.ToArray());
+                        }
+                        n.CreateNode().WithMesh(mesh).WithSkin(skin);
+                        // n.CreateNode(i.ToString()).WithSkinnedMesh(mesh, Matrix4x4.Identity, ns);
+                    }
+                    else
+                        n.CreateNode(i.ToString()).WithMesh(mesh);
                 }
             }
         }
         return n;
     }
 
-    private static System.Numerics.Matrix4x4 ToNum(Assimp.Matrix4x4 value)
+    private static unsafe Dictionary<float, Vector3> ToPositionDict(Assimp.Scene* scene, Node node, Assimp.Animation* scnAnim, Assimp.NodeAnim* anim)
     {
-        return System.Numerics.Matrix4x4.Transpose(new System.Numerics.Matrix4x4(value.A1, value.A2, value.A3, value.A4,
-            value.B1, value.B2, value.B3, value.B4,
-            value.C1, value.C2, value.C3, value.C4,
-            value.D1, value.D2, value.D3, value.D4));
+        var dict = new Dictionary<float, Vector3>();
+        for (int i = 0; i < anim->MNumPositionKeys; i++)
+        {
+            var key = anim->MPositionKeys[i];
+            var time = key.MTime / scnAnim->MTicksPerSecond;
+            if (double.IsFinite(time))
+                dict.TryAdd((float)time, ToNum3(key.MValue));
+        }
+        return dict;
+        // channel.PositionKeys.ToDictionary(x => (float)(x.Time * aiScene.Animations[0].TicksPerSecond), x => ToNum3(x.Value))
     }
 
-    private static System.Numerics.Quaternion ToNum(Assimp.Quaternion value)
+    private static unsafe Dictionary<float, Quaternion> ToRotationDict(Assimp.Scene* scene, Node node, Assimp.Animation* scnAnim, Assimp.NodeAnim* anim)
     {
-        
+        var dict = new Dictionary<float, Quaternion>();
+        for (int i = 0; i < anim->MNumRotationKeys; i++)
+        {
+            var key = anim->MRotationKeys[i];
+            var time = key.MTime / scnAnim->MTicksPerSecond;
+            if (double.IsFinite(time))
+                dict.TryAdd((float)time, ToNum(key.MValue));
+        }
+        return dict;
+    }
+
+    private static unsafe Dictionary<float, Vector3> ToScaleDict(Assimp.Scene* scene, Node node, Assimp.Animation* scnAnim, Assimp.NodeAnim* anim)
+    {
+        var dict = new Dictionary<float, Vector3>();
+        for (int i = 0; i < anim->MNumScalingKeys; i++)
+        {
+            var key = anim->MScalingKeys[i];
+            var time = key.MTime / scnAnim->MTicksPerSecond;
+            if (double.IsFinite(time))
+                dict.TryAdd((float)time, ToNum3(key.MValue));
+        }
+        return dict;
+    }
+
+    private static System.Numerics.Matrix4x4 ToNum(System.Numerics.Matrix4x4 value)
+    {
+        // Console.WriteLine(value);
+        return System.Numerics.Matrix4x4.Transpose(new System.Numerics.Matrix4x4(
+            value.M11, value.M12, value.M13, value.M14,
+            value.M21, value.M22, value.M23, value.M24,
+            value.M31, value.M32, value.M33, value.M34,
+            value.M41, value.M42, value.M42, value.M44
+        ));
+        return System.Numerics.Matrix4x4.Transpose(new System.Numerics.Matrix4x4(value.M11, value.M12, value.M13, value.M14,
+            value.M21, value.M22, value.M23, value.M24,
+            value.M31, value.M32, value.M33, value.M34,
+            value.M41, value.M42, value.M43, value.M44));
+    }
+
+    private static System.Numerics.Quaternion ToNum(Assimp.AssimpQuaternion value)
+    {
+        return value;
         return System.Numerics.Quaternion.Inverse(new System.Numerics.Quaternion(value.X, value.Y, value.Z, value.W));
     }
 
-    private static bool GetChannel(Assimp.Node node, Assimp.Animation anim, out NodeAnimationChannel channel)
+    private static unsafe bool GetChannel(Assimp.Node* node, Assimp.Animation* anim, out Assimp.NodeAnim* channel)
     {
-        foreach (NodeAnimationChannel c in anim.NodeAnimationChannels)
+        for (int i = 0; i < anim->MNumChannels; i++)
         {
-            if (c.NodeName == node.Name)
+            if (anim->MChannels[i]->MNodeName == node->MName)
             {
-                channel = c;
+                channel = anim->MChannels[i];
                 return true;
             }
         }
@@ -374,11 +578,12 @@ public static class ShaderCompiler
         return false;
     }
 
-    private static void CreateShaders(string vertCode, string fragCode, string pass, string path)
+    private static Task CreateShaders(string vertCode, string fragCode, string pass, string path)
     {
         var compileResult = SpirvCompilation.CompileVertexFragment(Encoding.ASCII.GetBytes(vertCode), Encoding.ASCII.GetBytes(fragCode), CrossCompileTarget.ESSL, new CrossCompileOptions(true, false, false));
         Log.Info(nameof(ShaderCompiler), $"Compiling {path}.{pass}.json");
         File.WriteAllText($"{path}.{pass}.json", JsonConvert.SerializeObject(compileResult));
+        return Task.CompletedTask;
     }
 }
 #endif

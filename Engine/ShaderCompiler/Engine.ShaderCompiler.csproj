@@ -10,13 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AssimpNet" Version="5.0.0-beta1" />
     <!-- <PackageReference Include="BepuPhysics" Version="2.5.0-beta.7" /> -->
     <!-- <PackageReference Include="BepuUtilities" Version="2.5.0-beta.7" /> -->
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.2.0" PrivateAssets="all" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0026" />
     <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0026" />
+    <PackageReference Include="Silk.NET.Assimp" Version="2.20.0" />
     <!-- <PackageReference Include="NAudio.Vorbis" Version="1.5.0" /> -->
     <!-- <PackageReference Include="Silk.NET.OpenAL" Version="2.16.0" /> -->
     <ProjectReference Include="..\..\veldrid\src\Veldrid\Veldrid.csproj">
