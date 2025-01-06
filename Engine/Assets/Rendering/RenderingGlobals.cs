@@ -46,7 +46,7 @@ namespace Engine.Assets.Rendering
                 WindowHeight = (int)ViewSize.Y,
             }, new GraphicsDeviceOptions()
             {
-                SingleThreaded = false,
+                // SingleThreaded = false,
                 PreferDepthRangeZeroToOne = true,
                 PreferStandardClipSpaceYDirection = true,
                 SyncToVerticalBlank = true,
