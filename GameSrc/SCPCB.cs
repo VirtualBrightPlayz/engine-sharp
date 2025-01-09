@@ -44,6 +44,7 @@ namespace GameSrc
             MapGen = new MapGenerator()
             {
                 data = Data,
+                RandomSeed = Random.Shared.Next(),
             };
         }
 
