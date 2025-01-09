@@ -40,7 +40,7 @@ namespace Engine.Assets.Textures
             this.maxAnsio = maxAnsio;
         }
 
-        public SamplerDescription GetSamplerDescription()
+        public SamplerDescription GetSamplerDescription(uint miplevels)
         {
             SamplerAddressMode addressMode = SamplerAddressMode.Wrap;
             switch (wrap)
@@ -62,7 +62,7 @@ namespace Engine.Assets.Textures
                     filterMode = SamplerFilter.Anisotropic;
                     break;
             }
-            return new SamplerDescription(addressMode, addressMode, addressMode, filterMode, null, maxAnsio, 0, 0, 0, SamplerBorderColor.TransparentBlack);
+            return new SamplerDescription(addressMode, addressMode, addressMode, filterMode, null, maxAnsio, 0, miplevels, 1, SamplerBorderColor.TransparentBlack);
         }
     }
 
@@ -112,6 +112,11 @@ namespace Engine.Assets.Textures
             ReCreate();
         }
 
+        public static int ComputeMipLevels(int width, int height)
+        {
+            return 1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
+        }
+
         protected override void ReCreateInternal()
         {
             if (Tex != null && !Tex.IsDisposed)
@@ -136,11 +141,18 @@ namespace Engine.Assets.Textures
                     img.CopyPixelDataTo(_texData);
                 }
             }
-            TextureDescription desc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled);
+            TextureDescription desc = TextureDescription.Texture2D(Width, Height, (uint)ComputeMipLevels((int)Width, (int)Height), 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled | TextureUsage.GenerateMipmaps);
             Tex = ResourceManager.GraphicsFactory.CreateTexture(desc);
             Tex.Name = Name;
             RenderingGlobals.GameGraphics.UpdateTexture(Tex, _texData, 0, 0, 0, Width, Height, 1, 0, 0);
-            InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription());
+            using var cmd = ResourceManager.GraphicsFactory.CreateCommandList();
+            cmd.Name = Name;
+            cmd.Begin();
+            cmd.GenerateMipmaps(Tex);
+            cmd.End();
+            RenderingGlobals.GameGraphics.SubmitCommands(cmd);
+            RenderingGlobals.GameGraphics.WaitForIdle();
+            InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription(Tex.MipLevels));
             InternalSampler.Name = Name;
             ImGuiTex = RenderingGlobals.GameImGui.GetOrCreateImGuiBinding(ResourceManager.GraphicsFactory, Tex);
         }
@@ -161,7 +173,7 @@ namespace Engine.Assets.Textures
             Info = info;
             if (InternalSampler != null && !InternalSampler.IsDisposed)
                 InternalSampler.Dispose();
-            InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription());
+            InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription(Tex.MipLevels));
             InternalSampler.Name = Name;
         }
 

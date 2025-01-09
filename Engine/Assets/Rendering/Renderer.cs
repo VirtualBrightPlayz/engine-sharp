@@ -11,7 +11,7 @@ using Veldrid;
 
 namespace Engine.Assets.Rendering
 {
-    public class Renderer : Resource
+    public class Renderer : Resource, IDisposable
     {
         public static Renderer Current { get; set; }
         public override bool IsValid => _commandList != null && !_commandList.IsDisposed;
@@ -121,10 +121,10 @@ namespace Engine.Assets.Rendering
         {
             if (!WorldInfoBuffers.ContainsKey(material.Shader))
             {
-                WorldInfoBuffers[material.Shader] = new CompoundBuffer("WorldInfoBuffer", material.Shader, setId, WorldInfoResource);
-                WorldInfoBuffers[material.Shader].ReCreate();
+                // WorldInfoBuffers[material.Shader] = new CompoundBuffer("WorldInfoBuffer", material.Shader, setId, WorldInfoResource);
+                // WorldInfoBuffers[material.Shader].ReCreate();
             }
-            material.SetUniforms(setId, WorldInfoBuffers[material.Shader]);
+            material.SetUniforms(setId, new UniformLayout("WorldInfoBuffer", WorldInfoResource, true, true));
         }
 
         public void SetRenderTarget(RenderTexture2D target)

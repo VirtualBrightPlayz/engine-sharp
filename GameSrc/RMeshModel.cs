@@ -18,7 +18,9 @@ namespace GameSrc
         public const string ShaderPath = "Shaders/RMesh";
         public const uint ShaderWorldInfoSetId = 3;
         public const uint ShaderForwardSetId = 4;
+        public const uint ShaderLightmapSetId = 5;
         public static GraphicsShader shader { get; set; }
+        public static Dictionary<string, CompoundBuffer> TextureBuffers { get; set; } = new Dictionary<string, CompoundBuffer>();
         public static string[] RoomAmbiencePaths => new string[]
         {
             "SFX/Ambient/Room ambience/rumble.ogg",
@@ -37,6 +39,7 @@ namespace GameSrc
         private Mesh[] meshes;
         private Material[] materials;
         private CompoundBuffer[] uniforms;
+        private Texture2D[] lightmaps;
         private string _path;
         public Vector3[] CollisionPositions { get; private set; }
         public uint[] CollisionTriangles { get; private set; }
@@ -48,7 +51,6 @@ namespace GameSrc
         private List<ForwardConsts.ForwardLight> _lights = new List<ForwardConsts.ForwardLight>();
         public IReadOnlyList<ForwardConsts.ForwardLight> Lights => _lights;
         public UniformBuffer LightUniform { get; private set; }
-        public CompoundBuffer LightBuffer { get; private set; }
 
         public struct RMeshAudioSource
         {
@@ -77,6 +79,15 @@ namespace GameSrc
             public Vector3 BiTangent;
         }
 
+        public static CompoundBuffer GetCompoundBuffer(string name, params IMaterialBindable[] bindables)
+        {
+            if (TextureBuffers.TryGetValue(name, out var buffer))
+                return buffer;
+            buffer = new CompoundBuffer(name, shader, UniformConsts.DiffuseTextureSet, bindables);
+            TextureBuffers.Add(name, buffer);
+            return buffer;
+        }
+
         public RMeshModel(string path) : this(path, path)
         {
         }
@@ -103,6 +114,7 @@ namespace GameSrc
             meshes = new Mesh[count];
             materials = new Material[count];
             uniforms = new CompoundBuffer[count];
+            lightmaps = new Texture2D[count];
             int vertexCount = 0;
             List<uint> colTris = new List<uint>();
             List<Vector3> colPos = new List<Vector3>();
@@ -219,12 +231,22 @@ namespace GameSrc
                 string bumppath = Path.Combine(SCPCB.Instance.Data.GameDir, SCPCB.Instance.Data.GetBumpPath(Path.GetFileName(tex[1]).ToLower()) ?? string.Empty);
                 // string bumppath = Path.Combine(Path.GetDirectoryName(tex[1]), Path.GetFileNameWithoutExtension(tex[1]) + "bump.jpg");
                 Texture2D bump = (!string.IsNullOrWhiteSpace(bumppath) && File.Exists(bumppath)) ? SCPCB.GetTexture(bumppath) : Texture2D.DefaultNormal;
+                // if (string.IsNullOrWhiteSpace(tex[0]))
+                    uniforms[i] = GetCompoundBuffer(tex[1], diffuse, bump);
+                    // uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}", shader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, bump);
+                // else
+                    // uniforms[i] = GetCompoundBuffer($"RMeshBuf_{tex[1]}_{tex[0]}", diffuse, SCPCB.GetTexture(tex[0]), bump);
+                    // uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}_{tex[0]}", shader, UniformConsts.DiffuseTextureSet, diffuse, SCPCB.GetTexture(tex[0]), bump);
                 if (string.IsNullOrWhiteSpace(tex[0]))
-                    uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}", shader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, bump);
+                    lightmaps[i] = Texture2D.DefaultWhite;
                 else
-                    uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}_{tex[0]}", shader, UniformConsts.DiffuseTextureSet, diffuse, SCPCB.GetTexture(tex[0]), bump);
+                    lightmaps[i] = SCPCB.GetTexture(tex[0]);
                 meshes[i] = new Mesh($"{name}_{i}", false);
                 materials[i] = material;
+                materials[i].SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
+                materials[i].SetUniforms(ShaderLightmapSetId, new UniformLayout(string.Empty, lightmaps[i], false, true));
+                materials[i].SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, LightUniform, false, true));
+
                 RMeshVertexLayout[] data = new RMeshVertexLayout[vertices.Length];
                 for (int j = 0; j < data.Length; j++)
                 {
@@ -250,8 +272,6 @@ namespace GameSrc
                 colPos.AddRange(vertices);
                 colTris.AddRange(meshes[i].Indices.Select(x => (uint)(x + vertexCount)).ToArray());
                 vertexCount += vertices.Length;
-
-                LightBuffer = new CompoundBuffer($"RMeshBuffer_{ForwardConsts.LightBufferName}", shader, ShaderForwardSetId, LightUniform);
             }
 
             // collision mesh
@@ -478,8 +498,11 @@ namespace GameSrc
             for (int i = 0; i < meshes.Length; i++)
             {
                 renderer.WorldMatrix = WorldMatrix;
+                /*
                 materials[i].SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
-                materials[i].SetUniforms(ShaderForwardSetId, LightBuffer);
+                materials[i].SetUniforms(ShaderLightmapSetId, new UniformLayout(string.Empty, lightmaps[i], false, true));
+                materials[i].SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, LightUniform, false, true));
+                */
                 renderer.SetupStandardWorldInfoUniforms(materials[i], ShaderWorldInfoSetId);
             }
         }
@@ -488,6 +511,9 @@ namespace GameSrc
         {
             for (int i = 0; i < meshes.Length; i++)
             {
+                renderer.BindMaterial(materials[i], ForwardConsts.ForwardBasePassName);
+                renderer.DrawMeshNow(meshes[i]);
+                continue;
                 ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
                 for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
                 {

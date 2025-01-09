@@ -11,11 +11,11 @@ namespace Engine.Assets.Rendering
     public struct UniformLayout
     {
         public string name;
-        public Resource resource;
+        public IMaterialBindable resource;
         public bool vertexUse;
         public bool fragmentUse;
 
-        public UniformLayout(string name, Resource resource, bool vertexUse, bool fragmentUse)
+        public UniformLayout(string name, IMaterialBindable resource, bool vertexUse, bool fragmentUse)
         {
             this.name = name;
             this.resource = resource;

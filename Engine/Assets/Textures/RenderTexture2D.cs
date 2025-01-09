@@ -80,7 +80,7 @@ namespace Engine.Assets.Textures
             Info = info;
             if (InternalSampler != null && !InternalSampler.IsDisposed)
                 InternalSampler.Dispose();
-            InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription());
+            InternalSampler = ResourceManager.GraphicsFactory.CreateSampler(Info.GetSamplerDescription(1));
             InternalSampler.Name = Name;
         }
 

@@ -47,7 +47,6 @@ namespace Engine.Assets.Models
         private Dictionary<string, uint> _boneIdByName = new Dictionary<string, uint>();
         public List<Rendering.Material> InternalMaterials { get; private set; }
         public UniformBuffer LightUniform { get; private set; }
-        public CompoundBuffer LightBuffer { get; private set; }
         private string _path;
         private bool _shouldLoadMats;
         private bool _shouldAnimate;
@@ -105,10 +104,6 @@ namespace Engine.Assets.Models
             // else
                 AssimpLoadMeshes(_path, _ogMaterial, _shouldAnimate);
             LightUniform = new UniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
-            if (_shouldLoadMats)
-                LightBuffer = new CompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial?.Shader ?? new GraphicsShader(ShaderPath), ShaderForwardSetId, LightUniform);
-            else
-                LightBuffer = new CompoundBuffer($"Model_{ForwardConsts.LightBufferName}", _ogMaterial.Shader, ShaderForwardSetId, LightUniform);
         }
 
         private void GLTFLoadMeshes(string path)
@@ -616,7 +611,7 @@ namespace Engine.Assets.Models
                     InternalMaterials[i].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
                 else
                     Log.Warn(nameof(Model), $"{Name} has missing CompoundBuffers, {CompoundBuffers.Count} found, {_meshes.Length} required.");
-                InternalMaterials[i].SetUniforms(ShaderForwardSetId, LightBuffer);
+                InternalMaterials[i].SetUniforms(ShaderForwardSetId, new UniformLayout($"Model_{ForwardConsts.LightBufferName}", LightUniform, false, true));
                 renderer.SetupStandardWorldInfoUniforms(InternalMaterials[i], ShaderWorldInfoSetId);
                 renderer.SetupStandardMatrixUniforms(InternalMaterials[i]);
                 renderer.BindMaterial(InternalMaterials[i]);

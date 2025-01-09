@@ -59,10 +59,11 @@ layout(set = 0, binding = 2) uniform WorldMatrix
 
 layout(set = 2, binding = 0) uniform texture2D DiffuseTexture;
 layout(set = 2, binding = 1) uniform sampler DiffuseTextureSampler;
-layout(set = 2, binding = 2) uniform texture2D LightmapTexture;
-layout(set = 2, binding = 3) uniform sampler LightmapTextureSampler;
-layout(set = 2, binding = 4) uniform texture2D BumpTexture;
-layout(set = 2, binding = 5) uniform sampler BumpTextureSampler;
+layout(set = 2, binding = 2) uniform texture2D BumpTexture;
+layout(set = 2, binding = 3) uniform sampler BumpTextureSampler;
+
+layout(set = 5, binding = 0) uniform texture2D LightmapTexture;
+layout(set = 5, binding = 1) uniform sampler LightmapTextureSampler;
 
 layout(set = 3, binding = 0) uniform WorldInfo0
 {
