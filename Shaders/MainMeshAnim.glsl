@@ -56,8 +56,7 @@ layout(set = 0, binding = 1) uniform ProjectionMatrix
 {
     mat4 Projection;
 };
-
-layout(set = 1, binding = 0) uniform WorldMatrix
+layout(set = 0, binding = 2) uniform WorldMatrix
 {
     mat4 World;
 };
@@ -76,7 +75,7 @@ layout(set = 3, binding = 0) uniform WorldInfo0
 
 layout(set = 5, binding = 0) uniform BonesMatrix
 {
-    mat4 Bones[1];
+    mat4 Bones[64];
 };
 
 #if vertex

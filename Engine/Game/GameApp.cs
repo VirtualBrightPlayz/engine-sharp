@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using BepuPhysics;
 using BepuUtilities;
 using BepuUtilities.Memory;
-using DefaultEcs;
-using DefaultEcs.System;
+using Engine.Game.Entities;
 using Engine.Assets.Rendering;
-using Engine.Game.Systems;
 
 namespace Engine.Game
 {
@@ -18,23 +15,16 @@ namespace Engine.Game
         public BufferPool BufferPool { get; protected set; }
         public ThreadDispatcher dispatcher { get; protected set; }
         public abstract string Name { get; }
-        // public List<Entity> Entities { get; protected set; } = new List<Entity>();
-        public World Scene { get; protected set; }
-        public List<ISystem<double>> DrawSystems { get; protected set; } = new List<ISystem<double>>();
+        public List<Entity> Entities { get; protected set; } = new List<Entity>();
         public float TimeScale { get; set; } = 1f;
-        public MeshSystem DrawMeshSys { get; protected set; }
 
         public GameApp()
         {
-            Scene = new World();
             Current = this;
         }
 
         public virtual void Setup()
         {
-            DrawMeshSys = new MeshSystem(Scene);
-            DrawSystems.Add(DrawMeshSys);
-
             BufferPool = new BufferPool();
             var targetThreadCount = Math.Max(1, Environment.ProcessorCount > 4 ? Environment.ProcessorCount - 2 : Environment.ProcessorCount - 1);
             Simulation = Simulation.Create(BufferPool, new Physics.NarrowPhaseCallbacks(), new Physics.PoseIntegratorCallbacks(new System.Numerics.Vector3(0, -10, 0)), new SolveDescription(8, 1));
@@ -43,38 +33,40 @@ namespace Engine.Game
 
         public virtual void PreDraw(Renderer renderer, double dt)
         {
-            // Scene.Publish();
+            foreach (var ent in Entities.ToArray())
+                ent.PreDraw(renderer, dt);
         }
 
         public virtual void Draw(Renderer renderer, double dt)
         {
-            // Scene.Publish();
-            foreach (var sys in DrawSystems)
-            {
-                sys.Update(dt);
-            }
+            foreach (var ent in Entities.ToArray())
+                ent.Draw(renderer, dt);
         }
 
         public virtual void Tick(double dt)
         {
-            // Scene.Publish();
+            foreach (var ent in Entities.ToArray())
+                ent.Tick(dt);
             if (TimeScale > 0f)
                 Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, dispatcher);
         }
 
         public virtual void ReCreate()
         {
-            // Scene.Publish();
+            foreach (var ent in Entities.ToArray())
+                ent.ReCreate();
         }
 
         public virtual void Unload()
         {
-            // Scene.Publish();
+            foreach (var ent in Entities.ToArray())
+                ent.Unload();
         }
 
         public virtual void Dispose()
         {
-            Scene.Dispose();
+            foreach (var ent in Entities.ToArray())
+                ent.Dispose();
             dispatcher.Dispose();
             BufferPool.Clear();
         }

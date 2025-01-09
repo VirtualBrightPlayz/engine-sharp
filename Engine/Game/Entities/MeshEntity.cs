@@ -34,20 +34,20 @@ namespace Engine.Game.Entities
 
         private void Create(string path, Material material)
         {
-            Mesh = new Mesh(path, false, material);
+            // Mesh = new Mesh(path, false, material);
         }
 
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
-            Mesh.PreDraw(renderer);
+            // Mesh.PreDraw(renderer);
         }
 
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            Mesh.SetWorldMatrix(renderer, WorldMatrix);
-            Mesh.Draw(renderer);
+            // Mesh.SetWorldMatrix(renderer, WorldMatrix);
+            // Mesh.Draw(renderer);
         }
     }
 }

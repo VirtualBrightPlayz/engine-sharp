@@ -18,6 +18,7 @@ namespace GameSrc
         public const string ShaderPath = "Shaders/RMesh";
         public const uint ShaderWorldInfoSetId = 3;
         public const uint ShaderForwardSetId = 4;
+        public static GraphicsShader shader { get; set; }
         public static string[] RoomAmbiencePaths => new string[]
         {
             "SFX/Ambient/Room ambience/rumble.ogg",
@@ -34,6 +35,7 @@ namespace GameSrc
         };
         public override bool IsValid => true;
         private Mesh[] meshes;
+        private Material[] materials;
         private CompoundBuffer[] uniforms;
         private string _path;
         public Vector3[] CollisionPositions { get; private set; }
@@ -79,7 +81,7 @@ namespace GameSrc
         {
         }
         
-        public RMeshModel(string name, string path)
+        public RMeshModel(string name, string path) : base(name)
         {
             Name = name;
             _path = path;
@@ -99,11 +101,12 @@ namespace GameSrc
             }
             int count = stream.ReadInt();
             meshes = new Mesh[count];
+            materials = new Material[count];
             uniforms = new CompoundBuffer[count];
             int vertexCount = 0;
             List<uint> colTris = new List<uint>();
             List<Vector3> colPos = new List<Vector3>();
-            LightUniform = ResourceManager.CreateUniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
+            LightUniform = new UniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
             // LightUniform.UploadData(ForwardConsts.GetLightInfo());
 
             for (int i = 0; i < count; i++)
@@ -209,18 +212,19 @@ namespace GameSrc
                     bitangents[t2] = bitangent1;
                 }
 
-                GraphicsShader shader = ResourceManager.LoadShader(ShaderPath);
-                Material material = ResourceManager.CreateMaterial($"{tex[1]}_{i}_{Random.Shared.Next()}", shader);
+                shader ??= new GraphicsShader("Shaders/RMesh");
+                Material material = new Material($"{tex[1]}_{i}_{Random.Shared.Next()}", shader);
                 // Material material = ResourceManager.CreateMaterial($"RMeshMat_{tex[1]}", shader);
-                Texture2D diffuse = ResourceManager.LoadTexture(tex[1]);
+                Texture2D diffuse = SCPCB.GetTexture(tex[1]);
                 string bumppath = Path.Combine(SCPCB.Instance.Data.GameDir, SCPCB.Instance.Data.GetBumpPath(Path.GetFileName(tex[1]).ToLower()) ?? string.Empty);
                 // string bumppath = Path.Combine(Path.GetDirectoryName(tex[1]), Path.GetFileNameWithoutExtension(tex[1]) + "bump.jpg");
-                Texture2D bump = (!string.IsNullOrWhiteSpace(bumppath) && File.Exists(bumppath)) ? ResourceManager.LoadTexture(bumppath) : Texture2D.DefaultNormal;
+                Texture2D bump = (!string.IsNullOrWhiteSpace(bumppath) && File.Exists(bumppath)) ? SCPCB.GetTexture(bumppath) : Texture2D.DefaultNormal;
                 if (string.IsNullOrWhiteSpace(tex[0]))
-                    uniforms[i] = ResourceManager.CreateCompoundBuffer($"RMeshBuf_{tex[1]}", shader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, bump);
+                    uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}", shader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, bump);
                 else
-                    uniforms[i] = ResourceManager.CreateCompoundBuffer($"RMeshBuf_{tex[1]}_{tex[0]}", shader, UniformConsts.DiffuseTextureSet, diffuse, ResourceManager.LoadTexture(tex[0]), bump);
-                meshes[i] = ResourceManager.CreateMesh($"{name}_{i}", false, material);
+                    uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}_{tex[0]}", shader, UniformConsts.DiffuseTextureSet, diffuse, SCPCB.GetTexture(tex[0]), bump);
+                meshes[i] = new Mesh($"{name}_{i}", false);
+                materials[i] = material;
                 RMeshVertexLayout[] data = new RMeshVertexLayout[vertices.Length];
                 for (int j = 0; j < data.Length; j++)
                 {
@@ -247,7 +251,7 @@ namespace GameSrc
                 colTris.AddRange(meshes[i].Indices.Select(x => (uint)(x + vertexCount)).ToArray());
                 vertexCount += vertices.Length;
 
-                LightBuffer = ResourceManager.CreateCompoundBuffer($"RMeshBuffer_{ForwardConsts.LightBufferName}", shader, ShaderForwardSetId, LightUniform);
+                LightBuffer = new CompoundBuffer($"RMeshBuffer_{ForwardConsts.LightBufferName}", shader, ShaderForwardSetId, LightUniform);
             }
 
             // collision mesh
@@ -390,7 +394,7 @@ namespace GameSrc
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
                         int soundIndex = stream.ReadInt();
                         float range = stream.ReadFloat();
-                        AudioClip clip = ResourceManager.LoadAudioClip(Path.Combine(Path.GetDirectoryName(path), "..", "..", RoomAmbiencePaths[soundIndex]));
+                        AudioClip clip = new AudioClip(Path.Combine(Path.GetDirectoryName(path), "..", "..", RoomAmbiencePaths[soundIndex]));
                         soundEmitters.Add(new RMeshAudioSource()
                         {
                             position = position,
@@ -440,20 +444,23 @@ namespace GameSrc
             CollisionTriangles = colTris.ToArray();
         }
 
-        public override Resource Clone(string cloneName)
+        protected override Resource CloneInternal(string cloneName)
         {
             return new RMeshModel(cloneName, _path);
         }
 
-        public override void ReCreate()
+        protected override void ReCreateInternal()
         {
             if (HasBeenInitialized)
                 return;
-            base.ReCreate();
             LightUniform.ReCreate();
             foreach (var mesh in meshes)
             {
                 mesh.ReCreate();
+            }
+            foreach (var mat in materials)
+            {
+                mat.ReCreate();
             }
             foreach (var arr in uniforms)
             {
@@ -470,11 +477,10 @@ namespace GameSrc
             // LightUniform.UploadData(ForwardConsts.GetLightInfo());
             for (int i = 0; i < meshes.Length; i++)
             {
-                meshes[i].SetWorldMatrix(renderer, WorldMatrix);
-                meshes[i].InternalMaterial.SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
-                meshes[i].InternalMaterial.SetUniforms(ShaderForwardSetId, LightBuffer);
-                renderer.SetupStandardWorldInfoUniforms(meshes[i].InternalMaterial, ShaderWorldInfoSetId);
-                meshes[i].PreDraw(renderer);
+                renderer.WorldMatrix = WorldMatrix;
+                materials[i].SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
+                materials[i].SetUniforms(ShaderForwardSetId, LightBuffer);
+                renderer.SetupStandardWorldInfoUniforms(materials[i], ShaderWorldInfoSetId);
             }
         }
 
@@ -486,17 +492,22 @@ namespace GameSrc
                 for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
                 {
                     LightUniform.UploadData(renderer, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
-                    meshes[i].Draw(renderer, j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
+                    renderer.BindMaterial(materials[i], j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
+                    renderer.DrawMeshNow(meshes[i]);
                 }
             }
         }
 
-        public override void Dispose()
+        protected override void DisposeInternal()
         {
             LightUniform.Dispose();
             for (int i = 0; i < meshes.Length; i++)
             {
                 meshes[i].Dispose();
+            }
+            for (int i = 0; i < materials.Length; i++)
+            {
+                materials[i].Dispose();
             }
         }
     }

@@ -62,10 +62,10 @@ namespace Engine.Assets.Rendering
             if (InternalResourceSet != null && !InternalResourceSet.IsDisposed)
                 InternalResourceSet.Dispose();
             InternalResourceSet = null;
-            InternalShader.Dispose();
+            // InternalShader.Dispose();
             foreach (var item in Bindables)
             {
-                item.Dispose();
+                // item.Dispose();
             }
         }
     }

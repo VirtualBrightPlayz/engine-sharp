@@ -4,6 +4,7 @@ using System.Numerics;
 using Engine;
 using Engine.Assets;
 using Engine.Assets.Audio;
+using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using ImGuiNET;
 
@@ -17,12 +18,15 @@ namespace GameSrc
         public static string FontFolder => Path.Combine(SCPCB.Instance.Data.GFXDir, "font");
         public static string MenuFolder => Path.Combine(SCPCB.Instance.Data.GFXDir, "menu");
         public static Vector4 MenuSelected = new Vector4(0.1f, 0.1f, 0.1f, 1f);
-        public static Texture2D MenuWhite = ResourceManager.LoadTexture($"{MenuFolder}/menuwhite.jpg");
-        public static Texture2D MenuBlack = ResourceManager.LoadTexture($"{MenuFolder}/menublack.jpg");
-        public static AudioClip ButtonSFX = ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Interact", "Button.ogg"));
-        public static ImFontPtr CourierNew => ResourceManager.LoadImGuiFont($"{FontFolder}/cour/Courier New.ttf");
-        public static ImFontPtr CourierNewBold => ResourceManager.LoadImGuiFont($"{FontFolder}/courbd/Courier New.ttf");
-        public static ImFontPtr DS_Digital => ResourceManager.LoadImGuiFont($"{FontFolder}/DS-DIGI/DS-Digital.ttf");
+        public static Texture2D MenuWhite = new Texture2D($"{MenuFolder}/menuwhite.jpg");
+        public static Texture2D MenuBlack = new Texture2D($"{MenuFolder}/menublack.jpg");
+        public static AudioClip ButtonSFX = new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Interact", "Button.ogg"));
+        public static ImFontPtr CourierNew = LoadCourierNew(RenderingGlobals.GameImGui);
+        public static ImFontPtr CourierNewBold = LoadCourierNewBold(RenderingGlobals.GameImGui);
+        public static ImFontPtr DS_Digital = LoadDS_Digital(RenderingGlobals.GameImGui);
+        public static ImFontPtr LoadCourierNew(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/cour/Courier New.ttf");
+        public static ImFontPtr LoadCourierNewBold(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/courbd/Courier New.ttf");
+        public static ImFontPtr LoadDS_Digital(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/DS-DIGI/DS-Digital.ttf");
         public static Vector2 MenuScale = Vector2.One;
 
         public static void BeginDraw()
@@ -37,8 +41,7 @@ namespace GameSrc
             }
             _io = ImGui.GetIO();
             _drawList = ImGui.GetBackgroundDrawList();
-            Program.GameAudio.GetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, out Vector3 pos);
-            _clickSource.Position = pos;
+            _clickSource.Position = AudioGlobals.Position;
         }
 
         public static bool IsInside(Vector2 val, Vector2 pos, Vector2 size)

@@ -7,11 +7,10 @@ namespace GameSrc
     {
         public static RMeshModel LoadRoomModel(string path)
         {
-            RMeshModel buf = ResourceManager.CheckAndReturn<RMeshModel>(path);
+            RMeshModel buf = new RMeshModel(path);
             if (buf != null)
                 return buf;
             buf = new RMeshModel(path);
-            ResourceManager.Add(buf);
             return buf;
         }
     }

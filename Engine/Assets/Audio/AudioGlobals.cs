@@ -50,7 +50,7 @@ namespace Engine.Assets.Audio
                 Log.Fatal(nameof(AudioGlobals), "ALC AudioError");
             }
             CheckALError("Init");
-            // AL10.alDistanceModel(AL11.AL_LINEAR_DISTANCE_CLAMPED);
+            AL10.alDistanceModel(AL11.AL_LINEAR_DISTANCE_CLAMPED);
         }
 
         public static void DisposeGameAudio()

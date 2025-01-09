@@ -25,9 +25,9 @@ namespace Engine.Assets
 
         public static void Update()
         {
-            AllResources.AddRange(StagedResources.Select(x => new WeakReference<Resource>(x)));
-            AllResources.RemoveAll(x => !x.TryGetTarget(out _));
-            StagedResources.Clear();
+            // AllResources.AddRange(StagedResources.Select(x => new WeakReference<Resource>(x)));
+            AllResources.RemoveAll(x => x == null || !x.TryGetTarget(out _));
+            // StagedResources.Clear();
             UnStagedResources.Clear();
         }
 
@@ -149,7 +149,8 @@ namespace Engine.Assets
 
         internal static void AddInternal(Resource resource)
         {
-            StagedResources.Add(resource);
+            // StagedResources.Add(resource);
+            AllResources.Add(new WeakReference<Resource>(resource));
         }
 
         internal static void UnloadInternal(Resource resource)

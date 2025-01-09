@@ -60,11 +60,13 @@ namespace Engine.Assets.Rendering
 
         public void UploadData<T>(Renderer renderer, T[] data) where T : unmanaged
         {
+            // RenderingGlobals.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
             renderer.CommandList.UpdateBuffer(InternalBuffer, 0, data);
         }
 
         public void UploadData<T>(Renderer renderer, T data) where T : unmanaged
         {
+            // RenderingGlobals.GameGraphics.UpdateBuffer(InternalBuffer, 0, data);
             renderer.CommandList.UpdateBuffer(InternalBuffer, 0, data);
         }
 

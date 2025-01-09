@@ -11,8 +11,8 @@ namespace GameSrc
 {
     public partial class MenuEntity
     {
-        public Texture2D MainMenuBack = ResourceManager.LoadTexture(Path.Combine(SCPCB.Instance.Data.GFXDir, "menu", "back.jpg"));
-        public AudioClip MenuMusic = ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Music", "Menu.ogg"));
+        public Texture2D MainMenuBack = new Texture2D(Path.Combine(SCPCB.Instance.Data.GFXDir, "menu", "back.jpg"));
+        public AudioClip MenuMusic = new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Music", "Menu.ogg"));
 
         public void SetupMainMenu()
         {
@@ -33,10 +33,9 @@ namespace GameSrc
 
         public void DrawMainMenu()
         {
-            Program.GameAudio.GetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, out Vector3 pos);
-            _menuMusicSource.Position = pos;
-            if (Program.GameInputSnapshotHandler.IsMouseLocked)
-                Program.GameInputSnapshotHandler.IsMouseLocked = false;
+            _menuMusicSource.Position = AudioGlobals.Position;
+            if (InputHandler.IsMouseLocked)
+                InputHandler.IsMouseLocked = false;
             Vector2 buttonSize = new Vector2(160f, 70f);
             Image(MainMenuBack, Vector2.Zero, new Vector2(MainMenuBack.Width, MainMenuBack.Height));
             if (Button("PLAY", 24f, new Vector2(200f, 300f), buttonSize))
@@ -45,7 +44,7 @@ namespace GameSrc
             }
             if (Button("EXIT", 24f, new Vector2(200f, 400f), buttonSize))
             {
-                Program.IsClosing = true;
+                MiscGlobals.IsClosing = true;
             }
         }
     }

@@ -60,7 +60,7 @@ namespace Engine.Assets
     #if WEBGL
         public Vector2 MouseDelta => _mouseDelta;
     #else
-        public Vector2 MouseDelta => /*RenderingGlobals.Window.MouseDelta +*/ _mouseDelta;
+        public Vector2 MouseDelta => -RenderingGlobals.Window.MouseDelta;// + _mouseDelta;
     #endif
 
         public InputHandler()

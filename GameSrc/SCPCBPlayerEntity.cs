@@ -12,20 +12,18 @@ using Engine.Assets.Rendering;
 using Engine.Game;
 using Engine.Game.Entities;
 using Engine.Game.Physics;
-using Engine.VeldridSilk;
 using ImGuiNET;
-using Silk.NET.Input;
 
 namespace GameSrc
 {
     public class SCPCBPlayerEntity : PhysicsEntity
     {
-        public IInputContext Input => Program.GameInputContext;
-        public InputHandler InputHandler => Program.GameInputSnapshotHandler;
+        public InputHandler InputHandler => MiscGlobals.GameInputHandler;
         public Capsule shape;
         public float speed = 5f;
-        public float acceleration = 10f;
+        public float acceleration = 100f;
         public Vector3 viewDirection = -Vector3.UnitZ;
+        public Vector3 viewDirectionUp = Vector3.UnitY;
         public Vector3 direction = -Vector3.UnitZ;
         public Vector2 lookAxis = Vector2.Zero;
         public Quaternion CameraRotation = Quaternion.Identity;
@@ -44,23 +42,25 @@ namespace GameSrc
         private AudioSource footstepSource;
         private AudioClip[] footstepClips = new AudioClip[]
         {
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step1.ogg")),
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step2.ogg")),
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step3.ogg")),
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step4.ogg")),
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step5.ogg")),
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step6.ogg")),
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step7.ogg")),
-            ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step8.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step1.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step2.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step3.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step4.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step5.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step6.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step7.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step8.ogg")),
         };
         private Vector4 nextLightColor = Vector4.One;
+        private bool posFlipFlop;
+        private double posDeltaFlipFlop;
 
         public SCPCBPlayerEntity() : base("Player")
         {
             footstepSource = new AudioSource("PlayerFootsteps");
             footstepSource.MinGain = 1f;
             footstepSource.MaxGain = 1f;
-            shape = new Capsule(0.6f, 1.8f);
+            shape = new Capsule(0.4f, 1.4f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             var inertia = shape.ComputeInertia(1f);
             bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Discrete), shape.Radius * 0.02f));
@@ -69,7 +69,7 @@ namespace GameSrc
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
-            UpdateLook();
+            UpdateLook(dt);
             Vector3 viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * (MathF.PI / 180f)), out Vector3 up);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
@@ -117,20 +117,17 @@ namespace GameSrc
         public override unsafe void Tick(double dt)
         {
             base.Tick(dt);
-            UpdateLook();
+            // UpdateLook(dt);
             UpdateMovement(dt);
-            Program.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, Position);
+            AudioGlobals.Position = Position;
             float[] orientation = new float[6];
             orientation[0] = viewDirection.X;
             orientation[1] = viewDirection.Y;
             orientation[2] = viewDirection.Z;
-            orientation[3] = LocalUp.X;
-            orientation[4] = LocalUp.Y;
-            orientation[5] = LocalUp.Z;
-            fixed (float* d = &orientation[0])
-            {
-                Program.GameAudio.SetListenerProperty(Silk.NET.OpenAL.ListenerFloatArray.Orientation, d);
-            }
+            orientation[3] = viewDirectionUp.X;
+            orientation[4] = viewDirectionUp.Y;
+            orientation[5] = viewDirectionUp.Z;
+            AudioGlobals.OrientationRaw = orientation;
         }
 
         public override void Dispose()
@@ -139,21 +136,42 @@ namespace GameSrc
             footstepSource.Dispose();
         }
 
-        public void UpdateLook()
+        public void UpdateLook(double delta)
         {
-            if (!Program.IsFocused)
+            if (!MiscGlobals.IsFocused)
             {
                 InputHandler.IsMouseLocked = false;
             }
             if (InputHandler.IsMouseLocked)
             {
-                InputHandler.Position = new Vector2(Program.GameWindow.Size.X / 2, Program.GameWindow.Size.Y / 2);
-                lookAxis += InputHandler.MouseDelta * Vector2.One * 0.25f;
-                lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
+                /*
+                if (posFlipFlop)
+                {
+                    InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
+                }
+                else
+                {
+                    lookAxis += InputHandler.MouseDelta * Vector2.One * (float)delta * 100f;
+                    lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
+                }
+                posFlipFlop = !posFlipFlop;
+                */
+                // if (posDeltaFlipFlop > 0.025d)
+                {
+                    posDeltaFlipFlop = 0d;
+                    InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
+                }
+                // else
+                {
+                    lookAxis += InputHandler.MouseDelta * Vector2.One * 0.25f;
+                    lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
+                }
+                posDeltaFlipFlop += delta;
                 Quaternion cameraRot = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), lookAxis.Y * (MathF.PI / 180f), 0f);
                 CameraRotation = cameraRot;
                 Rotation = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), 0f, 0f);
                 QuaternionEx.Transform(-Vector3.UnitZ, cameraRot, out viewDirection);
+                QuaternionEx.Transform(Vector3.UnitY, cameraRot, out viewDirectionUp);
                 QuaternionEx.Transform(-Vector3.UnitZ, Rotation, out direction);
             }
             MarkTransformDirty(TransformDirtyFlags.Rotation);
@@ -168,20 +186,22 @@ namespace GameSrc
         {
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
             Vector2 inputDirection = Vector2.Zero;
-            if (Input.Keyboards[0].IsKeyPressed(Key.W))
+            if (InputHandler.IsKeyPressed(Veldrid.Key.W))
                 inputDirection.Y += 1f;
-            if (Input.Keyboards[0].IsKeyPressed(Key.S))
+            if (InputHandler.IsKeyPressed(Veldrid.Key.S))
                 inputDirection.Y -= 1f;
-            if (Input.Keyboards[0].IsKeyPressed(Key.A))
+            if (InputHandler.IsKeyPressed(Veldrid.Key.A))
                 inputDirection.X -= 1f;
-            if (Input.Keyboards[0].IsKeyPressed(Key.D))
+            if (InputHandler.IsKeyPressed(Veldrid.Key.D))
                 inputDirection.X += 1f;
             float inputLength = inputDirection.LengthSquared();
             if (inputLength > 0)
                 inputDirection /= MathF.Sqrt(inputLength);
             Vector2 targetVelocity = inputDirection * speed;
             Vector3 velocity = body.Velocity.Linear;
-            float maxVelChange = (float)dt * speed;
+            if (!UpdateTransforms)
+                velocity = Vector3.Zero;
+            float maxVelChange = (float)dt * acceleration;
             if (!body.Awake && targetVelocity != Vector2.Zero)
             {
                 Game.Simulation.Awakener.AwakenBody(bodyHandle.Value);
@@ -216,7 +236,17 @@ namespace GameSrc
             }
             walkViewTimer += (velLen > 0f ? 1f : 0f) * viewBobSpeed * (float)dt;
             footstepTime += (float)dt * (velLen > 0f ? 1f : 0f);
-            body.Velocity.Linear = velocity;
+            UpdateTransforms = !InputHandler.IsKeyPressed(Veldrid.Key.N);
+            if (!UpdateTransforms)
+            {
+                Position += velocity * (float)dt * speed;
+                MarkTransformDirty(TransformDirtyFlags.Position);
+                // body.Pose.Position = Position;
+            }
+            else
+            {
+                body.Velocity.Linear = velocity;
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ namespace Engine.Game.Entities
         public float Mass = 1f;
         public TypedIndex? shapeIndex;
         public BodyHandle? bodyHandle;
+        public bool UpdateTransforms = true;
         public StaticHandle? staticHandle;
 
         public PhysicsEntity() : base()
@@ -42,12 +43,12 @@ namespace Engine.Game.Entities
         public override void Tick(double dt)
         {
             base.Tick(dt);
-            if (bodyHandle.HasValue)
+            if (bodyHandle.HasValue && UpdateTransforms)
             {
                 Position = Game.Simulation.Bodies[bodyHandle.Value].Pose.Position;
                 Rotation = Game.Simulation.Bodies[bodyHandle.Value].Pose.Orientation;
             }
-            if (staticHandle.HasValue)
+            if (staticHandle.HasValue && UpdateTransforms)
             {
                 Position = Game.Simulation.Statics[staticHandle.Value].Pose.Position;
                 Rotation = Game.Simulation.Statics[staticHandle.Value].Pose.Orientation;

@@ -78,7 +78,7 @@ namespace Engine.Assets.Rendering
                     res.Value.Dispose();
             }
             _resourceSets.Clear();
-            Shader.ReCreate();
+            // Shader.ReCreate();
             foreach (var uniform in _uniformLayouts)
             {
                 SetUniforms(uniform.Key, true, uniform.Value);
@@ -323,7 +323,7 @@ namespace Engine.Assets.Rendering
             Pipeline pipeline = null;//_pipelines.FirstOrDefault().Value?.FirstOrDefault(x => x.Key == renderer).Value;
             if (!string.IsNullOrEmpty(passName))
             {
-                if (!_pipelines.ContainsKey(passName) || pipeline == null)
+                if (!_pipelines.ContainsKey(passName))
                     CreatePipeline(renderer, Shader.Passes.First(x => x.PassName == passName));
                 pipeline = _pipelines[passName][renderer];
             }
@@ -353,7 +353,7 @@ namespace Engine.Assets.Rendering
             }
             if (maxId != Shader._reflResourceLayouts.Count)
             {
-                Log.Error(nameof(Material), $"{Name} Missing a resource set, found {maxId}, {Shader._reflResourceLayouts.Count} required");
+                // Log.Error(nameof(Material), $"{Name} Missing a resource set, found {maxId}, {Shader._reflResourceLayouts.Count} required");
             }
         }
 

@@ -153,6 +153,7 @@ namespace Engine.Assets.Rendering
         public void Submit()
         {
             RenderingGlobals.GameGraphics.SubmitCommands(_commandList);
+            // RenderingGlobals.GameGraphics.WaitForIdle();
         }
 
         public void Blit(Texture2D tex)

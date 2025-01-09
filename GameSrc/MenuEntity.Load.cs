@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Engine;
 using Engine.Assets;
 using Engine.Assets.Audio;
+using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using ImGuiNET;
 using static GameSrc.UIExt;
@@ -15,8 +16,8 @@ namespace GameSrc
 {
     public partial class MenuEntity
     {
-        public AudioClip PreLoadMusic = ResourceManager.LoadAudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Music", "EntranceZone.ogg"));
-        public Texture2D BlinkMeterImg = ResourceManager.LoadTexture(Path.Combine(SCPCB.Instance.Data.GFXDir, "BlinkMeter.jpg"));
+        public AudioClip PreLoadMusic = new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Music", "EntranceZone.ogg"));
+        public Texture2D BlinkMeterImg = new Texture2D(Path.Combine(SCPCB.Instance.Data.GFXDir, "BlinkMeter.jpg"));
         private AudioSource _menuMusicSource;
         private Vector2 LoadingScreenRectPos => new Vector2(ScreenSize.X/2 - LoadingScreenRectSize.X/2, ScreenSize.X/2 + 30 - 100);
         private Vector2 LoadingScreenRectSize => new Vector2(304, 20);
@@ -38,7 +39,7 @@ namespace GameSrc
             _menuMusicSource.SetBuffer(PreLoadMusic);
             _menuMusicSource.Play();
             LoadPercent = 100;
-            // Task.Factory.StartNew(async () => await LoadCallback(new Progress<int>((i) => LoadPercent = i)));
+            Task.Factory.StartNew(async () => await LoadCallback(new Progress<int>((i) => LoadPercent = i)));
         }
 
         public void DisablePreLoadMenu()
@@ -74,7 +75,8 @@ namespace GameSrc
             }
             for (int i = 0; i < names.Count; i++)
             {
-                ResourceManagerExtensions.LoadRoomModel(names[i]);
+                if (!SCPCB.RMeshModels.ContainsKey(names[i]))
+                    SCPCB.RMeshModels.Add(names[i], new RMeshModel(names[i]));
                 await Task.Delay(75);
                 progress.Report((int)(((float)i / names.Count) * 100f));
             }
@@ -83,10 +85,9 @@ namespace GameSrc
 
         public void DrawLoadMenu()
         {
-            Program.GameAudio.GetListenerProperty(Silk.NET.OpenAL.ListenerVector3.Position, out Vector3 pos);
-            _menuMusicSource.Position = pos;
-            if (Program.GameInputSnapshotHandler.IsMouseLocked)
-                Program.GameInputSnapshotHandler.IsMouseLocked = false;
+            _menuMusicSource.Position = AudioGlobals.Position;
+            if (InputHandler.IsMouseLocked)
+                InputHandler.IsMouseLocked = false;
             Vector2 start = LoadingScreenRectPos;
             Rect(start, LoadingScreenRectSize, Color(Vector4.One));
             for (int x = 0; x < LoadPercent / 3.33333333333f; x++)

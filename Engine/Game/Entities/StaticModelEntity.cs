@@ -16,6 +16,7 @@ namespace Engine.Game.Entities
 {
     public class StaticModelEntity : PhysicsEntity
     {
+        public static Dictionary<string, WeakReference<Model>> Models = new Dictionary<string, WeakReference<Model>>();
         public Model Model { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
         private readonly string _path;
@@ -29,7 +30,15 @@ namespace Engine.Game.Entities
 
         public virtual void Create(bool createStatic)
         {
-            Model = new Model(Name, _path, _material, true, false);
+            if (Models.TryGetValue(_path, out var mdl) && mdl.TryGetTarget(out var mdl2))
+            {
+                Model = mdl2;
+            }
+            else
+            {
+                Model = new Model(Name, _path, _material, true, false);
+                Models.Add(_path, new WeakReference<Model>(Model));
+            }
             List<Triangle> tris = new List<Triangle>();
             for (int i = 0; i < Model.CollisionTriangles.Length - 2; i+=3)
             {

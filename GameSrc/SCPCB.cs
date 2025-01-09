@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using BepuPhysics;
 using BepuUtilities;
 using BepuUtilities.Memory;
 using Engine;
+using Engine.Assets;
 using Engine.Assets.Rendering;
+using Engine.Assets.Textures;
 using Engine.Game;
 using Engine.Game.Entities;
 using ImGuiNET;
@@ -14,7 +17,7 @@ namespace GameSrc
 {
     public class SCPCB : GameApp
     {
-        public static SCPCB Instance => Program.Game as SCPCB;
+        public static SCPCB Instance { get; private set; }
         public override string Name => "SCP - CSharp";
         public GameData Data { get; private set; }
         public MapGenerator MapGen { get; private set; }
@@ -22,9 +25,22 @@ namespace GameSrc
         private string rmeshPath = string.Empty;
         public MenuEntity Menu { get; private set; }
 
+        public static Dictionary<string, RMeshModel> RMeshModels { get; private set; } = new Dictionary<string, RMeshModel>();
+        public static Dictionary<string, Texture2D> Textures { get; private set; } = new Dictionary<string, Texture2D>();
+
+        public static Texture2D GetTexture(string path)
+        {
+            if (Textures.TryGetValue(path, out var tex))
+                return tex;
+            var tex2 = new Texture2D(path);
+            Textures.Add(path, tex2);
+            return tex2;
+        }
+
         public SCPCB() : base()
         {
-            Data = new GameData("Game");
+            Instance = this;
+            Data = new GameData("D:/Games/SCP - Containment Breach v1.3.11");
             MapGen = new MapGenerator()
             {
                 data = Data,
@@ -66,7 +82,7 @@ namespace GameSrc
         public override void Tick(double dt)
         {
             base.Tick(dt);
-            TimeScale = Program.IsFocused ? 1f : 0f;
+            TimeScale = MiscGlobals.IsFocused ? 1f : 0f;
         }
 
         public override void Dispose()

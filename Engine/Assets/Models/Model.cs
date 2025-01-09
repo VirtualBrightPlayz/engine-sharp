@@ -619,6 +619,7 @@ namespace Engine.Assets.Models
                 InternalMaterials[i].SetUniforms(ShaderForwardSetId, LightBuffer);
                 renderer.SetupStandardWorldInfoUniforms(InternalMaterials[i], ShaderWorldInfoSetId);
                 renderer.SetupStandardMatrixUniforms(InternalMaterials[i]);
+                renderer.BindMaterial(InternalMaterials[i]);
                 renderer.DrawMeshNow(_meshes[i]);
                 // _meshes[i].PreDraw(renderer);
 

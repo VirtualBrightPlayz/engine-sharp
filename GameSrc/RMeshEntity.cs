@@ -17,6 +17,7 @@ namespace GameSrc
 {
     public class RMeshEntity : PhysicsEntity
     {
+        public static GraphicsShader shader { get; set; }
         public RMeshModel Room { get; private set; }
         public AudioSource[] Sources { get; private set; }
         public StaticModelEntity[] Models { get; private set; }
@@ -25,7 +26,14 @@ namespace GameSrc
 
         public RMeshEntity(string name, string path) : base(name)
         {
-            Room = ResourceManager.Clone<RMeshModel>($"{name}_{Random.Shared.Next()}", ResourceManagerExtensions.LoadRoomModel(path));
+            shader ??= new GraphicsShader("Shaders/MainMesh");
+            if (SCPCB.RMeshModels.TryGetValue(path, out var r))
+                Room = r;
+            else
+            {
+                Room = new RMeshModel($"{name}_{Random.Shared.Next()}", path);
+                SCPCB.RMeshModels.Add(path, Room);
+            }
             List<Triangle> tris = new List<Triangle>();
             for (int i = 0; i < Room.CollisionTriangles.Length - 2; i+=3)
             {
@@ -66,7 +74,8 @@ namespace GameSrc
             Models = new StaticModelEntity[Room.Models.Count];
             for (int i = 0; i < Models.Length; i++)
             {
-                Models[i] = new StaticModelEntity(Room.Models[i].path, Path.Combine(SCPCB.Instance.Data.PropsDir, Room.Models[i].path), ResourceManager.CreateMaterial(Room.Models[i].path, ResourceManager.LoadShader(Model.ShaderPath)));
+                Models[i] = new StaticModelEntity(Room.Models[i].path, Path.Combine(SCPCB.Instance.Data.PropsDir, Room.Models[i].path), new Material(Room.Models[i].path, shader));
+                Models[i].Create(false);
                 Models[i].Position = Vector3.Transform(Room.Models[i].position, WorldMatrix);
                 var rot = Quaternion.CreateFromYawPitchRoll(Room.Models[i].euler.X, Room.Models[i].euler.Y, Room.Models[i].euler.Z);
                 Models[i].Rotation = rot * Rotation;
@@ -119,6 +128,10 @@ namespace GameSrc
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
+            if ((Position - renderer.ViewPosition).LengthSquared() > 25f * 25f)
+            {
+                return;
+            }
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i].PreDraw(renderer, dt);
@@ -128,7 +141,7 @@ namespace GameSrc
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            if ((Position - renderer.ViewPosition).LengthSquared() > 50f * 50f)
+            if ((Position - renderer.ViewPosition).LengthSquared() > 25f * 25f)
             {
                 return;
             }

@@ -6,7 +6,6 @@ using Engine.Assets.Audio;
 using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using Engine.Game.Entities;
-using Engine.VeldridSilk;
 using ImGuiNET;
 using Silk.NET.Input;
 using static GameSrc.UIExt;
@@ -23,9 +22,8 @@ namespace GameSrc
             GameLoad = 2,
         }
 
-        public IInputContext Input => Program.GameInputContext;
-        public InputHandler InputHandler => Program.GameInputSnapshotHandler;
-        public Vector2 ScreenSize => new Vector2(Program.GameWindow.Size.X, Program.GameWindow.Size.Y);
+        public InputHandler InputHandler => MiscGlobals.GameInputHandler;
+        public Vector2 ScreenSize => new Vector2(RenderingGlobals.Window.Width, RenderingGlobals.Window.Height);
         public MenuState State { get; private set; } = MenuState.PreLoad;
 
         public MenuEntity() : base("Menu")
