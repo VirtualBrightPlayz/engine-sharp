@@ -43,7 +43,7 @@ namespace GameSrc
         private string _path;
         public Vector3[] CollisionPositions { get; private set; }
         public uint[] CollisionTriangles { get; private set; }
-        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 1f / 102.4f;
+        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 20f / 2048f; //2f / 320f;
         private List<RMeshPointModel> pointModels = new List<RMeshPointModel>();
         public IReadOnlyList<RMeshPointModel> Models => pointModels;
         private List<RMeshAudioSource> soundEmitters = new List<RMeshAudioSource>();
@@ -245,7 +245,7 @@ namespace GameSrc
                 materials[i] = material;
                 materials[i].SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
                 materials[i].SetUniforms(ShaderLightmapSetId, new UniformLayout(string.Empty, lightmaps[i], false, true));
-                materials[i].SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, LightUniform, false, true));
+                materials[i].SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, ForwardConsts.LightUniform, false, true));
 
                 RMeshVertexLayout[] data = new RMeshVertexLayout[vertices.Length];
                 for (int j = 0; j < data.Length; j++)
@@ -507,12 +507,13 @@ namespace GameSrc
             }
         }
 
-        public void Draw(Renderer renderer, double dt)
+        public void Draw(Renderer renderer, Matrix4x4 WorldMatrix, double dt)
         {
             for (int i = 0; i < meshes.Length; i++)
             {
-                renderer.BindMaterial(materials[i], ForwardConsts.ForwardBasePassName);
-                renderer.DrawMeshNow(meshes[i]);
+                // renderer.BindMaterial(materials[i], ForwardConsts.ForwardBasePassName);
+                // renderer.DrawMeshNow(meshes[i]);
+                renderer.DrawMesh(meshes[i], WorldMatrix, materials[i], ForwardConsts.ForwardBasePassName);
                 continue;
                 ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
                 for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)

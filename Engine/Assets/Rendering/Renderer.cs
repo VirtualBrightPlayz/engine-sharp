@@ -13,6 +13,14 @@ namespace Engine.Assets.Rendering
 {
     public class Renderer : Resource, IDisposable
     {
+        public struct RenderBatch
+        {
+            public List<Mesh> meshes;
+            public List<Matrix4x4> matrix;
+            public Material material;
+            public string pass;
+        }
+
         public static Renderer Current { get; set; }
         public override bool IsValid => _commandList != null && !_commandList.IsDisposed;
         private CommandList _commandList;
@@ -29,6 +37,7 @@ namespace Engine.Assets.Rendering
         public Dictionary<GraphicsShader, CompoundBuffer> WorldInfoBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
         public Material BoundMaterial { get; private set; }
         public RenderTexture2D InternalRenderTexture { get; private set; }
+        private List<RenderBatch> batches = new List<RenderBatch>();
         private Mesh BlitMesh;
         private Material BlitMaterial;
         private GraphicsShader BlitShader = new GraphicsShader("Shaders/Blit");
@@ -146,8 +155,18 @@ namespace Engine.Assets.Rendering
 
         public void End()
         {
+            for (int i = 0; i < batches.Count; i++)
+            {
+                BindMaterial(batches[i].material, batches[i].pass);
+                for (int j = 0; j < batches[i].meshes.Count; j++)
+                {
+                    WorldMatrix = batches[i].matrix[j];
+                    DrawMeshNow(batches[i].meshes[j]);
+                }
+            }
             _commandList.End();
             IsDrawing = false;
+            batches.Clear();
         }
 
         public void Submit()
@@ -184,6 +203,32 @@ namespace Engine.Assets.Rendering
             SetupStandardMatrixUniforms(material);
             material.PreDraw(this);
             material.Bind(this, pass);
+        }
+
+        public void DrawMesh(Mesh mesh, Matrix4x4 matrix, Material material, string pass = "main")
+        {
+            int idx = batches.FindIndex(x => x.material == material && x.pass == pass);
+            if (idx == -1)
+            {
+                batches.Add(new RenderBatch()
+                {
+                    meshes = new List<Mesh>()
+                    {
+                        mesh,
+                    },
+                    matrix = new List<Matrix4x4>()
+                    {
+                        matrix,
+                    },
+                    material = material,
+                    pass = pass,
+                });
+            }
+            else
+            {
+                batches[idx].meshes.Add(mesh);
+                batches[idx].matrix.Add(matrix);
+            }
         }
 
         public void DrawMeshNow(Mesh mesh)

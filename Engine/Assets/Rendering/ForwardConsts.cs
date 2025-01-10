@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -27,9 +29,10 @@ namespace Engine.Assets.Rendering
         public const string LightBufferName = "LightInfo0";
         public const string ForwardBasePassName = "FwdBase";
         public const string ForwardAddPassName = "FwdAdd";
-        public static List<ForwardLight> Lights = new List<ForwardLight>();
+        public static ConcurrentBag<ForwardLight> Lights = new ConcurrentBag<ForwardLight>();
         public static Vector4 AmbientColor = Vector4.One * 0.1f;
         public static int MaxRealtimeLights = 4;
+        public static UniformBuffer LightUniform;
 
         public static bool IsPassValid(int pass)
         {
@@ -39,6 +42,14 @@ namespace Engine.Assets.Rendering
                 return false;
             return true;
             // return Math.Min(MaxRealtimeLights, Math.Min(Lights.Count, pass * MaxLightsPerPass)) > 0;
+        }
+
+        public static void UpdateUniforms(Renderer renderer)
+        {
+            if (LightUniform == null || !LightUniform.IsValid)
+                LightUniform = new UniformBuffer(LightBufferName, LightInfo.Size);
+            ForwardLight[] sortedLights = Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(MaxRealtimeLights).ToArray();
+            LightUniform.UploadData(renderer, GetLightInfo(0, true, sortedLights));
         }
 
         public static float[] GetLightInfo(int pass, bool basePass, ForwardLight[] sortedLights)

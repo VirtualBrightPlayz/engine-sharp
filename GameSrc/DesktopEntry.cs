@@ -121,13 +121,13 @@ public static class DesktopEntry
         game.PreDraw(renderer, delta);
         renderer.Begin();
         renderer.Clear();
-        // renderer.End();
-        // renderer.Submit();
         Renderer.Current = renderer;
         game.Draw(renderer, delta);
+        renderer.End();
+        renderer.Submit();
         // DebugGlobals.DrawDebugWindow();
         ImGuiNET.ImGui.EndFrame();
-        // renderer.Begin();
+        renderer.Begin();
         RenderingGlobals.GameImGui.Render(RenderingGlobals.GameGraphics, renderer.CommandList);
         renderer.End();
         renderer.Submit();

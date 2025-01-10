@@ -611,30 +611,14 @@ namespace Engine.Assets.Models
                     InternalMaterials[i].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
                 else
                     Log.Warn(nameof(Model), $"{Name} has missing CompoundBuffers, {CompoundBuffers.Count} found, {_meshes.Length} required.");
-                InternalMaterials[i].SetUniforms(ShaderForwardSetId, new UniformLayout($"Model_{ForwardConsts.LightBufferName}", LightUniform, false, true));
+                InternalMaterials[i].SetUniforms(ShaderForwardSetId, new UniformLayout($"Model_{ForwardConsts.LightBufferName}", ForwardConsts.LightUniform, false, true));
                 renderer.SetupStandardWorldInfoUniforms(InternalMaterials[i], ShaderWorldInfoSetId);
                 renderer.SetupStandardMatrixUniforms(InternalMaterials[i]);
-                renderer.BindMaterial(InternalMaterials[i]);
-                renderer.DrawMeshNow(_meshes[i]);
+                // renderer.BindMaterial(InternalMaterials[i]);
+                // renderer.DrawMeshNow(_meshes[i]);
                 // _meshes[i].PreDraw(renderer);
 
-                ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
-                if (sortedLights.Length == 0)
-                {
-                    int j = 0;
-                    LightUniform.UploadData(renderer, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
-                    renderer.BindMaterial(InternalMaterials[i], j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
-                    renderer.DrawMeshNow(_meshes[i]);
-                }
-                else
-                {
-                    for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
-                    {
-                        LightUniform.UploadData(renderer, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
-                        renderer.BindMaterial(InternalMaterials[i], j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
-                        renderer.DrawMeshNow(_meshes[i]);
-                    }
-                }
+                renderer.DrawMesh(_meshes[i], WorldMatrix, InternalMaterials[i], ForwardConsts.ForwardBasePassName);
             }
         }
 

@@ -70,7 +70,7 @@ namespace GameSrc
         {
             base.PreDraw(renderer, dt);
             UpdateLook(dt);
-            Vector3 viewPos = Position + Vector3.UnitY * shape.HalfLength + Vector3.UnitY * upDownBob;
+            Vector3 viewPos = Position + Vector3.UnitY * (shape.HalfLength + shape.Radius) + Vector3.UnitY * upDownBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * (MathF.PI / 180f)), out Vector3 up);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             // Renderer.Current.WorldInfoResource.UploadData(Renderer.Current, new Vector4(viewPos, 1f));
@@ -86,6 +86,7 @@ namespace GameSrc
             if (ImGui.Begin("Test"))
             {
                 ImGui.Text("Test Window");
+                ImGui.Text($"FPS: {MiscGlobals.FPS}");
                 ImGui.Text($"Position {Position.ToString()}");
                 ImGui.Text($"Velocity {body.Velocity.Linear.ToString()}");
                 ImGui.InputFloat("ViewBobSpeed", ref viewBobSpeed);
@@ -239,7 +240,8 @@ namespace GameSrc
             UpdateTransforms = !InputHandler.IsKeyPressed(Veldrid.Key.N);
             if (!UpdateTransforms)
             {
-                Position += velocity * (float)dt * speed;
+                QuaternionEx.Transform(Vector3.UnitX, Rotation, out Vector3 charSide);
+                Position += (viewDirection * targetVelocity.Y + charSide * targetVelocity.X) * (float)dt * speed;
                 MarkTransformDirty(TransformDirtyFlags.Position);
                 // body.Pose.Position = Position;
             }

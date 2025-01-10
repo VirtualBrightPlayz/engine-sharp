@@ -69,13 +69,16 @@ namespace GameSrc
                 Lights[i].Color = Room.Lights[i].Color;
                 Lights[i].Range = Room.Lights[i].Range;
             }
-            ForwardConsts.Lights.AddRange(Lights);
+            for (int i = 0; i < Lights.Length; i++)
+            {
+                ForwardConsts.Lights.Add(Lights[i]);
+            }
             StopAudio();
             Models = new StaticModelEntity[Room.Models.Count];
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i] = new StaticModelEntity(Room.Models[i].path, Path.Combine(SCPCB.Instance.Data.PropsDir, Room.Models[i].path), new Material(Room.Models[i].path, shader));
-                Models[i].Create(false);
+                Models[i].Create(true);
                 Models[i].Position = Vector3.Transform(Room.Models[i].position, WorldMatrix);
                 var rot = Quaternion.CreateFromYawPitchRoll(Room.Models[i].euler.X, Room.Models[i].euler.Y, Room.Models[i].euler.Z);
                 Models[i].Rotation = rot * Rotation;
@@ -130,7 +133,7 @@ namespace GameSrc
             base.PreDraw(renderer, dt);
             if ((Position - renderer.ViewPosition).LengthSquared() > 25f * 25f)
             {
-                return;
+                // return;
             }
             for (int i = 0; i < Models.Length; i++)
             {
@@ -143,14 +146,14 @@ namespace GameSrc
             base.Draw(renderer, dt);
             if ((Position - renderer.ViewPosition).LengthSquared() > 25f * 25f)
             {
-                return;
+                // return;
             }
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i].Draw(renderer, dt);
             }
             Room.SetWorldMatrix(renderer, WorldMatrix);
-            Room.Draw(renderer, dt);
+            Room.Draw(renderer, WorldMatrix, dt);
         }
 
         public override void Tick(double dt)

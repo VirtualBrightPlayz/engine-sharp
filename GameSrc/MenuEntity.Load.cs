@@ -39,7 +39,7 @@ namespace GameSrc
             _menuMusicSource.SetBuffer(PreLoadMusic);
             _menuMusicSource.Play();
             LoadPercent = 100;
-            Task.Factory.StartNew(async () => await LoadCallback(new Progress<int>((i) => LoadPercent = i)));
+            Task.Run(async () => await LoadCallback(new Progress<int>((i) => LoadPercent = i)));
         }
 
         public void DisablePreLoadMenu()
@@ -54,7 +54,7 @@ namespace GameSrc
                 _menuMusicSource.SetBuffer(MenuMusic);
                 _menuMusicSource.Play();
             }
-            Task.Factory.StartNew(async () => await SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default));
+            Task.Run(async () => await SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default));
         }
 
         public void DisableGameLoadMenu()

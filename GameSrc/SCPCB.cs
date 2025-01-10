@@ -76,6 +76,7 @@ namespace GameSrc
 
         public override void Draw(Renderer renderer, double dt)
         {
+            ForwardConsts.UpdateUniforms(renderer);
             UIExt.BeginDraw();
             base.Draw(renderer, dt);
         }
