@@ -23,6 +23,7 @@ namespace GameSrc
         public StaticModelEntity[] Models { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
         public ForwardConsts.ForwardLight[] Lights { get; private set; }
+        public UniformBuffer WorldMatrixUniform { get; private set; }
 
         public RMeshEntity(string name, string path) : base(name)
         {
@@ -85,6 +86,7 @@ namespace GameSrc
                 Models[i].Scale = Room.Models[i].scale;
                 Models[i].MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
             }
+            WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
         }
 
         public void PlayAudio()
@@ -131,29 +133,29 @@ namespace GameSrc
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
-            if ((Position - renderer.ViewPosition).LengthSquared() > 25f * 25f)
+            if ((Position - renderer.ViewPosition).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
             {
-                // return;
+                return;
             }
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i].PreDraw(renderer, dt);
             }
+            WorldMatrixUniform.UploadData(WorldMatrix);
         }
 
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            if ((Position - renderer.ViewPosition).LengthSquared() > 25f * 25f)
+            if ((Position - renderer.ViewPosition).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
             {
-                // return;
+                return;
             }
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i].Draw(renderer, dt);
             }
-            Room.SetWorldMatrix(renderer, WorldMatrix);
-            Room.Draw(renderer, WorldMatrix, dt);
+            Room.Draw(renderer, WorldMatrixUniform, dt);
         }
 
         public override void Tick(double dt)

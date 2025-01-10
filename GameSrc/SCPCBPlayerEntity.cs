@@ -52,8 +52,7 @@ namespace GameSrc
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step8.ogg")),
         };
         private Vector4 nextLightColor = Vector4.One;
-        private bool posFlipFlop;
-        private double posDeltaFlipFlop;
+        public static float MaxRoomRenderDistance = 25f;
 
         public SCPCBPlayerEntity() : base("Player")
         {
@@ -93,7 +92,8 @@ namespace GameSrc
                 ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
                 ImGui.InputFloat("FootstepInterval", ref footstepInterval);
                 ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
-                ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
+                // ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
+                ImGui.InputFloat("MaxRoomRenderDistance", ref MaxRoomRenderDistance);
                 ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
                 // ImGui.SliderFloat4("AmbientColor", ref ForwardConsts.AmbientLight, 0f, 1f);
                 /*
@@ -145,29 +145,11 @@ namespace GameSrc
             }
             if (InputHandler.IsMouseLocked)
             {
-                /*
-                if (posFlipFlop)
                 {
                     InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
-                }
-                else
-                {
-                    lookAxis += InputHandler.MouseDelta * Vector2.One * (float)delta * 100f;
-                    lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
-                }
-                posFlipFlop = !posFlipFlop;
-                */
-                // if (posDeltaFlipFlop > 0.025d)
-                {
-                    posDeltaFlipFlop = 0d;
-                    InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
-                }
-                // else
-                {
                     lookAxis += InputHandler.MouseDelta * Vector2.One * 0.25f;
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                 }
-                posDeltaFlipFlop += delta;
                 Quaternion cameraRot = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), lookAxis.Y * (MathF.PI / 180f), 0f);
                 CameraRotation = cameraRot;
                 Rotation = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), 0f, 0f);

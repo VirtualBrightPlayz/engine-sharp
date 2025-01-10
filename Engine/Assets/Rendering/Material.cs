@@ -318,7 +318,7 @@ namespace Engine.Assets.Rendering
             }
         }
 
-        internal void Bind(Renderer renderer, string passName = "")
+        internal void Bind(Renderer renderer, string passName = "", bool bindPipeline = true)
         {
             Pipeline pipeline = null;//_pipelines.FirstOrDefault().Value?.FirstOrDefault(x => x.Key == renderer).Value;
             if (!string.IsNullOrEmpty(passName))
@@ -335,7 +335,8 @@ namespace Engine.Assets.Rendering
             {
                 Log.Error(nameof(Material), $"{Name} Missing renderer.CommandList");
             }
-            renderer.CommandList.SetPipeline(pipeline);
+            if (bindPipeline)
+                renderer.CommandList.SetPipeline(pipeline);
             uint maxId = 0;
             foreach (var resSet in _resourceSets.OrderBy(x => x.Key))
             {

@@ -21,6 +21,7 @@ namespace Engine.Game.Entities
         public BepuPhysics.Collidables.Mesh shape;
         private readonly string _path;
         private readonly Material _material;
+        public UniformBuffer WorldMatrixUniform { get; private set; }
 
         public StaticModelEntity(string name, string path, Material material) : base(name)
         {
@@ -57,6 +58,7 @@ namespace Engine.Game.Entities
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             if (createStatic)
                 staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
+            WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
         }
 
         public override void MarkTransformDirty(TransformDirtyFlags flags)
@@ -71,10 +73,16 @@ namespace Engine.Game.Entities
             base.MarkTransformDirty(flags);
         }
 
+        public override void PreDraw(Renderer renderer, double dt)
+        {
+            base.PreDraw(renderer, dt);
+            WorldMatrixUniform.UploadData(WorldMatrix);
+        }
+
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
-            Model.SetWorldMatrixDraw(renderer, WorldMatrix);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform);
         }
     }
 }

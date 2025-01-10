@@ -46,7 +46,6 @@ namespace Engine.Assets.Models
         private Animation _animation;
         private Dictionary<string, uint> _boneIdByName = new Dictionary<string, uint>();
         public List<Rendering.Material> InternalMaterials { get; private set; }
-        public UniformBuffer LightUniform { get; private set; }
         private string _path;
         private bool _shouldLoadMats;
         private bool _shouldAnimate;
@@ -103,7 +102,6 @@ namespace Engine.Assets.Models
                 // GLTFLoadMeshes(_path);
             // else
                 AssimpLoadMeshes(_path, _ogMaterial, _shouldAnimate);
-            LightUniform = new UniformBuffer(ForwardConsts.LightBufferName, ForwardConsts.LightInfo.Size);
         }
 
         private void GLTFLoadMeshes(string path)
@@ -595,7 +593,13 @@ namespace Engine.Assets.Models
             return m;
         }
 
-        public void SetWorldMatrixDraw(Renderer renderer, System.Numerics.Matrix4x4 WorldMatrix)
+        private void OnBatchDraw(Renderer renderer, Renderer.RenderBatch batch, int index)
+        {
+            batch.material.SetUniforms(UniformConsts.WorldMatrixBufferSet, true, new UniformLayout(UniformConsts.WorldMatrixName, (IMaterialBindable)batch.instances[index], true, false));
+            renderer.BindMaterial(batch.material, batch.pass, false);
+        }
+
+        public void SetWorldMatrixDraw(Renderer renderer, UniformBuffer WorldMatrix)
         {
             for (int i = 0; i < _meshes.Length; i++)
             {
@@ -606,19 +610,19 @@ namespace Engine.Assets.Models
                     InternalMaterials[i].SetUniforms(ShaderBonesSetId, bonesBuffers[i]);
                 }
                 // _meshes[i].SetWorldMatrix(renderer, WorldMatrix);
-                renderer.WorldMatrix = WorldMatrix;
+                // renderer.WorldMatrix = WorldMatrix;
                 if (CompoundBuffers.Count == _meshes.Length)
                     InternalMaterials[i].SetUniforms(UniformConsts.DiffuseTextureSet, CompoundBuffers[i]);
                 else
                     Log.Warn(nameof(Model), $"{Name} has missing CompoundBuffers, {CompoundBuffers.Count} found, {_meshes.Length} required.");
+                // InternalMaterials[i].SetUniforms(UniformConsts.WorldMatrixBufferSet, true, new UniformLayout(UniformConsts.WorldMatrixName, WorldMatrix, true, false));
                 InternalMaterials[i].SetUniforms(ShaderForwardSetId, new UniformLayout($"Model_{ForwardConsts.LightBufferName}", ForwardConsts.LightUniform, false, true));
-                renderer.SetupStandardWorldInfoUniforms(InternalMaterials[i], ShaderWorldInfoSetId);
                 renderer.SetupStandardMatrixUniforms(InternalMaterials[i]);
+                renderer.SetupStandardWorldInfoUniforms(InternalMaterials[i], ShaderWorldInfoSetId);
                 // renderer.BindMaterial(InternalMaterials[i]);
                 // renderer.DrawMeshNow(_meshes[i]);
                 // _meshes[i].PreDraw(renderer);
-
-                renderer.DrawMesh(_meshes[i], WorldMatrix, InternalMaterials[i], ForwardConsts.ForwardBasePassName);
+                renderer.DrawMesh(_meshes[i], OnBatchDraw, WorldMatrix, InternalMaterials[i], ForwardConsts.ForwardBasePassName);
             }
         }
 

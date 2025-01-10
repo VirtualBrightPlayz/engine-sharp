@@ -16,7 +16,8 @@ namespace Engine.Assets.Rendering
         public struct RenderBatch
         {
             public List<Mesh> meshes;
-            public List<Matrix4x4> matrix;
+            public List<Action<Renderer, RenderBatch, int>> callbacks;
+            public List<object> instances;
             public Material material;
             public string pass;
         }
@@ -27,11 +28,11 @@ namespace Engine.Assets.Rendering
         public CommandList CommandList => _commandList;
         public Matrix4x4 ViewMatrix { get; set; }
         public Matrix4x4 ProjectionMatrix { get; set; }
-        public Matrix4x4 WorldMatrix { get; set; }
+        // public Matrix4x4 WorldMatrix { get; set; }
         public Vector3 ViewPosition { get; set; }
         public UniformBuffer ViewMatrixResource { get; private set; }
         public UniformBuffer ProjMatrixResource { get; private set; }
-        public UniformBuffer WorldMatrixResource { get; private set; }
+        // public UniformBuffer WorldMatrixResource { get; private set; }
         public UniformBuffer WorldInfoResource { get; private set; }
         public Dictionary<GraphicsShader, CompoundBuffer> MatrixBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
         public Dictionary<GraphicsShader, CompoundBuffer> WorldInfoBuffers { get; private set; } = new Dictionary<GraphicsShader, CompoundBuffer>();
@@ -70,7 +71,7 @@ namespace Engine.Assets.Rendering
                 _commandList.Dispose();
             ViewMatrixResource = new UniformBuffer(UniformConsts.ViewMatrixName, (uint)16 * 4);
             ProjMatrixResource = new UniformBuffer(UniformConsts.ProjectionMatrixName, (uint)16 * 4);
-            WorldMatrixResource = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
+            // WorldMatrixResource = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
             WorldInfoResource = new UniformBuffer("WorldInfo", (uint)4 * 4);
             foreach (var item in MatrixBuffers)
             {
@@ -120,7 +121,7 @@ namespace Engine.Assets.Rendering
         {
             if (!MatrixBuffers.ContainsKey(material.Shader))
             {
-                MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewMatrixName, ViewMatrixResource, ProjMatrixResource, WorldMatrixResource);
+                MatrixBuffers[material.Shader] = new CompoundBuffer("ProjViewMatrixBuffer", material.Shader, UniformConsts.ViewMatrixName, ViewMatrixResource, ProjMatrixResource);
                 MatrixBuffers[material.Shader].ReCreate();
             }
             material.SetUniforms(UniformConsts.ViewProjectionMatrixBufferSet, MatrixBuffers[material.Shader]);
@@ -160,7 +161,7 @@ namespace Engine.Assets.Rendering
                 BindMaterial(batches[i].material, batches[i].pass);
                 for (int j = 0; j < batches[i].meshes.Count; j++)
                 {
-                    WorldMatrix = batches[i].matrix[j];
+                    batches[i].callbacks[j].Invoke(this, batches[i], j);
                     DrawMeshNow(batches[i].meshes[j]);
                 }
             }
@@ -197,15 +198,15 @@ namespace Engine.Assets.Rendering
             Begin();
         }
 
-        public void BindMaterial(Material material, string pass = "main")
+        public void BindMaterial(Material material, string pass = "main", bool bindPipeline = true)
         {
             BoundMaterial = material;
             SetupStandardMatrixUniforms(material);
             material.PreDraw(this);
-            material.Bind(this, pass);
+            material.Bind(this, pass, bindPipeline);
         }
 
-        public void DrawMesh(Mesh mesh, Matrix4x4 matrix, Material material, string pass = "main")
+        public void DrawMesh(Mesh mesh, Action<Renderer, RenderBatch, int> callback, object instanceData, Material material, string pass = "main")
         {
             int idx = batches.FindIndex(x => x.material == material && x.pass == pass);
             if (idx == -1)
@@ -216,9 +217,13 @@ namespace Engine.Assets.Rendering
                     {
                         mesh,
                     },
-                    matrix = new List<Matrix4x4>()
+                    callbacks = new List<Action<Renderer, RenderBatch, int>>()
                     {
-                        matrix,
+                        callback,
+                    },
+                    instances = new List<object>()
+                    {
+                        instanceData,
                     },
                     material = material,
                     pass = pass,
@@ -227,13 +232,14 @@ namespace Engine.Assets.Rendering
             else
             {
                 batches[idx].meshes.Add(mesh);
-                batches[idx].matrix.Add(matrix);
+                batches[idx].callbacks.Add(callback);
+                batches[idx].instances.Add(instanceData);
             }
         }
 
         public void DrawMeshNow(Mesh mesh)
         {
-            WorldMatrixResource.UploadData(this, WorldMatrix);
+            // WorldMatrixResource.UploadData(this, WorldMatrix);
             if (!mesh.IsValidForRenderer(this))
                 mesh.UploadToRenderer(this);
             mesh.Bind(this);
@@ -255,7 +261,7 @@ namespace Engine.Assets.Rendering
             // ViewMatrixResource = null;
             ProjMatrixResource?.Dispose();
             // ProjMatrixResource = null;
-            WorldMatrixResource?.Dispose();
+            // WorldMatrixResource?.Dispose();
             WorldInfoResource?.Dispose();
             // WorldInfoResource = null;
             _commandList.Dispose();

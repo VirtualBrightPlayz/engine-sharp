@@ -43,7 +43,7 @@ namespace GameSrc
         private string _path;
         public Vector3[] CollisionPositions { get; private set; }
         public uint[] CollisionTriangles { get; private set; }
-        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 20f / 2048f; //2f / 320f;
+        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 20f / 2048f;
         private List<RMeshPointModel> pointModels = new List<RMeshPointModel>();
         public IReadOnlyList<RMeshPointModel> Models => pointModels;
         private List<RMeshAudioSource> soundEmitters = new List<RMeshAudioSource>();
@@ -492,28 +492,19 @@ namespace GameSrc
             }
         }
 
-        public void SetWorldMatrix(Renderer renderer, Matrix4x4 WorldMatrix)
+        private void OnBatchDraw(Renderer renderer, Renderer.RenderBatch batch, int index)
         {
-            // LightUniform.UploadData(ForwardConsts.GetLightInfo());
-            for (int i = 0; i < meshes.Length; i++)
-            {
-                renderer.WorldMatrix = WorldMatrix;
-                /*
-                materials[i].SetUniforms(UniformConsts.DiffuseTextureSet, uniforms[i]);
-                materials[i].SetUniforms(ShaderLightmapSetId, new UniformLayout(string.Empty, lightmaps[i], false, true));
-                materials[i].SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, LightUniform, false, true));
-                */
-                renderer.SetupStandardWorldInfoUniforms(materials[i], ShaderWorldInfoSetId);
-            }
+            batch.material.SetUniforms(UniformConsts.WorldMatrixBufferSet, true, new UniformLayout(UniformConsts.WorldMatrixName, (IMaterialBindable)batch.instances[index], true, false));
+            renderer.BindMaterial(batch.material, batch.pass, false);
         }
 
-        public void Draw(Renderer renderer, Matrix4x4 WorldMatrix, double dt)
+        public void Draw(Renderer renderer, UniformBuffer WorldMatrix, double dt)
         {
             for (int i = 0; i < meshes.Length; i++)
             {
-                // renderer.BindMaterial(materials[i], ForwardConsts.ForwardBasePassName);
-                // renderer.DrawMeshNow(meshes[i]);
-                renderer.DrawMesh(meshes[i], WorldMatrix, materials[i], ForwardConsts.ForwardBasePassName);
+                renderer.SetupStandardMatrixUniforms(materials[i]);
+                renderer.SetupStandardWorldInfoUniforms(materials[i], ShaderWorldInfoSetId);
+                renderer.DrawMesh(meshes[i], OnBatchDraw, WorldMatrix, materials[i], ForwardConsts.ForwardBasePassName);
                 continue;
                 ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
                 for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)

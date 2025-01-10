@@ -44,7 +44,7 @@ layout(set = 0, binding = 1) uniform ProjectionMatrix
 {
     mat4 Projection;
 };
-layout(set = 0, binding = 2) uniform WorldMatrix
+layout(set = 1, binding = 0) uniform WorldMatrix
 {
     mat4 World;
 };
