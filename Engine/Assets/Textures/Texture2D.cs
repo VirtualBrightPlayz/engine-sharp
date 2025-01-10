@@ -62,7 +62,7 @@ namespace Engine.Assets.Textures
                     filterMode = SamplerFilter.Anisotropic;
                     break;
             }
-            return new SamplerDescription(addressMode, addressMode, addressMode, filterMode, null, maxAnsio, 0, miplevels+1, 1, SamplerBorderColor.TransparentBlack);
+            return new SamplerDescription(addressMode, addressMode, addressMode, filterMode, null, maxAnsio, 0, miplevels, 1, SamplerBorderColor.TransparentBlack);
         }
     }
 
