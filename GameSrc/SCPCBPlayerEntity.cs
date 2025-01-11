@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics;
 using BepuPhysics;
 using BepuPhysics.Collidables;
+using BepuPhysics.Trees;
 using BepuUtilities;
 using Engine;
 using Engine.Assets;
@@ -16,11 +17,11 @@ using ImGuiNET;
 
 namespace GameSrc
 {
-    public class SCPCBPlayerEntity : PhysicsEntity
+    public class SCPCBPlayerEntity : PhysicsEntity, IRayHitHandler
     {
         public InputHandler InputHandler => MiscGlobals.GameInputHandler;
         public Capsule shape;
-        public float speed = 5f;
+        public float speed = 3.5f;
         public float acceleration = 100f;
         public Vector3 viewDirection = -Vector3.UnitZ;
         public Vector3 viewDirectionUp = Vector3.UnitY;
@@ -51,6 +52,17 @@ namespace GameSrc
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step7.ogg")),
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "Step8.ogg")),
         };
+        private AudioClip[] footstepMetalClips = new AudioClip[]
+        {
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal1.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal2.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal3.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal4.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal5.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal6.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal7.ogg")),
+            new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal8.ogg")),
+        };
         private Vector4 nextLightColor = Vector4.One;
         public static float MaxRoomRenderDistance = 25f;
 
@@ -62,7 +74,44 @@ namespace GameSrc
             shape = new Capsule(0.4f, 1.4f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             var inertia = shape.ComputeInertia(1f);
-            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.MaxValue, ContinuousDetection.Discrete), shape.Radius * 0.02f));
+            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, 50f, ContinuousDetection.Discrete), shape.Radius * 0.02f));
+        }
+
+        public bool AllowTest(CollidableReference collidable)
+        {
+            return collidable.Mobility == CollidableMobility.Static && RMeshEntity.FloorLookup.ContainsKey(collidable.StaticHandle);
+        }
+
+        public bool AllowTest(CollidableReference collidable, int childIndex)
+        {
+            return collidable.Mobility == CollidableMobility.Static && RMeshEntity.FloorLookup.ContainsKey(collidable.StaticHandle);
+        }
+
+        public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
+        {
+            switch (ray.Id)
+            {
+                case 0: // footsteps
+                {
+                    if (RMeshEntity.FloorLookup.TryGetValue(collidable.StaticHandle, out string floorTexture))
+                    {
+                        if (floorTexture == "1")
+                        {
+                            footstepSource.SetBuffer(footstepMetalClips[Random.Shared.Next(footstepMetalClips.Length)]);
+                        }
+                        else
+                        {
+                            footstepSource.SetBuffer(footstepClips[Random.Shared.Next(footstepClips.Length)]);
+                        }
+                    }
+                    else
+                    {
+                        footstepSource.SetBuffer(footstepClips[Random.Shared.Next(footstepClips.Length)]);
+                    }
+                    footstepSource.Play();
+                    break;
+                }
+            }
         }
 
         public override void PreDraw(Renderer renderer, double dt)
@@ -95,6 +144,7 @@ namespace GameSrc
                 // ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
                 ImGui.InputFloat("MaxRoomRenderDistance", ref MaxRoomRenderDistance);
                 ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
+                ImGui.SliderFloat("Speed", ref speed, 1f, 10f);
                 // ImGui.SliderFloat4("AmbientColor", ref ForwardConsts.AmbientLight, 0f, 1f);
                 /*
                 if (ImGui.Button("New light"))
@@ -147,7 +197,7 @@ namespace GameSrc
             {
                 {
                     InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
-                    lookAxis += InputHandler.MouseDelta * Vector2.One * 0.25f;
+                    lookAxis += InputHandler.MouseDelta * Vector2.One * (float)(0.001d / delta);
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                 }
                 Quaternion cameraRot = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), lookAxis.Y * (MathF.PI / 180f), 0f);
@@ -158,11 +208,11 @@ namespace GameSrc
                 QuaternionEx.Transform(-Vector3.UnitZ, Rotation, out direction);
             }
             MarkTransformDirty(TransformDirtyFlags.Rotation);
-            if (InputHandler.IsMouseDown(Veldrid.MouseButton.Right) && !wasEscPressed)
+            if (InputHandler.IsKeyPressed(Veldrid.Key.Escape) && !wasEscPressed)
             {
                 InputHandler.IsMouseLocked = !InputHandler.IsMouseLocked;
             }
-            wasEscPressed = InputHandler.IsMouseDown(Veldrid.MouseButton.Right);
+            wasEscPressed = InputHandler.IsKeyPressed(Veldrid.Key.Escape);
         }
 
         public void UpdateMovement(double dt)
@@ -213,8 +263,12 @@ namespace GameSrc
             float velLen = targetVelocity.Length();
             if (prevFootstepTime + footstepInterval < footstepTime)
             {
+                SCPCBPlayerEntity ent = this;
+                Game.Simulation.RayCast(Position, -Vector3.UnitY, 5f, ref ent, 0);
+                /*
                 footstepSource.SetBuffer(footstepClips[Random.Shared.Next(footstepClips.Length)]);
                 footstepSource.Play();
+                */
                 prevFootstepTime = footstepTime;
             }
             walkViewTimer += (velLen > 0f ? 1f : 0f) * viewBobSpeed * (float)dt;
@@ -225,7 +279,6 @@ namespace GameSrc
                 QuaternionEx.Transform(Vector3.UnitX, Rotation, out Vector3 charSide);
                 Position += (viewDirection * targetVelocity.Y + charSide * targetVelocity.X) * (float)dt * speed;
                 MarkTransformDirty(TransformDirtyFlags.Position);
-                // body.Pose.Position = Position;
             }
             else
             {

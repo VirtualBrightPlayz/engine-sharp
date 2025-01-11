@@ -366,7 +366,7 @@ namespace GameSrc
 
                     if (temp == 0)
                     {
-                        Console.WriteLine($"ROOM4 not placed in zone {i}");
+                        Log.Debug(nameof(MapGenerator), $"ROOM4 not placed in zone {i}");
                     }
                 }
 
@@ -479,7 +479,7 @@ namespace GameSrc
 
                     if (temp == 0)
                     {
-                        Console.WriteLine($"ROOM2C not placed in zone {i}");
+                        Log.Debug(nameof(MapGenerator), $"ROOM2C not placed in zone {i}");
                     }
                 }
             }
@@ -783,7 +783,7 @@ namespace GameSrc
         {
             if (max_pos < min_pos)
             {
-                Console.WriteLine($"Can't place {room_name}");
+                Log.Warn(nameof(MapGenerator), $"Can't place {room_name}");
                 return false;
             }
             
@@ -813,7 +813,7 @@ namespace GameSrc
             }
             else
             {
-                Console.WriteLine($"Can't place {room_name}");
+                Log.Warn(nameof(MapGenerator), $"Can't place {room_name}");
                 return false;
             }
         }

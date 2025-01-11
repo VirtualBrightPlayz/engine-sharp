@@ -18,10 +18,13 @@ namespace GameSrc
     {
         public AudioClip PreLoadMusic = new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Music", "EntranceZone.ogg"));
         public Texture2D BlinkMeterImg = new Texture2D(Path.Combine(SCPCB.Instance.Data.GFXDir, "BlinkMeter.jpg"));
+        public AudioClip MenuLoaded = new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Horror", "Horror8.ogg"));
         private AudioSource _menuMusicSource;
+        private AudioSource _menuDoneLoading;
         private Vector2 LoadingScreenRectPos => new Vector2(ScreenSize.X/2 - LoadingScreenRectSize.X/2, ScreenSize.X/2 + 30 - 100);
         private Vector2 LoadingScreenRectSize => new Vector2(304, 20);
         public int LoadPercent;
+        private int lastLoadPercent;
 
         public void SetupLoadMenu()
         {
@@ -31,6 +34,13 @@ namespace GameSrc
             _menuMusicSource.RolloffFactor = 0f;
             _menuMusicSource.ReferenceDistance = 0f;
             _menuMusicSource.Looping = true;
+
+            _menuDoneLoading = new AudioSource("MenuLoaded");
+            _menuDoneLoading.SetBuffer(MenuLoaded);
+            _menuDoneLoading.MaxDistance = float.PositiveInfinity;
+            _menuDoneLoading.RolloffFactor = 0f;
+            _menuDoneLoading.ReferenceDistance = 0f;
+            _menuDoneLoading.Looping = false;
         }
 
         public void EnablePreLoadMenu()
@@ -55,6 +65,7 @@ namespace GameSrc
                 _menuMusicSource.Play();
             }
             Task.Run(async () => await SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default));
+            // _ = SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default);
         }
 
         public void DisableGameLoadMenu()
@@ -76,7 +87,7 @@ namespace GameSrc
             for (int i = 0; i < names.Count; i++)
             {
                 if (!SCPCB.RMeshModels.ContainsKey(names[i]))
-                    SCPCB.RMeshModels.Add(names[i], new RMeshModel(names[i]));
+                    SCPCB.RMeshModels.TryAdd(names[i], new RMeshModel(names[i]));
                 await Task.Delay(75);
                 progress.Report((int)(((float)i / names.Count) * 100f));
             }
@@ -86,6 +97,7 @@ namespace GameSrc
         public void DrawLoadMenu()
         {
             _menuMusicSource.Position = AudioGlobals.Position;
+            _menuDoneLoading.Position = AudioGlobals.Position;
             if (InputHandler.IsMouseLocked)
                 InputHandler.IsMouseLocked = false;
             Vector2 start = LoadingScreenRectPos;
@@ -98,6 +110,11 @@ namespace GameSrc
             string LoadText = $"LOADING - {LoadPercent}%";
             TextCentered(CourierNew, 14f, startText + new Vector2(1f, 1f), Vector2.Zero, LoadText, Color(Vector4.Zero));
             TextCentered(CourierNew, 14f, startText, Vector2.Zero, LoadText, Color(Vector4.One));
+            if (lastLoadPercent != LoadPercent && LoadPercent >= 100)
+            {
+                _menuDoneLoading.Play();
+            }
+            lastLoadPercent = LoadPercent;
             if (LoadPercent >= 100)
             {
                 if (InputHandler.IsMouseDown(Veldrid.MouseButton.Left) || InputHandler.KeyEvents.Any())

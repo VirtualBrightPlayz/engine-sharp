@@ -324,21 +324,30 @@ namespace Engine.Assets.Rendering
             foreach (var resSet in _resourceSets.OrderBy(x => x.Key))
             {
                 if (resSet.Value == null || resSet.Value.IsDisposed)
+                {
                     Log.Error(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
+                    continue;
+                }
                 maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value);
             }
             foreach (var resSet in _compoundBuffers.OrderBy(x => x.Key))
             {
                 if (resSet.Value.InternalResourceSet == null || resSet.Value.InternalResourceSet.IsDisposed)
+                {
                     Log.Error(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
+                    continue;
+                }
                 maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value.InternalResourceSet);
             }
             foreach (var resSet in _bindables.OrderBy(x => x.Key))
             {
                 if (resSet.Value == null)
+                {
                     Log.Error(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
+                    continue;
+                }
                 maxId++;
                 resSet.Value.Bind(renderer, this, resSet.Key);
             }
@@ -360,6 +369,11 @@ namespace Engine.Assets.Rendering
                 cmp.Value.Dispose();
             }
             _compoundBuffers.Clear();
+            foreach (var cmp in _bindables)
+            {
+                cmp.Value.Dispose();
+            }
+            _bindables.Clear();
             foreach (var item in _pipelines)
             {
                 foreach (var pipeline in item.Value)

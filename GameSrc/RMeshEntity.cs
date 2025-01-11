@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -18,10 +20,15 @@ namespace GameSrc
     public class RMeshEntity : PhysicsEntity
     {
         public static GraphicsShader shader { get; set; }
+        public static ConcurrentDictionary<StaticHandle, string> FloorLookup { get; private set; } = new ConcurrentDictionary<StaticHandle, string>();
         public RMeshModel Room { get; private set; }
         public AudioSource[] Sources { get; private set; }
         public StaticModelEntity[] Models { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
+        public Compound compoundShape;
+        public BepuPhysics.Collidables.Mesh[] shapes;
+        public TypedIndex[] shapeIndexes;
+        public StaticHandle?[] staticHandles;
         public ForwardConsts.ForwardLight[] Lights { get; private set; }
         public UniformBuffer WorldMatrixUniform { get; private set; }
 
@@ -33,14 +40,84 @@ namespace GameSrc
             else
             {
                 Room = new RMeshModel($"{name}_{Random.Shared.Next()}", path);
-                SCPCB.RMeshModels.Add(path, Room);
+                SCPCB.RMeshModels.TryAdd(path, Room);
             }
-            List<Triangle> tris = new List<Triangle>();
-            for (int i = 0; i < Room.CollisionTriangles.Length - 2; i+=3)
+        #if false
+            shapes = new BepuPhysics.Collidables.Mesh[Room.Meshes.Length];
+            shapeIndexes = new TypedIndex[Room.Meshes.Length];
+            staticHandles = new StaticHandle?[Room.Meshes.Length];
+            Game.BufferPool.Take<CompoundChild>(Room.Meshes.Length, out var children);
+            for (int i = 0; i < Room.Meshes.Length; i++)
             {
-                var v0 = Room.CollisionPositions[Room.CollisionTriangles[i+0]];
-                var v1 = Room.CollisionPositions[Room.CollisionTriangles[i+1]];
-                var v2 = Room.CollisionPositions[Room.CollisionTriangles[i+2]];
+                Debug.Assert(Room.Meshes[i].Indices.Count % 3 == 0);
+                Game.BufferPool.Take<Triangle>(Room.Meshes[i].Indices.Count / 3, out var triBuf);
+                for (int j = 0; j < Room.Meshes[i].Indices.Count / 3; j++)
+                {
+                    RMeshModel.RMeshVertexLayout vertex0 = (RMeshModel.RMeshVertexLayout)Room.Meshes[i].VertexList[(int)Room.Meshes[i].Indices[j*3+0]];
+                    RMeshModel.RMeshVertexLayout vertex1 = (RMeshModel.RMeshVertexLayout)Room.Meshes[i].VertexList[(int)Room.Meshes[i].Indices[j*3+1]];
+                    RMeshModel.RMeshVertexLayout vertex2 = (RMeshModel.RMeshVertexLayout)Room.Meshes[i].VertexList[(int)Room.Meshes[i].Indices[j*3+2]];
+                    Debug.Assert(float.IsFinite(vertex0.Position.X) && float.IsFinite(vertex0.Position.Y) && float.IsFinite(vertex0.Position.Z));
+                    Debug.Assert(float.IsFinite(vertex1.Position.X) && float.IsFinite(vertex1.Position.Y) && float.IsFinite(vertex1.Position.Z));
+                    Debug.Assert(float.IsFinite(vertex2.Position.X) && float.IsFinite(vertex2.Position.Y) && float.IsFinite(vertex2.Position.Z));
+                    triBuf[j] = new Triangle(vertex0.Position, vertex1.Position, vertex2.Position);
+                    // triBuf[j] = new Triangle(vertex2.Position, vertex1.Position, vertex0.Position);
+                }
+                shapes[i] = new BepuPhysics.Collidables.Mesh(triBuf, Vector3.One, Game.BufferPool);
+                shapeIndexes[i] = Game.Simulation.Shapes.Add(shape);
+                children[i] = new CompoundChild(RigidPose.Identity, shapeIndexes[i]);
+                // staticHandles[i] = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndexes[i]));
+                // FloorLookup.TryAdd(staticHandles[i], Room.Textures[i]);
+            }
+            compoundShape = new Compound(children);
+            // compoundShape = new BigCompound(children, Game.Simulation.Shapes, Game.BufferPool, Game.Dispatcher);
+            shapeIndex = Game.Simulation.Shapes.Add(compoundShape);
+            staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
+        #elif true
+            Dictionary<string, List<Triangle>> trisLookup = new Dictionary<string, List<Triangle>>();
+            int offset = 0;
+            for (int i = 0; i < Room.Meshes.Length; i++)
+            {
+                string type = SCPCB.Instance.Data.GetFloorType(Path.GetFileName(Room.Textures[i]).ToLower());
+                if (!trisLookup.ContainsKey(type))
+                    trisLookup[type] = new List<Triangle>();
+                for (int j = 0; j < Room.Meshes[i].Indices.Count / 3; j++)
+                {
+                    int index = j * 3 + offset;
+                    var v0 = Room.CollisionPositions[Room.CollisionTriangles[index+0]];
+                    var v1 = Room.CollisionPositions[Room.CollisionTriangles[index+1]];
+                    var v2 = Room.CollisionPositions[Room.CollisionTriangles[index+2]];
+                    trisLookup[type].Add(new Triangle(v0, v1, v2));
+                }
+                offset += Room.Meshes[i].Indices.Count;
+            }
+            shapes = new BepuPhysics.Collidables.Mesh[trisLookup.Count];
+            shapeIndexes = new TypedIndex[trisLookup.Count];
+            staticHandles = new StaticHandle?[trisLookup.Count];
+            int id = 0;
+            foreach (var kvp in trisLookup)
+            {
+                Game.BufferPool.Take<Triangle>(kvp.Value.Count, out var triBuf);
+                for (int i = 0; i < kvp.Value.Count; i++)
+                {
+                    triBuf[i] = kvp.Value[i];
+                }
+                shapes[id] = new BepuPhysics.Collidables.Mesh(triBuf, Vector3.One, Game.BufferPool);
+                shapeIndexes[id] = Game.Simulation.Shapes.Add(shapes[id]);
+                staticHandles[id] = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndexes[id]));
+                FloorLookup.TryAdd(staticHandles[id].Value, kvp.Key);
+                id++;
+            }
+        #else
+            shapes = new BepuPhysics.Collidables.Mesh[0];
+            shapeIndexes = new TypedIndex[0];
+            staticHandles = new StaticHandle?[0];
+
+            List<Triangle> tris = new List<Triangle>();
+            for (int i = 0; i < Room.CollisionTriangles.Length / 3; i++)
+            {
+                var v0 = Room.CollisionPositions[Room.CollisionTriangles[i*3+0]];
+                var v1 = Room.CollisionPositions[Room.CollisionTriangles[i*3+1]];
+                var v2 = Room.CollisionPositions[Room.CollisionTriangles[i*3+2]];
                 tris.Add(new Triangle(v0, v1, v2));
                 // tris.Add(new Triangle(v2, v1, v0));
             }
@@ -52,6 +129,8 @@ namespace GameSrc
             shape = new BepuPhysics.Collidables.Mesh(triBuf, Vector3.One, Game.BufferPool);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
+        #endif
+
             Sources = new AudioSource[Room.Sounds.Count];
             for (int i = 0; i < Sources.Length; i++)
             {
@@ -108,6 +187,17 @@ namespace GameSrc
         public override void MarkTransformDirty(TransformDirtyFlags flags)
         {
             base.MarkTransformDirty(flags);
+            for (int i = 0; i < staticHandles.Length; i++)
+            {
+                if (staticHandles[i].HasValue)
+                {
+                    if (flags.HasFlag(TransformDirtyFlags.Position))
+                        Game.Simulation.Statics[staticHandles[i].Value].Pose.Position = Position;
+                    if (flags.HasFlag(TransformDirtyFlags.Rotation))
+                        Game.Simulation.Statics[staticHandles[i].Value].Pose.Orientation = Rotation;
+                    Game.Simulation.Statics.UpdateBounds(staticHandles[i].Value);
+                }
+            }
             if (flags.HasFlag(TransformDirtyFlags.Position) || flags.HasFlag(TransformDirtyFlags.Rotation) || flags.HasFlag(TransformDirtyFlags.Scale))
             {
                 for (int i = 0; i < Sources.Length; i++)
@@ -141,7 +231,7 @@ namespace GameSrc
             {
                 Models[i].PreDraw(renderer, dt);
             }
-            // WorldMatrixUniform.UploadData(WorldMatrix);
+            WorldMatrixUniform.UploadData(WorldMatrix);
         }
 
         public override void Draw(Renderer renderer, double dt)
@@ -162,6 +252,28 @@ namespace GameSrc
         public override void Tick(double dt)
         {
             base.Tick(dt);
+            /*
+            if (SCPCB.Instance.player == null || (Position - SCPCB.Instance.player.Position).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
+            {
+                for (int i = 0; i < staticHandles.Length; i++)
+                {
+                    if (staticHandles[i].HasValue)
+                    {
+                        Game.Simulation.Statics.Remove(staticHandles[i].Value);
+                        staticHandles[i] = null;
+                    }
+                }
+                return;
+            }
+            for (int i = 0; i < staticHandles.Length; i++)
+            {
+                if (!staticHandles[i].HasValue)
+                {
+                    staticHandles[i] = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndexes[i]));
+                    // Game.Simulation.Statics.UpdateBounds(staticHandles[i].Value);
+                }
+            }
+            */
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i].Tick(dt);
@@ -170,6 +282,15 @@ namespace GameSrc
 
         public override void Dispose()
         {
+            for (int i = 0; i < staticHandles.Length; i++)
+            {
+                Game.Simulation.Shapes.Remove(shapeIndexes[i]);
+                if (staticHandles[i].HasValue)
+                {
+                    FloorLookup.TryRemove(staticHandles[i].Value, out _);
+                    Game.Simulation.Statics.Remove(staticHandles[i].Value);
+                }
+            }
             for (int i = 0; i < Sources.Length; i++)
             {
                 Sources[i].Dispose();

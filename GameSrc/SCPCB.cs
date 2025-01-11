@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -25,15 +26,15 @@ namespace GameSrc
         private string rmeshPath = string.Empty;
         public MenuEntity Menu { get; private set; }
 
-        public static Dictionary<string, RMeshModel> RMeshModels { get; private set; } = new Dictionary<string, RMeshModel>();
-        public static Dictionary<string, Texture2D> Textures { get; private set; } = new Dictionary<string, Texture2D>();
+        public static ConcurrentDictionary<string, RMeshModel> RMeshModels { get; private set; } = new ConcurrentDictionary<string, RMeshModel>();
+        public static ConcurrentDictionary<string, Texture2D> Textures { get; private set; } = new ConcurrentDictionary<string, Texture2D>();
 
         public static Texture2D GetTexture(string path)
         {
             if (Textures.TryGetValue(path, out var tex))
                 return tex;
             var tex2 = new Texture2D(path);
-            Textures.Add(path, tex2);
+            Textures.TryAdd(path, tex2);
             return tex2;
         }
 

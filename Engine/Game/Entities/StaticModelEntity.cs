@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace Engine.Game.Entities
 {
     public class StaticModelEntity : PhysicsEntity
     {
-        public static Dictionary<string, WeakReference<Model>> Models = new Dictionary<string, WeakReference<Model>>();
+        public static ConcurrentDictionary<string, WeakReference<Model>> Models = new ConcurrentDictionary<string, WeakReference<Model>>();
         public Model Model { get; private set; }
         public BepuPhysics.Collidables.Mesh shape;
         private readonly string _path;
@@ -31,6 +32,10 @@ namespace Engine.Game.Entities
 
         public virtual void Create(bool createStatic)
         {
+            if (shapeIndex.HasValue)
+                Game.Simulation.Shapes.Remove(shapeIndex.Value);
+            if (staticHandle.HasValue)
+                Game.Simulation.Statics.Remove(staticHandle.Value);
             if (Models.TryGetValue(_path, out var mdl) && mdl.TryGetTarget(out var mdl2))
             {
                 Model = mdl2;
@@ -38,14 +43,15 @@ namespace Engine.Game.Entities
             else
             {
                 Model = new Model(Name, _path, _material, true, false);
-                Models.Add(_path, new WeakReference<Model>(Model));
+                Models.TryAdd(_path, new WeakReference<Model>(Model));
             }
+            WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
             List<Triangle> tris = new List<Triangle>();
-            for (int i = 0; i < Model.CollisionTriangles.Length - 2; i+=3)
+            for (int i = 0; i < Model.CollisionTriangles.Length / 3; i++)
             {
-                var v0 = Model.CollisionPositions[Model.CollisionTriangles[i+0]];
-                var v1 = Model.CollisionPositions[Model.CollisionTriangles[i+1]];
-                var v2 = Model.CollisionPositions[Model.CollisionTriangles[i+2]];
+                var v0 = Model.CollisionPositions[Model.CollisionTriangles[i*3+0]];
+                var v1 = Model.CollisionPositions[Model.CollisionTriangles[i*3+1]];
+                var v2 = Model.CollisionPositions[Model.CollisionTriangles[i*3+2]];
                 tris.Add(new Triangle(v0, v1, v2));
                 tris.Add(new Triangle(v2, v1, v0));
             }
@@ -58,7 +64,8 @@ namespace Engine.Game.Entities
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             if (createStatic)
                 staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
-            WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
+            else
+                staticHandle = null;
         }
 
         public override void MarkTransformDirty(TransformDirtyFlags flags)
@@ -81,8 +88,8 @@ namespace Engine.Game.Entities
 
         public override void Draw(Renderer renderer, double dt)
         {
-            base.Draw(renderer, dt);
             Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform);
+            base.Draw(renderer, dt);
         }
     }
 }

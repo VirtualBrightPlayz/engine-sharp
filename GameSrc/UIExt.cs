@@ -24,9 +24,9 @@ namespace GameSrc
         public static ImFontPtr CourierNew = LoadCourierNew(RenderingGlobals.GameImGui);
         public static ImFontPtr CourierNewBold = LoadCourierNewBold(RenderingGlobals.GameImGui);
         public static ImFontPtr DS_Digital = LoadDS_Digital(RenderingGlobals.GameImGui);
-        public static ImFontPtr LoadCourierNew(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/cour/Courier New.ttf");
-        public static ImFontPtr LoadCourierNewBold(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/courbd/Courier New.ttf");
-        public static ImFontPtr LoadDS_Digital(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/DS-DIGI/DS-Digital.ttf");
+        public static ImFontPtr LoadCourierNew(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/cour/Courier New.ttf", 14f);
+        public static ImFontPtr LoadCourierNewBold(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/courbd/Courier New.ttf", 14f);
+        public static ImFontPtr LoadDS_Digital(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/DS-DIGI/DS-Digital.ttf", 14f);
         public static Vector2 MenuScale = Vector2.One;
 
         public static void BeginDraw()

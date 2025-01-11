@@ -102,6 +102,8 @@ float GetHeightFromBump(vec2 texCoords)
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir, float multi)
 {
+    return texCoords + viewDir.xy * ((GetHeightFromBump(texCoords) - 0.5) * multi);
+
     const float numLayers = 10;
     float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
@@ -136,10 +138,10 @@ void main()
 
     vec3 viewDir = normalize(fsin_TanViewPos - fsin_TanFragPos);
     // vec2 uvOffset0 = ParallaxMapping(fsin_UV0, viewDir, 0.05);
-    vec2 uvOffset0 = vec2(0.0);
-    const float gamma = 2.2;
-    // const float gamma = 1.0;
-    vec4 diffuseColor = pow(texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), fsin_UV0), vec4(gamma));
+    vec2 uvOffset0 = fsin_UV0;
+    // const float gamma = 2.2;
+    const float gamma = 1.0;
+    vec4 diffuseColor = pow(texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), uvOffset0), vec4(gamma));
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
     vec4 lighting = ApplyLighting();
     vec4 finalLighting = diffuseColor;

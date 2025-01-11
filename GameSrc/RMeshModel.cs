@@ -39,11 +39,15 @@ namespace GameSrc
         private Mesh[] meshes;
         private Material[] materials;
         private CompoundBuffer[] uniforms;
+        private string[] textures;
         private Texture2D[] lightmaps;
         private string _path;
+        public Mesh[] Meshes => meshes;
+        public string[] Textures => textures;
         public Vector3[] CollisionPositions { get; private set; }
         public uint[] CollisionTriangles { get; private set; }
-        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * 20f / 2048f;
+        public static float RoomRatio => 20f / 2048f;
+        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * RoomRatio;
         private List<RMeshPointModel> pointModels = new List<RMeshPointModel>();
         public IReadOnlyList<RMeshPointModel> Models => pointModels;
         private List<RMeshAudioSource> soundEmitters = new List<RMeshAudioSource>();
@@ -115,6 +119,7 @@ namespace GameSrc
             materials = new Material[count];
             uniforms = new CompoundBuffer[count];
             lightmaps = new Texture2D[count];
+            textures = new string[count];
             int vertexCount = 0;
             List<uint> colTris = new List<uint>();
             List<Vector3> colPos = new List<Vector3>();
@@ -237,6 +242,7 @@ namespace GameSrc
                 // else
                     // uniforms[i] = GetCompoundBuffer($"RMeshBuf_{tex[1]}_{tex[0]}", diffuse, SCPCB.GetTexture(tex[0]), bump);
                     // uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}_{tex[0]}", shader, UniformConsts.DiffuseTextureSet, diffuse, SCPCB.GetTexture(tex[0]), bump);
+                textures[i] = tex[1];
                 if (string.IsNullOrWhiteSpace(tex[0]))
                     lightmaps[i] = Texture2D.DefaultWhite;
                 else
@@ -377,7 +383,7 @@ namespace GameSrc
                         float y = stream.ReadFloat();
                         float z = stream.ReadFloat();
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
-                        float range = stream.ReadFloat() * (1f / 102.4f);// / 2000f;
+                        float range = stream.ReadFloat() * RoomRatio;
                         string strColor = stream.ReadString();
                         float intensity = MathF.Min(stream.ReadFloat() * 0.8f, 1.0f);
                         string[] splColor = strColor.Split(' ');
@@ -447,7 +453,7 @@ namespace GameSrc
                         float xScale = stream.ReadFloat();
                         float yScale = stream.ReadFloat();
                         float zScale = stream.ReadFloat();
-                        Vector3 scale = new Vector3(xScale, yScale, zScale) * (1f / 102.4f);
+                        Vector3 scale = new Vector3(xScale, yScale, zScale) * RoomRatio;
                         pointModels.Add(new RMeshPointModel()
                         {
                             path = mdlFile,

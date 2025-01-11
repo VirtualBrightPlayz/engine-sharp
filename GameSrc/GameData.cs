@@ -61,6 +61,15 @@ namespace GameSrc
             return null;
         }
 
+        public string GetFloorType(string name)
+        {
+            if (MaterialsIni.Sections.ContainsSection(name) && MaterialsIni.Sections[name].ContainsKey("stepsound"))
+            {
+                return MaterialsIni.Sections[name]["stepsound"];
+            }
+            return string.Empty;
+        }
+
         public string GetRoomPath(string name, MapGenerator.RoomType type, int zone, System.Random rng)
         {
             List<string> names = new List<string>();

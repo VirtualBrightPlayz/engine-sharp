@@ -13,7 +13,7 @@ namespace Engine.Game
         public static GameApp Current { get; private set; }
         public Simulation Simulation { get; protected set; }
         public BufferPool BufferPool { get; protected set; }
-        public ThreadDispatcher dispatcher { get; protected set; }
+        public ThreadDispatcher Dispatcher { get; protected set; }
         public abstract string Name { get; }
         public List<Entity> Entities { get; protected set; } = new List<Entity>();
         public float TimeScale { get; set; } = 1f;
@@ -28,7 +28,7 @@ namespace Engine.Game
             BufferPool = new BufferPool();
             var targetThreadCount = Math.Max(1, Environment.ProcessorCount > 4 ? Environment.ProcessorCount - 2 : Environment.ProcessorCount - 1);
             Simulation = Simulation.Create(BufferPool, new Physics.NarrowPhaseCallbacks(), new Physics.PoseIntegratorCallbacks(new System.Numerics.Vector3(0, -10, 0)), new SolveDescription(8, 1));
-            dispatcher = new ThreadDispatcher(targetThreadCount);
+            Dispatcher = new ThreadDispatcher(targetThreadCount);
         }
 
         public virtual void PreDraw(Renderer renderer, double dt)
@@ -48,7 +48,7 @@ namespace Engine.Game
             foreach (var ent in Entities.ToArray())
                 ent.Tick(dt);
             if (TimeScale > 0f)
-                Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, dispatcher);
+                Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, Dispatcher);
         }
 
         public virtual void ReCreate()
@@ -67,7 +67,7 @@ namespace Engine.Game
         {
             foreach (var ent in Entities.ToArray())
                 ent.Dispose();
-            dispatcher.Dispose();
+            Dispatcher.Dispose();
             BufferPool.Clear();
         }
     }
