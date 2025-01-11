@@ -138,7 +138,7 @@ namespace GameSrc
                 Sources[i] = new AudioSource($"{name}_{i}");
                 Sources[i].SetBuffer(Room.Sounds[i].clip);
                 Sources[i].Position = Vector3.Transform(Room.Sounds[i].position, WorldMatrix);
-                Sources[i].MaxDistance = Room.Sounds[i].range * 3f;
+                Sources[i].MaxDistance = Room.Sounds[i].range * 1f;
                 Sources[i].ReferenceDistance = Room.Sounds[i].range * 0.75f;
                 Sources[i].Looping = true;
             }
