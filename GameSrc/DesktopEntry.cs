@@ -35,8 +35,15 @@ public static class DesktopEntry
         renderer.InternalRenderTexture.ReCreate();
         AudioGlobals.InitGameAudio();
         MiscGlobals.InitGameMisc();
-        game = new GameSrc.SCPCB();
-        game.Setup();
+        try
+        {
+            game = new GameSrc.SCPCB();
+            game.Setup();
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(nameof(DesktopEntry), e.ToString());
+        }
         ResourceManager.Update();
         startTime = currentTime;
         while (!MiscGlobals.IsClosing)
