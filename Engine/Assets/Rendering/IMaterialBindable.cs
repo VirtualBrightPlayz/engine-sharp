@@ -8,5 +8,6 @@ namespace Engine.Assets.Rendering
     {
         BindableResource[] Bindables { get; }
         void ReCreate();
+        void Bind(Renderer renderer, Material material, uint setId);
     }
 }

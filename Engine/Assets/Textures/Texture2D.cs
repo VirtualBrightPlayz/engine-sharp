@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -80,6 +81,7 @@ namespace Engine.Assets.Textures
         private Rgba32[] _texData;
         public uint Width { get; private set; }
         public uint Height { get; private set; }
+        private Dictionary<GraphicsShader, Dictionary<uint, ResourceSet>> resSets = new Dictionary<GraphicsShader, Dictionary<uint, ResourceSet>>();
 
         public BindableResource[] Bindables => new BindableResource[]
         {
@@ -117,10 +119,33 @@ namespace Engine.Assets.Textures
             return 1 + (int)Math.Floor(Math.Log(Math.Max(width, height), 2));
         }
 
+        public void Bind(Renderer renderer, Material material, uint setId)
+        {
+            if (!resSets.ContainsKey(material.Shader))
+            {
+                resSets[material.Shader] = new Dictionary<uint, ResourceSet>();
+            }
+            if (!resSets[material.Shader].ContainsKey(setId))
+            {
+                ResourceSetDescription desc = new ResourceSetDescription(material.Shader._reflResourceLayouts[(int)setId], Bindables);
+                resSets[material.Shader][setId] = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
+                resSets[material.Shader][setId].Name = Name;
+            }
+            renderer.CommandList.SetGraphicsResourceSet(setId, resSets[material.Shader][setId]);
+        }
+
         protected override void ReCreateInternal()
         {
             if (Tex != null && !Tex.IsDisposed)
                 Tex.Dispose();
+            foreach (var kvp in resSets)
+            {
+                foreach (var set in kvp.Value)
+                {
+                    set.Value.Dispose();
+                }
+            }
+            resSets.Clear();
             if (_texData == null)
             {
                 if (_streamData == null)

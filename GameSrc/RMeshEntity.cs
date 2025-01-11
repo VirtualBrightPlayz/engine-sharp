@@ -86,7 +86,7 @@ namespace GameSrc
                 Models[i].Scale = Room.Models[i].scale;
                 Models[i].MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
             }
-            WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
+            WorldMatrixUniform = new UniformBuffer($"{path}_{UniformConsts.WorldMatrixName}", (uint)16 * 4);
         }
 
         public void PlayAudio()
@@ -141,7 +141,7 @@ namespace GameSrc
             {
                 Models[i].PreDraw(renderer, dt);
             }
-            WorldMatrixUniform.UploadData(WorldMatrix);
+            // WorldMatrixUniform.UploadData(WorldMatrix);
         }
 
         public override void Draw(Renderer renderer, double dt)
@@ -155,6 +155,7 @@ namespace GameSrc
             {
                 Models[i].Draw(renderer, dt);
             }
+            WorldMatrixUniform.UploadData(renderer, WorldMatrix);
             Room.Draw(renderer, WorldMatrixUniform, dt);
         }
 

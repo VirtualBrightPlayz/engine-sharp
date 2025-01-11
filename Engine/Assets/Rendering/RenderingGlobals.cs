@@ -50,6 +50,7 @@ namespace Engine.Assets.Rendering
                 PreferStandardClipSpaceYDirection = true,
                 SyncToVerticalBlank = true,
                 SwapchainDepthFormat = PixelFormat.D32_Float_S8_UInt,
+                ResourceBindingModel = ResourceBindingModel.Improved,
             }, api, out win, out gfx);
             Window = win;
             GameGraphics = gfx;

@@ -26,7 +26,7 @@ public static class DesktopEntry
     {
         MiscGlobals.Init();
         Log.Info(nameof(DesktopEntry), "Starting...");
-        RenderingGlobals.InitGameGraphics(GraphicsBackend.OpenGL);
+        RenderingGlobals.InitGameGraphics(GraphicsBackend.Vulkan);
         RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;

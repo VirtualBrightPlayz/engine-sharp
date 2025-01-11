@@ -32,6 +32,7 @@ namespace Engine.Assets.Rendering
         private Dictionary<uint, List<Resource>> _uniformResources = new Dictionary<uint, List<Resource>>();
         internal Dictionary<uint, UniformLayout[]> _uniformLayouts = new Dictionary<uint, UniformLayout[]>();
         private Dictionary<uint, ResourceSet> _resourceSets = new Dictionary<uint, ResourceSet>();
+        private Dictionary<uint, IMaterialBindable> _bindables = new Dictionary<uint, IMaterialBindable>();
         private Dictionary<uint, CompoundBuffer> _compoundBuffers = new Dictionary<uint, CompoundBuffer>();
         private Dictionary<uint, ResourceLayout> layouts = new Dictionary<uint, ResourceLayout>();
 
@@ -130,7 +131,6 @@ namespace Engine.Assets.Rendering
 
         public void SetUniforms(uint setId, bool force, params UniformLayout[] uniforms)
         {
-            // throw new NotSupportedException();
             if (!force && HasSetUniform(setId))
             {
                 return;
@@ -141,6 +141,11 @@ namespace Engine.Assets.Rendering
                     _compoundBuffers[setId] = buffer;
                 else
                     _compoundBuffers.Add(setId, buffer);
+                return;
+            }
+            if (uniforms.Length == 1)
+            {
+                _bindables[setId] = uniforms[0].resource;
                 return;
             }
             if (!force && _uniformResources.ContainsKey(setId) && _uniformResources[setId].Any(x => uniforms.Any(y => y.resource == x)))
@@ -171,9 +176,8 @@ namespace Engine.Assets.Rendering
                     elements.Add(new ResourceLayoutElementDescription(uniforms[i].name + "Sampler", ResourceKind.Sampler, stages));
                     _uniformResources[setId].Add(tex);
                 }
-                if (uniforms[i].resource is RenderTexture2D renderTex)
+                else if (uniforms[i].resource is RenderTexture2D renderTex)
                 {
-                    // throw new NotImplementedException();
                     elements.Add(new ResourceLayoutElementDescription(uniforms[i].name, ResourceKind.TextureReadOnly, stages));
                     elements.Add(new ResourceLayoutElementDescription(uniforms[i].name + "Sampler", ResourceKind.Sampler, stages));
                     _uniformResources[setId].Add(renderTex);
@@ -185,32 +189,13 @@ namespace Engine.Assets.Rendering
                 }
             }
 
-        #if WEBGL && false
-            ResourceLayout layout;
-            if (!layouts.ContainsKey(setId))
-            {
-                layout = ResourceManager.GraphicsFactory.CreateResourceLayout(new ResourceLayoutDescription(elements.ToArray()));
-                layouts.Add(setId, layout);
-            }
-            else
-            {
-                layout = layouts[setId];
-            }
-        #endif
-
-        #if !WEBGL || true
             if (setId < Shader._reflResourceLayouts.Count)
-        #endif
             {
                 if (!_resourceSets.ContainsKey(setId))
                     _resourceSets.Add(setId, null);
                 else if (_resourceSets[setId] != null && !_resourceSets[setId].IsDisposed)
                     _resourceSets[setId].Dispose();
-            #if WEBGL && false
-                ResourceSetDescription desc = new ResourceSetDescription(layout);
-            #else
                 ResourceSetDescription desc = new ResourceSetDescription(Shader._reflResourceLayouts[(int)setId]);
-            #endif
                 if (_uniformResources.ContainsKey(setId))
                 {
                     List<BindableResource> boundResources = new List<BindableResource>();
@@ -244,10 +229,8 @@ namespace Engine.Assets.Rendering
                 _resourceSets[setId] = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
                 _resourceSets[setId].Name = $"{Name}_{setId}";
             }
-        #if !WEBGL || true
             else
                 throw new Exception($"Material.SetUniforms: {setId} was not found in the shader's resourceLayouts");
-        #endif
         }
 
         internal void CreatePipeline(Renderer renderer, ShaderPass pass, bool dispose = true)
@@ -351,6 +334,13 @@ namespace Engine.Assets.Rendering
                     Log.Error(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
                 maxId++;
                 renderer.CommandList.SetGraphicsResourceSet(resSet.Key, resSet.Value.InternalResourceSet);
+            }
+            foreach (var resSet in _bindables.OrderBy(x => x.Key))
+            {
+                if (resSet.Value == null)
+                    Log.Error(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
+                maxId++;
+                resSet.Value.Bind(renderer, this, resSet.Key);
             }
             if (maxId != Shader._reflResourceLayouts.Count)
             {

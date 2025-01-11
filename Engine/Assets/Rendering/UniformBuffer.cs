@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Veldrid;
 
@@ -28,6 +29,7 @@ namespace Engine.Assets.Rendering
         {
             InternalBuffer
         };
+        private Dictionary<GraphicsShader, Dictionary<uint, ResourceSet>> resSets = new Dictionary<GraphicsShader, Dictionary<uint, ResourceSet>>();
 
         public UniformBuffer(string name, uint size) : base(name)
         {
@@ -35,10 +37,33 @@ namespace Engine.Assets.Rendering
             ReCreate();
         }
 
+        public void Bind(Renderer renderer, Material material, uint setId)
+        {
+            if (!resSets.ContainsKey(material.Shader))
+            {
+                resSets[material.Shader] = new Dictionary<uint, ResourceSet>();
+            }
+            if (!resSets[material.Shader].ContainsKey(setId))
+            {
+                ResourceSetDescription desc = new ResourceSetDescription(material.Shader._reflResourceLayouts[(int)setId], Bindables);
+                resSets[material.Shader][setId] = ResourceManager.GraphicsFactory.CreateResourceSet(desc);
+                resSets[material.Shader][setId].Name = Name;
+            }
+            renderer.CommandList.SetGraphicsResourceSet(setId, resSets[material.Shader][setId]);
+        }
+
         protected override void ReCreateInternal()
         {
             if (InternalBuffer != null && !InternalBuffer.IsDisposed)
                 InternalBuffer.Dispose();
+            foreach (var kvp in resSets)
+            {
+                foreach (var set in kvp.Value)
+                {
+                    set.Value.Dispose();
+                }
+            }
+            resSets.Clear();
             InternalBuffer = ResourceManager.GraphicsFactory.CreateBuffer(new BufferDescription(Size, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
             InternalBuffer.Name = Name;
         }
