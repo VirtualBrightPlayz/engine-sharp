@@ -1,6 +1,9 @@
+using System;
 using System.IO;
 using Engine.Assets.Audio;
+using Engine.Assets.Rendering;
 using Engine.Game.Entities;
+using ImGuiNET;
 
 namespace GameSrc
 {
@@ -30,21 +33,30 @@ namespace GameSrc
         public MusicHandler() : base(nameof(MusicHandler))
         {
             source = new AudioSource(Name);
-            source.Gain = source.MaxGain = 2f;
+            // source.Gain = source.MaxGain = 2f;
             source.Looping = true;
             source.Relative = true;
+        }
+
+        public override void Draw(Renderer renderer, double dt)
+        {
+            base.Draw(renderer, dt);
+            if (ImGui.Begin(Name))
+            {
+                int cur = (int)Music;
+                string[] names = Enum.GetNames<MusicType>();
+                ImGui.Combo("Music", ref cur, names, names.Length);
+                Music = (MusicType)(cur);
+                ImGui.End();
+            }
         }
 
         public override void Tick(double dt)
         {
             base.Tick(dt);
-            if (SCPCB.Instance.player != null)
-            {
-                Music = MusicType.LightContainment;
-            }
             if (lastMusic != Music)
             {
-                if (Music == MusicType.None)
+                if ((int)Music < 0 || (int)Music >= clips.Length)
                 {
                     source.Stop();
                 }

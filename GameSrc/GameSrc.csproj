@@ -11,18 +11,18 @@
     <ProjectReference Include="..\Engine\Desktop\Engine.Desktop.csproj" />
     <ProjectReference Include="..\veldrid\src\Veldrid\Veldrid.csproj" />
     <ProjectReference Include="..\veldrid\src\Veldrid.ImGui\Veldrid.ImGui.csproj" />
-    <ProjectReference Include="..\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ini-parser" Version="2.5.2" />
+    <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)..\soft_oal.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)..\ImGui.NET\deps\cimgui\win-x64\cimgui.dll">
+    <Content Include="$(MSBuildThisFileDirectory)..\cimgui.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildThisFileDirectory)..\Shaders\*.*">

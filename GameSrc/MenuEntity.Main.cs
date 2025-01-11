@@ -38,11 +38,11 @@ namespace GameSrc
                 InputHandler.IsMouseLocked = false;
             Vector2 buttonSize = new Vector2(160f, 70f);
             Image(MainMenuBack, Vector2.Zero, new Vector2(MainMenuBack.Width, MainMenuBack.Height));
-            if (Button("PLAY", 24f, new Vector2(200f, 300f), buttonSize))
+            if (Button(CourierNew24, "PLAY", new Vector2(200f, 300f), buttonSize))
             {
                 SetMenuState(MenuState.GameLoad);
             }
-            if (Button("EXIT", 24f, new Vector2(200f, 400f), buttonSize))
+            if (Button(CourierNew24, "EXIT", new Vector2(200f, 400f), buttonSize))
             {
                 MiscGlobals.IsClosing = true;
             }

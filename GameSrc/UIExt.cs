@@ -21,13 +21,23 @@ namespace GameSrc
         public static Texture2D MenuWhite = new Texture2D($"{MenuFolder}/menuwhite.jpg");
         public static Texture2D MenuBlack = new Texture2D($"{MenuFolder}/menublack.jpg");
         public static AudioClip ButtonSFX = new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Interact", "Button.ogg"));
-        public static ImFontPtr CourierNew = LoadCourierNew(RenderingGlobals.GameImGui);
-        public static ImFontPtr CourierNewBold = LoadCourierNewBold(RenderingGlobals.GameImGui);
-        public static ImFontPtr DS_Digital = LoadDS_Digital(RenderingGlobals.GameImGui);
-        public static ImFontPtr LoadCourierNew(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/cour/Courier New.ttf", 14f);
-        public static ImFontPtr LoadCourierNewBold(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/courbd/Courier New.ttf", 14f);
+        public static ImFontPtr CourierNew14;// = LoadCourierNew(RenderingGlobals.GameImGui, 14f);
+        public static ImFontPtr CourierNew24;// = LoadCourierNew(RenderingGlobals.GameImGui, 24f);
+        public static ImFontPtr CourierNewBold14;// = LoadCourierNewBold(RenderingGlobals.GameImGui, 14f);
+        public static ImFontPtr CourierNewBold24;// = LoadCourierNewBold(RenderingGlobals.GameImGui, 24f);
+        public static ImFontPtr DS_Digital14 = LoadDS_Digital(RenderingGlobals.GameImGui);
+        public static ImFontPtr LoadCourierNew(Veldrid.ImGuiRenderer renderer, float size) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/cour/Courier New.ttf", size);
+        public static ImFontPtr LoadCourierNewBold(Veldrid.ImGuiRenderer renderer, float size) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/courbd/Courier New.ttf", size);
         public static ImFontPtr LoadDS_Digital(Veldrid.ImGuiRenderer renderer) => ResourceManager.LoadImGuiFont(renderer, $"{FontFolder}/DS-DIGI/DS-Digital.ttf", 14f);
         public static Vector2 MenuScale = Vector2.One;
+
+        public static void LoadFonts()
+        {
+            CourierNew14 = LoadCourierNew(RenderingGlobals.GameImGui, 14f);
+            CourierNew24 = LoadCourierNew(RenderingGlobals.GameImGui, 24f);
+            CourierNewBold14 = LoadCourierNewBold(RenderingGlobals.GameImGui, 14f);
+            CourierNewBold24 = LoadCourierNewBold(RenderingGlobals.GameImGui, 24f);
+        }
 
         public static void BeginDraw()
         {
@@ -70,27 +80,25 @@ namespace GameSrc
             _drawList.AddImage(tex.ImGuiTex, pos, pos + size);
         }
 
-        public static void TextLeft(ImFontPtr font, float fSize, Vector2 pos, Vector2 size, string text, uint color)
+        public static void TextLeft(ImFontPtr font, Vector2 pos, Vector2 size, string text, uint color)
         {
             pos *= MenuScale;
             size *= MenuScale;
-            _drawList.AddText(font, fSize, pos, color, text);
+            _drawList.AddText(font, font.FontSize, pos, color, text);
         }
 
-        public static void TextRight(ImFontPtr font, float fSize, Vector2 pos, Vector2 size, string text, uint color)
+        public static void TextBoxCentered(ImFontPtr font, Vector2 pos, Vector2 size, string text, uint color)
         {
-            pos *= MenuScale;
-            size *= MenuScale;
-            _drawList.AddText(font, fSize, pos + ImGui.CalcTextSize(text) / 2f, color, text);
+            ImGui.CalcTextSize(text, size.X);
         }
 
-        public static void TextCentered(ImFontPtr font, float fSize, Vector2 pos, Vector2 size, string text, uint color)
+        public static void TextCentered(ImFontPtr font, Vector2 pos, Vector2 size, string text, uint color)
         {
             pos *= MenuScale;
             size *= MenuScale;
             if (size == Vector2.Zero)
                 size = ImGui.CalcTextSize(text);
-            _drawList.AddText(font, fSize, pos + size / 2f - ImGui.CalcTextSize(text), color, text);
+            _drawList.AddText(font, font.FontSize, pos - size / 2f, color, text);
         }
 
         public static void Rect(Vector2 pos, Vector2 size, uint col)
@@ -100,7 +108,7 @@ namespace GameSrc
             _drawList.AddRect(pos, pos + size, col);
         }
 
-        public static bool Button(string text, float textSize, Vector2 pos, Vector2 size)
+        public static bool Button(ImFontPtr font, string text, Vector2 pos, Vector2 size)
         {
             pos *= MenuScale;
             size *= MenuScale;
@@ -111,7 +119,7 @@ namespace GameSrc
                 _drawList.AddRectFilled(pos + Vector2.One * border, pos + size - Vector2.One * border, Color(MenuSelected));
             else
                 _drawList.AddImage(MenuBlack.ImGuiTex, pos + Vector2.One * border, pos + size - Vector2.One * border);
-            TextCentered(CourierNew, textSize, pos / MenuScale, size / MenuScale, text, Color(Vector4.One));
+            TextCentered(font, pos / MenuScale, size / MenuScale, text, Color(Vector4.One));
             bool clicked = over && _io.MouseClicked[0];
             if (clicked)
                 _clickSource.Play();

@@ -407,7 +407,8 @@ namespace Engine.Assets.Models
             List<Vector3> colPos = new List<Vector3>();
             List<uint> colTris = new List<uint>();
             using AssimpContext ctx = new AssimpContext();
-            Scene scene = ctx.ImportFileFromStream(FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace, extHint);
+            Scene scene = ctx.ImportFileFromStream(FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace
+            | PostProcessSteps.GenerateNormals | PostProcessSteps.ForceGenerateNormals, extHint);
             _meshes = new Mesh[scene.MeshCount];
             for (int i = 0; i < _meshes.Length; i++)
             {
@@ -429,7 +430,7 @@ namespace Engine.Assets.Models
                 mesh.Indices = inds2.ToList();
                 // mesh.Indices = amesh.GetIndices().Select(x => (uint)x).ToList();
                 var positions = amesh.Vertices.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
-                var normals = amesh.Normals.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
+                var normals = amesh.Normals.Select(x => -new Vector3(x.X, x.Y, x.Z)).ToList();
                 var tangents = amesh.Tangents.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
                 var bitangents = amesh.BiTangents.Select(x => new Vector3(x.X, x.Y, x.Z)).ToList();
                 List<Vector2> uv0s;

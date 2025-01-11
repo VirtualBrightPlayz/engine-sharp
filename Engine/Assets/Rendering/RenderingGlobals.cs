@@ -1,5 +1,6 @@
 using System.Numerics;
 using Engine.Assets.Textures;
+using ImGuiNET;
 using Veldrid;
 using Veldrid.StartupUtilities;
 
@@ -57,6 +58,7 @@ namespace Engine.Assets.Rendering
             APIBackend = gfx.BackendType;
             MainSwapchain = gfx.MainSwapchain;
             GameImGui = new ImGuiRenderer(GameGraphics, SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+            ImGui.EndFrame();
         }
 
         public static void SwapMainBuffer()

@@ -53,7 +53,9 @@ namespace GameSrc
         public override void Setup()
         {
             base.Setup();
-            RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
+            UIExt.LoadFonts();
+            RenderingGlobals.Window.Title = Name;
+            // RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
             /*
             Entities.Add(new RMeshEntity("h", "Game/GFX/map/173_opt.rmesh"));
             SpawnPlayer();
@@ -77,6 +79,7 @@ namespace GameSrc
             player.Position = ((RMeshEntity)Entities.First(x => x is RMeshEntity)).PlayerStart + Vector3.UnitY * 1f;
             player.MarkTransformDirty(TransformDirtyFlags.Position);
             Entities.Add(player);
+            Music.Music = MusicHandler.MusicType.LightContainment;
         }
 
         public override void Draw(Renderer renderer, double dt)
