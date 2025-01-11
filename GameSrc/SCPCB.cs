@@ -23,7 +23,6 @@ namespace GameSrc
         public GameData Data { get; private set; }
         public MapGenerator MapGen { get; private set; }
         public SCPCBPlayerEntity player;
-        private string rmeshPath = string.Empty;
         public MenuEntity Menu { get; private set; }
         public MusicHandler Music { get; private set; }
 
@@ -55,12 +54,7 @@ namespace GameSrc
             base.Setup();
             UIExt.LoadFonts();
             RenderingGlobals.Window.Title = Name;
-            // RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
-            /*
-            Entities.Add(new RMeshEntity("h", "Game/GFX/map/173_opt.rmesh"));
-            SpawnPlayer();
-            return;
-            */
+            RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
             Menu = new MenuEntity();
             Entities.Add(Menu);
             Music = new MusicHandler();

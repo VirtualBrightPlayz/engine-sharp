@@ -120,46 +120,27 @@ namespace GameSrc
             Vector3 viewPos = Position + Vector3.UnitY * (shape.HalfLength + shape.Radius) + Vector3.UnitY * upDownBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * (MathF.PI / 180f)), out Vector3 up);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
-            // Renderer.Current.WorldInfoResource.UploadData(Renderer.Current, new Vector4(viewPos, 1f));
             footstepSource.Position = viewPos;
             renderer.ViewPosition = viewPos;
-            // ForwardConsts.LightPosition = viewPos - Vector3.UnitY;
         }
 
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
-            if (ImGui.Begin("Test"))
+            if (ImGui.Begin("Player Debug"))
             {
-                ImGui.Text("Test Window");
+                ImGui.Text("Debug Window");
                 ImGui.Text($"FPS: {MiscGlobals.FPS}");
-                ImGui.Text($"Position {Position.ToString()}");
-                ImGui.Text($"Velocity {body.Velocity.Linear.ToString()}");
+                ImGui.Text($"Position {Position}");
+                ImGui.Text($"Velocity {body.Velocity.Linear}");
                 ImGui.InputFloat("ViewBobSpeed", ref viewBobSpeed);
                 ImGui.InputFloat("ViewBobAmount", ref viewBobAmount);
                 ImGui.InputFloat("FootstepInterval", ref footstepInterval);
                 ImGui.ColorEdit4("AmbientColor", ref ForwardConsts.AmbientColor, ImGuiColorEditFlags.Float);
-                // ImGui.ColorEdit4("LightColor", ref nextLightColor, ImGuiColorEditFlags.Float);
                 ImGui.InputFloat("MaxRoomRenderDistance", ref MaxRoomRenderDistance);
                 ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
                 ImGui.SliderFloat("Speed", ref speed, 1f, 10f);
-                // ImGui.SliderFloat4("AmbientColor", ref ForwardConsts.AmbientLight, 0f, 1f);
-                /*
-                if (ImGui.Button("New light"))
-                {
-                    ForwardConsts.Lights.Add(new ForwardConsts.ForwardLight()
-                    {
-                        Position = Position,
-                        Color = nextLightColor,
-                        Range = 5f,
-                    });
-                }
-                if (ImGui.Button("Clear lights"))
-                {
-                    ForwardConsts.Lights.Clear();
-                }
-                */
             }
             ImGui.End();
         }
@@ -196,7 +177,7 @@ namespace GameSrc
             {
                 {
                     InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
-                    lookAxis += InputHandler.MouseDelta * Vector2.One * 0.1f;// * (float)(0.001d / delta);
+                    lookAxis += InputHandler.MouseDelta * Vector2.One * 0.1f;
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                 }
                 Quaternion cameraRot = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), lookAxis.Y * (MathF.PI / 180f), 0f);

@@ -98,7 +98,7 @@ namespace GameSrc
             size *= MenuScale;
             if (size == Vector2.Zero)
                 size = ImGui.CalcTextSize(text);
-            _drawList.AddText(font, font.FontSize, pos - size / 2f, color, text);
+            _drawList.AddText(font, font.FontSize, pos + size / 2f - ImGui.CalcTextSize(text), color, text);
         }
 
         public static void Rect(Vector2 pos, Vector2 size, uint col)
