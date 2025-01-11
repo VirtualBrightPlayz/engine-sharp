@@ -160,8 +160,8 @@ namespace GameSrc
                     ForwardConsts.Lights.Clear();
                 }
                 */
-                ImGui.End();
             }
+            ImGui.End();
         }
 
         public override unsafe void Tick(double dt)

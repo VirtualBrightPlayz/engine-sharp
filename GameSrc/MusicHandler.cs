@@ -47,8 +47,8 @@ namespace GameSrc
                 string[] names = Enum.GetNames<MusicType>();
                 ImGui.Combo("Music", ref cur, names, names.Length);
                 Music = (MusicType)(cur);
-                ImGui.End();
             }
+            ImGui.End();
         }
 
         public override void Tick(double dt)
