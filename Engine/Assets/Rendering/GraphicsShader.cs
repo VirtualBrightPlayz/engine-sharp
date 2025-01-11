@@ -6,8 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Engine.Assets.Models;
 using Engine.Assets.Textures;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Veldrid;
 using Veldrid.SPIRV;
 

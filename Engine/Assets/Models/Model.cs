@@ -4,12 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Assimp;
 using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
+#if GLTF
 using SharpGLTF.Memory;
-using Veldrid;
+#endif
 
 namespace Engine.Assets.Models
 {
@@ -104,6 +104,7 @@ namespace Engine.Assets.Models
                 AssimpLoadMeshes(_path, _ogMaterial, _shouldAnimate);
         }
 
+#if GLTF
         private void GLTFLoadMeshes(string path)
         {
             var root = SharpGLTF.Schema2.ModelRoot.ReadGLB(FileManager.LoadStream(path), new SharpGLTF.Schema2.ReadSettings()
@@ -234,6 +235,7 @@ namespace Engine.Assets.Models
             }
             return vertexCount;
         }
+#endif
 
         private System.Numerics.Matrix4x4[] AssimpAnimate(double time, int i)
         {

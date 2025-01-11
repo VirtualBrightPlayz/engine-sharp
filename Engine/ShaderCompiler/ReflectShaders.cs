@@ -6,7 +6,6 @@ using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Veldrid.SPIRV;
 
 namespace Engine.Assets.Rendering

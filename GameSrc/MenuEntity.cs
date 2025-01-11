@@ -7,8 +7,6 @@ using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using Engine.Game.Entities;
 using ImGuiNET;
-using Silk.NET.Input;
-using static GameSrc.UIExt;
 
 namespace GameSrc
 {

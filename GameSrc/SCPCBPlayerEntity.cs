@@ -147,7 +147,7 @@ namespace GameSrc
             {
                 {
                     InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
-                    lookAxis += InputHandler.MouseDelta * Vector2.One * 0.25f;
+                    lookAxis += InputHandler.MouseDelta * Vector2.One * 0.25f * (float)delta;
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                 }
                 Quaternion cameraRot = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), lookAxis.Y * (MathF.PI / 180f), 0f);

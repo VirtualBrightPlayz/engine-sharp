@@ -505,14 +505,6 @@ namespace GameSrc
                 renderer.SetupStandardMatrixUniforms(materials[i]);
                 renderer.SetupStandardWorldInfoUniforms(materials[i], ShaderWorldInfoSetId);
                 renderer.DrawMesh(meshes[i], OnBatchDraw, WorldMatrix, materials[i], ForwardConsts.ForwardBasePassName);
-                continue;
-                ForwardConsts.ForwardLight[] sortedLights = ForwardConsts.Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(ForwardConsts.MaxRealtimeLights).ToArray();
-                for (int j = 0; j < (float)sortedLights.Length / ForwardConsts.MaxLightsPerPass; j++)
-                {
-                    LightUniform.UploadData(renderer, ForwardConsts.GetLightInfo(j, j == 0, sortedLights));
-                    renderer.BindMaterial(materials[i], j == 0 ? ForwardConsts.ForwardBasePassName : ForwardConsts.ForwardAddPassName);
-                    renderer.DrawMeshNow(meshes[i]);
-                }
             }
         }
 
