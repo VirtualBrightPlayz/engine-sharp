@@ -51,7 +51,8 @@ namespace Engine.Assets
                 #if WEBGL
                     MiscGlobals.WebRuntime.InvokeVoid("lockMouse", value);
                 #else
-                    RenderingGlobals.Window.CursorVisible = !value;
+                    // RenderingGlobals.Window.CursorVisible = !value;
+                    Sdl2Native.SDL_SetRelativeMouseMode(value);
                 #endif
                 }
             }

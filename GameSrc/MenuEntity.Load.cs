@@ -30,17 +30,13 @@ namespace GameSrc
         {
             _menuMusicSource = new AudioSource("MenuMusic");
             _menuMusicSource.SetBuffer(MenuMusic);
-            _menuMusicSource.MaxDistance = float.PositiveInfinity;
-            _menuMusicSource.RolloffFactor = 0f;
-            _menuMusicSource.ReferenceDistance = 0f;
             _menuMusicSource.Looping = true;
+            _menuMusicSource.Relative = true;
 
             _menuDoneLoading = new AudioSource("MenuLoaded");
             _menuDoneLoading.SetBuffer(MenuLoaded);
-            _menuDoneLoading.MaxDistance = float.PositiveInfinity;
-            _menuDoneLoading.RolloffFactor = 0f;
-            _menuDoneLoading.ReferenceDistance = 0f;
             _menuDoneLoading.Looping = false;
+            _menuDoneLoading.Relative = true;
         }
 
         public void EnablePreLoadMenu()
@@ -96,8 +92,8 @@ namespace GameSrc
 
         public void DrawLoadMenu()
         {
-            _menuMusicSource.Position = AudioGlobals.Position;
-            _menuDoneLoading.Position = AudioGlobals.Position;
+            // _menuMusicSource.Position = AudioGlobals.Position;
+            // _menuDoneLoading.Position = AudioGlobals.Position;
             if (InputHandler.IsMouseLocked)
                 InputHandler.IsMouseLocked = false;
             Vector2 start = LoadingScreenRectPos;

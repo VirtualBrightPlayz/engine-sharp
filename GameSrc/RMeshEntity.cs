@@ -31,6 +31,7 @@ namespace GameSrc
         public StaticHandle?[] staticHandles;
         public ForwardConsts.ForwardLight[] Lights { get; private set; }
         public UniformBuffer WorldMatrixUniform { get; private set; }
+        public Vector3 PlayerStart => Vector3.Transform(Room.PlayerStart, WorldMatrix);
 
         public RMeshEntity(string name, string path) : base(name)
         {

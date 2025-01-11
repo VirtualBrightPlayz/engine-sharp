@@ -63,8 +63,7 @@ namespace GameSrc
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal7.ogg")),
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal8.ogg")),
         };
-        private Vector4 nextLightColor = Vector4.One;
-        public static float MaxRoomRenderDistance = 25f;
+        public static float MaxRoomRenderDistance = 100f;
 
         public SCPCBPlayerEntity() : base("Player")
         {
@@ -197,7 +196,7 @@ namespace GameSrc
             {
                 {
                     InputHandler.Position = new Vector2(RenderingGlobals.Window.Width / 2, RenderingGlobals.Window.Height / 2);
-                    lookAxis += InputHandler.MouseDelta * Vector2.One * (float)(0.001d / delta);
+                    lookAxis += InputHandler.MouseDelta * Vector2.One * 0.1f;// * (float)(0.001d / delta);
                     lookAxis.Y = MathUtils.Clamp(lookAxis.Y, -89f, 89f);
                 }
                 Quaternion cameraRot = Quaternion.CreateFromYawPitchRoll(lookAxis.X * (MathF.PI / 180f), lookAxis.Y * (MathF.PI / 180f), 0f);
@@ -264,11 +263,7 @@ namespace GameSrc
             if (prevFootstepTime + footstepInterval < footstepTime)
             {
                 SCPCBPlayerEntity ent = this;
-                Game.Simulation.RayCast(Position, -Vector3.UnitY, 5f, ref ent, 0);
-                /*
-                footstepSource.SetBuffer(footstepClips[Random.Shared.Next(footstepClips.Length)]);
-                footstepSource.Play();
-                */
+                Game.Simulation.RayCast(Position + Vector3.UnitY, -Vector3.UnitY, 5f, ref ent, 0);
                 prevFootstepTime = footstepTime;
             }
             walkViewTimer += (velLen > 0f ? 1f : 0f) * viewBobSpeed * (float)dt;

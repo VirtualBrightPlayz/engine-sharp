@@ -101,6 +101,11 @@ namespace Engine.Assets.Audio
             set => _al.SetSourceProperty(_handle.Value, SourceFloat.RolloffFactor, value);
             #endif
         }
+        public bool Relative
+        {
+            get { AL10.alGetSourcei(_handle.Value, AL10.AL_SOURCE_RELATIVE, out var value); AudioGlobals.CheckALError(); return value == 1 ? true : false; }
+            set { AL10.alSourcei(_handle.Value, AL10.AL_SOURCE_RELATIVE, value ? 1 : 0); AudioGlobals.CheckALError(); }
+        }
 
         public AudioSource(string name) : base(name)
         {
@@ -135,6 +140,7 @@ namespace Engine.Assets.Audio
             ReferenceDistance = ReferenceDistance;
             Looping = Looping;
             Position = Position;
+            Relative = Relative;
             if (IsPlaying)
                 Play();
         }
@@ -151,6 +157,7 @@ namespace Engine.Assets.Audio
             src.ReferenceDistance = ReferenceDistance;
             src.Looping = Looping;
             src.Position = Position;
+            src.Relative = Relative;
             if (src.IsPlaying)
                 src.Play();
             return src;
@@ -173,6 +180,7 @@ namespace Engine.Assets.Audio
             MaxDistance = 1f;
             ReferenceDistance = 0.1f;
             Looping = false;
+            Relative = false;
         }
 
         public void Stop()

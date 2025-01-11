@@ -54,6 +54,7 @@ namespace GameSrc
         public IReadOnlyList<RMeshAudioSource> Sounds => soundEmitters;
         private List<ForwardConsts.ForwardLight> _lights = new List<ForwardConsts.ForwardLight>();
         public IReadOnlyList<ForwardConsts.ForwardLight> Lights => _lights;
+        public Vector3 PlayerStart { get; private set; } = Vector3.Zero;
         public UniformBuffer LightUniform { get; private set; }
 
         public struct RMeshAudioSource
@@ -435,6 +436,7 @@ namespace GameSrc
                         float y = stream.ReadFloat();
                         float z = stream.ReadFloat();
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
+                        PlayerStart = position;
                         string strAngles = stream.ReadString();
                     }
                     break;

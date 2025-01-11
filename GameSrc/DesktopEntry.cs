@@ -69,7 +69,6 @@ public static class DesktopEntry
             FrameLoop();
             if (!RenderingGlobals.Window.Exists)
                 break;
-            Thread.Yield();
         }
         AudioGlobals.DisposeGameAudio();
         RenderingGlobals.DisposeGameGraphics();

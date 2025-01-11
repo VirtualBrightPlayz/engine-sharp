@@ -19,12 +19,13 @@ namespace GameSrc
     public class SCPCB : GameApp
     {
         public static SCPCB Instance { get; private set; }
-        public override string Name => "SCP - CSharp";
+        public override string Name => "SCP - Containment Breach";
         public GameData Data { get; private set; }
         public MapGenerator MapGen { get; private set; }
         public SCPCBPlayerEntity player;
         private string rmeshPath = string.Empty;
         public MenuEntity Menu { get; private set; }
+        public MusicHandler Music { get; private set; }
 
         public static ConcurrentDictionary<string, RMeshModel> RMeshModels { get; private set; } = new ConcurrentDictionary<string, RMeshModel>();
         public static ConcurrentDictionary<string, Texture2D> Textures { get; private set; } = new ConcurrentDictionary<string, Texture2D>();
@@ -52,6 +53,7 @@ namespace GameSrc
         public override void Setup()
         {
             base.Setup();
+            RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
             /*
             Entities.Add(new RMeshEntity("h", "Game/GFX/map/173_opt.rmesh"));
             SpawnPlayer();
@@ -59,6 +61,8 @@ namespace GameSrc
             */
             Menu = new MenuEntity();
             Entities.Add(Menu);
+            Music = new MusicHandler();
+            Entities.Add(Music);
         }
 
         public void SpawnPlayer()
@@ -70,7 +74,7 @@ namespace GameSrc
                 player = null;
             }
             player = new SCPCBPlayerEntity();
-            player.Position = Entities.First(x => x is RMeshEntity).Position + Vector3.UnitY * 3f;
+            player.Position = ((RMeshEntity)Entities.First(x => x is RMeshEntity)).PlayerStart + Vector3.UnitY * 1f;
             player.MarkTransformDirty(TransformDirtyFlags.Position);
             Entities.Add(player);
         }
