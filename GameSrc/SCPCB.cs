@@ -42,7 +42,7 @@ namespace GameSrc
         public SCPCB() : base()
         {
             Instance = this;
-            Data = new GameData("scpcb");
+            Data = new GameData(@"D:\Games\SCP - Containment Breach v1.3.11");
             MapGen = new MapGenerator()
             {
                 data = Data,

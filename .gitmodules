@@ -1,15 +1,3 @@
-[submodule "cimgui"]
-	path = cimgui
-	url = https://github.com/cimgui/cimgui.git
 [submodule "OpenAL-CS"]
 	path = OpenAL-CS
 	url = https://github.com/flibitijibibo/OpenAL-CS.git
-[submodule "assimp"]
-	path = assimp
-	url = https://github.com/assimp/assimp.git
-[submodule "veldrid"]
-	path = veldrid
-	url = https://github.com/veldrid/veldrid.git
-[submodule "ImGui.NET"]
-	path = ImGui.NET
-	url = https://github.com/ImGuiNET/ImGui.NET.git
