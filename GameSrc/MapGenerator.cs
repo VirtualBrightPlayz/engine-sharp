@@ -774,7 +774,7 @@ namespace GameSrc
         {
             RMeshEntity room = new RMeshEntity(room_name, data.GetRoomPath(room_name, type, zone, rng));
             UnspawnedEntities.Add(room);
-            room.Position = new Vector3(x * 20f, y * 20f, z * 20f);
+            room.Position = new Vector3(x * 8f, y * 8f, z * 8f);
             room.MarkTransformDirty(TransformDirtyFlags.Position);
             return Task.FromResult<Entity>(room);
         }

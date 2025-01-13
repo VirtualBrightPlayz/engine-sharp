@@ -57,13 +57,13 @@ namespace Engine.Game.Entities
 
         public override void Dispose()
         {
-            base.Dispose();
-            if (shapeIndex.HasValue)
-                Game.Simulation.Shapes.Remove(shapeIndex.Value);
             if (bodyHandle.HasValue)
                 Game.Simulation.Bodies.Remove(bodyHandle.Value);
             if (staticHandle.HasValue)
                 Game.Simulation.Statics.Remove(staticHandle.Value);
+            if (shapeIndex.HasValue)
+                Game.Simulation.Shapes.Remove(shapeIndex.Value);
+            base.Dispose();
         }
     }
 }

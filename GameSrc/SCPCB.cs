@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using BepuPhysics;
@@ -8,11 +9,14 @@ using BepuUtilities;
 using BepuUtilities.Memory;
 using Engine;
 using Engine.Assets;
+using Engine.Assets.Models;
 using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using Engine.Game;
 using Engine.Game.Entities;
+using GameSrc.NPCs;
 using ImGuiNET;
+using VirtualBright.Util;
 
 namespace GameSrc
 {
@@ -25,9 +29,14 @@ namespace GameSrc
         public SCPCBPlayerEntity player;
         public MenuEntity Menu { get; private set; }
         public MusicHandler Music { get; private set; }
+        public AStar NavMap { get; private set; }
+        public SCP173 npc;
+        public bool ShouldReturnToMenu = false;
+        public static GraphicsShader shader { get; set; }
 
         public static ConcurrentDictionary<string, RMeshModel> RMeshModels { get; private set; } = new ConcurrentDictionary<string, RMeshModel>();
         public static ConcurrentDictionary<string, Texture2D> Textures { get; private set; } = new ConcurrentDictionary<string, Texture2D>();
+        public static ConcurrentDictionary<string, Model> Models { get; private set; } = new ConcurrentDictionary<string, Model>();
 
         public static Texture2D GetTexture(string path)
         {
@@ -59,6 +68,8 @@ namespace GameSrc
             Entities.Add(Menu);
             Music = new MusicHandler();
             Entities.Add(Music);
+            NavMap = new AStar(Simulation);
+            shader ??= new GraphicsShader("Shaders/MainMesh");
         }
 
         public void SpawnPlayer()
@@ -70,10 +81,54 @@ namespace GameSrc
                 player = null;
             }
             player = new SCPCBPlayerEntity();
-            player.Position = ((RMeshEntity)Entities.First(x => x is RMeshEntity)).PlayerStart + Vector3.UnitY * 1f;
+            player.Position = ((RMeshEntity)Entities.First(x => x is RMeshEntity)).PlayerStart;
             player.MarkTransformDirty(TransformDirtyFlags.Position);
             Entities.Add(player);
             Music.Music = MusicHandler.MusicType.LightContainment;
+            RebuildNavMap();
+            if (npc != null)
+            {
+                Entities.Remove(npc);
+                npc.Dispose();
+                npc = null;
+            }
+            npc = new SCP173("NPC", Path.Combine(Data.GFXDir, "npcs", "173_2.b3d"), new Material("temp", shader));
+            npc.Position = player.Position;
+            npc.Scale = Vector3.One * 0.35f / 8f;
+            npc.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Scale);
+            Entities.Add(npc);
+        }
+
+        public void QuitToMenu()
+        {
+            ShouldReturnToMenu = false;
+            Entities.Remove(npc);
+            npc.Dispose();
+            npc = null;
+            MapGen.UnspawnedEntities.Clear();
+            foreach (var ent in Entities.Where(x => x is RMeshEntity).ToArray())
+            {
+                Entities.Remove(ent);
+                ent.Dispose();
+            }
+            if (player != null)
+            {
+                Entities.Remove(player);
+                player.Dispose();
+                player = null;
+            }
+            Menu.SetMenuState(MenuEntity.MenuState.MainMenu);
+            Music.Music = MusicHandler.MusicType.None;
+        }
+
+        public void RebuildNavMap()
+        {
+            NavMap.Map.Clear();
+            foreach (RMeshEntity rmesh in Entities.Where(x => x is RMeshEntity))
+            {
+                NavMap.Map.AddRange(rmesh.NavPoints.Select(x => new AStarNode(x)));
+            }
+            NavMap.RebuildMap();
         }
 
         public override void Draw(Renderer renderer, double dt)
@@ -87,6 +142,8 @@ namespace GameSrc
         {
             base.Tick(dt);
             TimeScale = MiscGlobals.IsFocused ? 1f : 0f;
+            if (ShouldReturnToMenu)
+                QuitToMenu();
         }
 
         public override void Dispose()

@@ -70,12 +70,10 @@ namespace GameSrc
             ChangeLoadingScreen();
             LoadPercent = 0;
             if (_menuMusicSource.AudioBuffer != MenuMusic)
-            {
                 _menuMusicSource.SetBuffer(MenuMusic);
+            if (!_menuMusicSource.IsPlaying)
                 _menuMusicSource.Play();
-            }
             Task.Run(async () => await SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default));
-            // _ = SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default);
         }
 
         public void DisableGameLoadMenu()
@@ -139,9 +137,11 @@ namespace GameSrc
                 TextCentered(CourierNew24, new Vector2(ScreenSize.X / 2, ScreenSize.Y / 2 + 80) + Vector2.One, Vector2.Zero, LoadingScreens[currentLoadingScreen].Name, Color(Vector4.Zero));
                 TextCentered(CourierNew24, new Vector2(ScreenSize.X / 2, ScreenSize.Y / 2 + 80), Vector2.Zero, LoadingScreens[currentLoadingScreen].Name, Color(Vector4.One));
 
+                /*
                 string loadingText = LoadingScreens[currentLoadingScreen].Text.FirstOrDefault() ?? string.Empty;
                 TextCentered(CourierNew14, new Vector2(ScreenSize.X / 2 - 200, ScreenSize.Y / 2 + 120) + Vector2.One, new Vector2(400, 300), loadingText, Color(Vector4.Zero));
                 TextCentered(CourierNew14, new Vector2(ScreenSize.X / 2 - 200, ScreenSize.Y / 2 + 120), new Vector2(400, 300), loadingText, Color(Vector4.One));
+                */
             }
             if (InputHandler.IsMouseLocked)
                 InputHandler.IsMouseLocked = false;

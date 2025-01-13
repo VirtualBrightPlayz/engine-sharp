@@ -48,7 +48,7 @@ namespace Engine.Game
             foreach (var ent in Entities.ToArray())
                 ent.Tick(dt);
             if (TimeScale > 0f)
-                Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale, Dispatcher);
+                Simulation.Timestep(MathF.Min(0.5f, (float)dt) * TimeScale);
         }
 
         public virtual void ReCreate()

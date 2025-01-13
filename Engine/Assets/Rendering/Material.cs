@@ -325,7 +325,7 @@ namespace Engine.Assets.Rendering
             {
                 if (resSet.Value == null || resSet.Value.IsDisposed)
                 {
-                    Log.Warn(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
+                    // Log.Warn(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
                     continue;
                 }
                 maxId++;
@@ -335,7 +335,7 @@ namespace Engine.Assets.Rendering
             {
                 if (resSet.Value.InternalResourceSet == null || resSet.Value.InternalResourceSet.IsDisposed)
                 {
-                    Log.Warn(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
+                    // Log.Warn(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
                     continue;
                 }
                 maxId++;
@@ -345,7 +345,7 @@ namespace Engine.Assets.Rendering
             {
                 if (resSet.Value == null)
                 {
-                    Log.Warn(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
+                    // Log.Warn(nameof(Material), $"{Name} {resSet.Key} is null/disposed!");
                     continue;
                 }
                 maxId++;

@@ -31,6 +31,7 @@ namespace GameSrc
         public StaticHandle?[] staticHandles;
         public ForwardConsts.ForwardLight[] Lights { get; private set; }
         public UniformBuffer WorldMatrixUniform { get; private set; }
+        public Vector3[] NavPoints { get; private set; }
         public Vector3 PlayerStart => Vector3.Transform(Room.PlayerStart, WorldMatrix);
 
         public RMeshEntity(string name, string path) : base(name)
@@ -142,6 +143,11 @@ namespace GameSrc
                 Sources[i].ReferenceDistance = Room.Sounds[i].range * 0.75f;
                 Sources[i].Looping = true;
             }
+            NavPoints = new Vector3[Room.Waypoints.Count];
+            for (int i = 0; i < NavPoints.Length; i++)
+            {
+                NavPoints[i] = Vector3.Transform(Room.Waypoints[i], WorldMatrix);
+            }
             Lights = new ForwardConsts.ForwardLight[Room.Lights.Count];
             for (int i = 0; i < Lights.Length; i++)
             {
@@ -205,6 +211,10 @@ namespace GameSrc
                 {
                     Sources[i].Position = Vector3.Transform(Room.Sounds[i].position, WorldMatrix);
                     Sources[i].Play();
+                }
+                for (int i = 0; i < NavPoints.Length; i++)
+                {
+                    NavPoints[i] = Vector3.Transform(Room.Waypoints[i], WorldMatrix);
                 }
                 for (int i = 0; i < Lights.Length; i++)
                 {

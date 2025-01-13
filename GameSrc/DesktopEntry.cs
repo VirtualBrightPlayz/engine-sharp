@@ -26,7 +26,7 @@ public static class DesktopEntry
     {
         MiscGlobals.Init();
         Log.Info(nameof(DesktopEntry), "Starting...");
-        RenderingGlobals.InitGameGraphics(GraphicsBackend.Vulkan);
+        RenderingGlobals.InitGameGraphics(GraphicsBackend.OpenGL);
         RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
@@ -122,7 +122,7 @@ public static class DesktopEntry
         ResourceManager.Update();
         RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Width, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Height);
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputHandler);
-        renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.1f, 1000f);
+        renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.01f, 1000f);
         Renderer.Current = renderer;
         game.PreDraw(renderer, delta);
         renderer.Begin();

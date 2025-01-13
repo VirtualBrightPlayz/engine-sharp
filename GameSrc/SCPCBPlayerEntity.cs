@@ -21,7 +21,7 @@ namespace GameSrc
     {
         public InputHandler InputHandler => MiscGlobals.GameInputHandler;
         public Capsule shape;
-        public float speed = 3.5f;
+        public float speed = 2f;
         public float acceleration = 100f;
         public Vector3 viewDirection = -Vector3.UnitZ;
         public Vector3 viewDirectionUp = Vector3.UnitY;
@@ -31,10 +31,8 @@ namespace GameSrc
         public Vector3 desiredVelocity = Vector3.Zero;
         private bool wasEscPressed = false;
         private float walkViewTimer;
-        // private float viewBobSpeed = 0.03f;
-        // private float viewBobAmount = 0.1f;
         private float viewBobSpeed = 7.5f;
-        private float viewBobAmount = 0.075f;
+        private float viewBobAmount = 0.01f;
         private float upDownBob => MathF.Sin(walkViewTimer) * viewBobAmount;
         private float leftRightBob => MathF.Cos(walkViewTimer) * viewBobAmount;
         private float footstepInterval = 0.75f;
@@ -63,17 +61,17 @@ namespace GameSrc
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal7.ogg")),
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal8.ogg")),
         };
-        public static float MaxRoomRenderDistance = 100f;
+        public static float MaxRoomRenderDistance = 24f;
 
         public SCPCBPlayerEntity() : base("Player")
         {
             footstepSource = new AudioSource("PlayerFootsteps");
             footstepSource.MinGain = 1f;
             footstepSource.MaxGain = 1f;
-            shape = new Capsule(0.4f, 1.4f);
+            shape = new Capsule(0.2f, 0.5f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             var inertia = shape.ComputeInertia(1f);
-            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, 50f, ContinuousDetection.Discrete), shape.Radius * 0.02f));
+            bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.PositiveInfinity, ContinuousDetection.Continuous()), shape.Radius * 0.02f));
         }
 
         public bool AllowTest(CollidableReference collidable)
@@ -128,9 +126,8 @@ namespace GameSrc
         {
             base.Draw(renderer, dt);
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
-            if (ImGui.Begin("Player Debug"))
+            if (ImGui.Begin("Debug Window"))
             {
-                ImGui.Text("Debug Window");
                 ImGui.Text($"FPS: {MiscGlobals.FPS}");
                 ImGui.Text($"Position {Position}");
                 ImGui.Text($"Velocity {body.Velocity.Linear}");
@@ -141,6 +138,10 @@ namespace GameSrc
                 ImGui.InputFloat("MaxRoomRenderDistance", ref MaxRoomRenderDistance);
                 ImGui.InputInt("MaxLights", ref ForwardConsts.MaxRealtimeLights);
                 ImGui.SliderFloat("Speed", ref speed, 1f, 10f);
+                if (ImGui.Button("Quit"))
+                {
+                    SCPCB.Instance.ShouldReturnToMenu = true;
+                }
             }
             ImGui.End();
         }
@@ -249,7 +250,7 @@ namespace GameSrc
             }
             walkViewTimer += (velLen > 0f ? 1f : 0f) * viewBobSpeed * (float)dt;
             footstepTime += (float)dt * (velLen > 0f ? 1f : 0f);
-            UpdateTransforms = !InputHandler.IsKeyPressed(Veldrid.Key.N);
+            UpdateTransforms = !InputHandler.IsKeyPressed(Veldrid.Key.V);
             if (!UpdateTransforms)
             {
                 QuaternionEx.Transform(Vector3.UnitX, Rotation, out Vector3 charSide);

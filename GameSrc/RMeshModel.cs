@@ -46,7 +46,7 @@ namespace GameSrc
         public string[] Textures => textures;
         public Vector3[] CollisionPositions { get; private set; }
         public uint[] CollisionTriangles { get; private set; }
-        public static float RoomRatio => 20f / 2048f;
+        public static float RoomRatio => 8f / 2048f;
         public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * RoomRatio;
         private List<RMeshPointModel> pointModels = new List<RMeshPointModel>();
         public IReadOnlyList<RMeshPointModel> Models => pointModels;
@@ -54,6 +54,8 @@ namespace GameSrc
         public IReadOnlyList<RMeshAudioSource> Sounds => soundEmitters;
         private List<ForwardConsts.ForwardLight> _lights = new List<ForwardConsts.ForwardLight>();
         public IReadOnlyList<ForwardConsts.ForwardLight> Lights => _lights;
+        private List<Vector3> _waypoints = new List<Vector3>();
+        public IReadOnlyList<Vector3> Waypoints => _waypoints;
         public Vector3 PlayerStart { get; private set; } = Vector3.Zero;
         public UniformBuffer LightUniform { get; private set; }
 
@@ -376,6 +378,7 @@ namespace GameSrc
                         float y = stream.ReadFloat();
                         float z = stream.ReadFloat();
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
+                        _waypoints.Add(position);
                     }
                     break;
                     case "light":
@@ -405,7 +408,7 @@ namespace GameSrc
                         float y = stream.ReadFloat();
                         float z = stream.ReadFloat();
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
-                        float range = stream.ReadFloat() / 2000f;
+                        float range = stream.ReadFloat() * RoomRatio;
                         string strColor = stream.ReadString();
                         float intensity = MathF.Min(stream.ReadFloat() * 0.8f, 1.0f);
                         string strAngles = stream.ReadString();
@@ -442,7 +445,6 @@ namespace GameSrc
                     break;
                     case "model":
                     {
-                        // TODO
                         string mdlFile = stream.ReadString();
                         float x = stream.ReadFloat();
                         float y = stream.ReadFloat();

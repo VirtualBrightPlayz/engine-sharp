@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace Engine.Game.Entities
 {
     public class ModelEntity : Entity
     {
+        public static ConcurrentDictionary<string, WeakReference<Model>> Models = new ConcurrentDictionary<string, WeakReference<Model>>();
         public Model Model { get; private set; }
         private readonly string _path;
         private readonly Material _material;
@@ -29,8 +31,15 @@ namespace Engine.Game.Entities
 
         public virtual void Create()
         {
-            Model = new Model(Name, _path, _material, false, false);
-            // Model = await ResourceManager.Clone<Model>($"{Name}_{Random.Shared.Next()}", await ResourceManager.LoadModel(Name, _material, _path));
+            if (Models.TryGetValue(_path, out var mdl) && mdl.TryGetTarget(out var mdl2))
+            {
+                Model = mdl2;
+            }
+            else
+            {
+                Model = new Model(Name, _path, _material, true, false);
+                Models.TryAdd(_path, new WeakReference<Model>(Model));
+            }
             WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
         }
 

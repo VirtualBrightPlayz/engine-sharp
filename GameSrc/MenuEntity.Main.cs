@@ -21,10 +21,9 @@ namespace GameSrc
         public void EnableMainMenu()
         {
             if (_menuMusicSource.AudioBuffer != MenuMusic)
-            {
                 _menuMusicSource.SetBuffer(MenuMusic);
+            if (!_menuMusicSource.IsPlaying)
                 _menuMusicSource.Play();
-            }
         }
 
         public void DisableMainMenu()
@@ -33,7 +32,7 @@ namespace GameSrc
 
         public void DrawMainMenu()
         {
-            _menuMusicSource.Position = AudioGlobals.Position;
+            // _menuMusicSource.Position = AudioGlobals.Position;
             if (InputHandler.IsMouseLocked)
                 InputHandler.IsMouseLocked = false;
             Vector2 buttonSize = new Vector2(160f, 70f);

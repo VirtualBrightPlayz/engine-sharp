@@ -29,7 +29,7 @@ namespace Engine.Assets.Audio
         private static IntPtr GameAudioDevice;
         private static IntPtr GameAudioCtx;
 
-        public static void CheckALError(string id = "", bool errThrow = true)
+        public static void CheckALError(string id = "", bool errThrow = false)
         {
             int err = AL10.alGetError();
             if (err != AL10.AL_NO_ERROR)
@@ -49,7 +49,7 @@ namespace Engine.Assets.Audio
             {
                 Log.Fatal(nameof(AudioGlobals), "ALC AudioError");
             }
-            CheckALError("Init");
+            CheckALError("Init", true);
             AL10.alDistanceModel(AL11.AL_LINEAR_DISTANCE_CLAMPED);
         }
 
