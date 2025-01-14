@@ -146,7 +146,8 @@ void main()
     vec4 lighting = ApplyLighting();
     vec2 atten = GetAttenuation();
     vec4 finalLighting = diffuseColor;
-    FragColor = vec4(finalLighting.rgb, 1) * mix(lightmapColor * fsin_Color * $FwdBase$, lighting, atten.x);
+    // FragColor = vec4(finalLighting.rgb, 1) * mix(lightmapColor * fsin_Color * $FwdBase$, lighting, atten.x);
+    FragColor = vec4(finalLighting.rgb, 1) * (lightmapColor * fsin_Color * $FwdBase$ + lighting);
     FragColor.a = lighting.a;
 }
 #endif
