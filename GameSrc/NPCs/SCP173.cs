@@ -97,6 +97,7 @@ namespace GameSrc.NPCs
 
         public override void Tick(double dt)
         {
+            MarkTransformDirty(TransformDirtyFlags.Rotation);
             base.Tick(dt);
             stoneSource.Position = Position;
             Vector3 dir = Vector3.Zero;

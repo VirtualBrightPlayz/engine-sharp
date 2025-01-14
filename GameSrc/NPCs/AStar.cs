@@ -161,7 +161,7 @@ namespace VirtualBright.Util
             return collidable.Mobility == CollidableMobility.Static;
         }
 
-        public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
+        public void OnRayHit(in RayData ray, ref float maximumT, float t, Vector3 normal, CollidableReference collidable, int childIndex)
         {
             foundRayTarget = true;
         }

@@ -14,6 +14,7 @@ using Engine.Assets.Rendering;
 using Engine.Assets.Textures;
 using Engine.Game;
 using Engine.Game.Entities;
+using GameSrc.Map;
 using GameSrc.NPCs;
 using ImGuiNET;
 using VirtualBright.Util;
@@ -98,7 +99,7 @@ namespace GameSrc
             Entities.Add(npc);
             // debug door
             var door = new Door("Door");
-            door.Position = player.Position;
+            door.Position = ((RMeshEntity)Entities.First(x => x is RMeshEntity)).PlayerStart + Vector3.UnitZ * 4f;
             door.MarkTransformDirty(TransformDirtyFlags.Position);
             Entities.Add(door);
         }

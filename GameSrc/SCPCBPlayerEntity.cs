@@ -13,6 +13,7 @@ using Engine.Assets.Rendering;
 using Engine.Game;
 using Engine.Game.Entities;
 using Engine.Game.Physics;
+using GameSrc.Map;
 using ImGuiNET;
 
 namespace GameSrc
@@ -62,6 +63,8 @@ namespace GameSrc
             new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "Step", "StepMetal8.ogg")),
         };
         public static float MaxRoomRenderDistance = 24f;
+        public Vector3 viewPos;
+        public InteractHandler interact;
 
         public SCPCBPlayerEntity() : base("Player")
         {
@@ -72,6 +75,10 @@ namespace GameSrc
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             var inertia = shape.ComputeInertia(1f);
             bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.PositiveInfinity, ContinuousDetection.Continuous()), shape.Radius * 0.02f));
+            interact = new InteractHandler()
+            {
+                player = this,
+            };
         }
 
         public bool AllowTest(CollidableReference collidable)
@@ -84,7 +91,7 @@ namespace GameSrc
             return collidable.Mobility == CollidableMobility.Static && RMeshEntity.FloorLookup.ContainsKey(collidable.StaticHandle);
         }
 
-        public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
+        public void OnRayHit(in RayData ray, ref float maximumT, float t, Vector3 normal, CollidableReference collidable, int childIndex)
         {
             switch (ray.Id)
             {
@@ -115,7 +122,7 @@ namespace GameSrc
         {
             base.PreDraw(renderer, dt);
             UpdateLook(dt);
-            Vector3 viewPos = Position + Vector3.UnitY * (shape.HalfLength + shape.Radius) + Vector3.UnitY * upDownBob;
+            viewPos = Position + Vector3.UnitY * (shape.HalfLength + shape.Radius) + Vector3.UnitY * upDownBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * (MathF.PI / 180f)), out Vector3 up);
             renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             footstepSource.Position = viewPos;
@@ -194,6 +201,19 @@ namespace GameSrc
                 InputHandler.IsMouseLocked = !InputHandler.IsMouseLocked;
             }
             wasEscPressed = InputHandler.IsKeyPressed(Veldrid.Key.Escape);
+        }
+
+        public void UpdateInteract(double dt)
+        {
+            float dist = 1f;
+            if (InputHandler.IsMouseDown(Veldrid.MouseButton.Left))
+            {
+                Game.Simulation.RayCast(viewPos, viewDirection, dist, ref interact, 0);
+            }
+            else
+            {
+                Game.Simulation.RayCast(viewPos, viewDirection, dist, ref interact, 1);
+            }
         }
 
         public void UpdateMovement(double dt)
