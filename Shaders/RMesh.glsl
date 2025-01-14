@@ -144,8 +144,9 @@ void main()
     vec4 diffuseColor = pow(texture(sampler2D(DiffuseTexture, DiffuseTextureSampler), uvOffset0), vec4(gamma));
     vec4 lightmapColor = texture(sampler2D(LightmapTexture, LightmapTextureSampler), fsin_UV1);
     vec4 lighting = ApplyLighting();
+    vec2 atten = GetAttenuation();
     vec4 finalLighting = diffuseColor;
-    FragColor = vec4(finalLighting.rgb, 1) * lightmapColor * fsin_Color;
+    FragColor = vec4(finalLighting.rgb, 1) * mix(lightmapColor * fsin_Color * $FwdBase$, lighting, atten.x);
     FragColor.a = lighting.a;
 }
 #endif

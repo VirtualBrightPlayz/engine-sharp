@@ -42,7 +42,8 @@ float GetLightAttenuation(int i)
     // for (int i = 0; i < $LIGHTS_MAX$; i++)
     {
         float d = length(fsinLight_TanLightPos[i].xyz - $TAN_POSITION$.xyz);
-        float a = LightInfo.LightPosition[i].w / (d * d);
+        float a = mix(1, 0, d / LightInfo.LightPosition[i].w);
+        // float a = 1 / max(d, 0.0001) / LightInfo.LightPosition[i].w;
         attenuation += clamp(a, 0, 1);
     }
     return attenuation;
@@ -111,11 +112,54 @@ vec4 ApplyLighting()
     {
         float a = GetLightAttenuation(i);
         vec3 lighting = ApplyDiffuseLighting(i) * a + ApplySpecularLighting(i) * a;
-        vec4 fLight = vec4(lighting, ApplyAlphaLighting(i, lighting, a));
+        vec4 fLight = vec4(lighting, a);// vec4(lighting, ApplyAlphaLighting(i, lighting, a));
         col.rgb += fLight.rgb;
         col.a += fLight.a;
     }
     col.a *= $FwdAdd$;
+    return col;
+}
+
+vec4 ApplyLightingNoSpecular()
+{
+    vec4 col = vec4(ApplyAmbientLighting(), 0);
+    for (int i = 0; i < LightInfo.AmbientColor.w; i++)
+    {
+        float a = GetLightAttenuation(i);
+        vec3 lighting = ApplyDiffuseLighting(i) * a;
+        vec4 fLight = vec4(lighting, a);// vec4(lighting, ApplyAlphaLighting(i, lighting, a));
+        col.rgb += fLight.rgb;
+        col.a += fLight.a;
+    }
+    col.a *= $FwdAdd$;
+    return col;
+}
+
+vec2 GetAttenuation()
+{
+    vec2 col = vec2(0);
+    for (int i = 0; i < LightInfo.AmbientColor.w; i++)
+    {
+        float a = GetLightAttenuation(i);
+        col.x += a;
+    }
+    col.y *= $FwdAdd$;
+    return col;
+}
+
+vec2 GetNormalVector()
+{
+    vec3 norm = -normalize($TAN_NORMAL$.xyz);
+    vec2 col = vec2(0);
+    for (int i = 0; i < LightInfo.AmbientColor.w; i++)
+    {
+        float a = GetLightAttenuation(i);
+        vec4 lightPos = vec4(fsinLight_TanLightPos[i].xyz, LightInfo.LightPosition[i].w);
+        vec3 lightDir = normalize(lightPos.xyz - $TAN_POSITION$.xyz);
+        float diff = max(dot(norm, lightDir), 0);
+        col.x += diff * a;
+    }
+    col.y *= $FwdAdd$;
     return col;
 }
 

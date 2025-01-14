@@ -88,8 +88,10 @@ namespace Engine.Game.Entities
 
         public override void Draw(Renderer renderer, double dt)
         {
-            Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform);
             base.Draw(renderer, dt);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform, ForwardConsts.ForwardBasePassName);
+            for (int i = 1; i < ForwardConsts.LightUniforms.Count; i++)
+                Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform, ForwardConsts.ForwardAddPassName + '#' + i);
         }
     }
 }

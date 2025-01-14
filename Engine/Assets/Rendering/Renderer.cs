@@ -203,7 +203,7 @@ namespace Engine.Assets.Rendering
             BoundMaterial = material;
             SetupStandardMatrixUniforms(material);
             material.PreDraw(this);
-            material.Bind(this, pass, bindPipeline);
+            material.Bind(this, pass.Split('#')[0], bindPipeline);
         }
 
         public void DrawMesh(Mesh mesh, Action<Renderer, RenderBatch, int> callback, object instanceData, Material material, string pass = "main")

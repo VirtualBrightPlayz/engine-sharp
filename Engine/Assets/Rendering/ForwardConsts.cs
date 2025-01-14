@@ -33,6 +33,7 @@ namespace Engine.Assets.Rendering
         public static Vector4 AmbientColor = Vector4.One * 0.1f;
         public static int MaxRealtimeLights = 4;
         public static UniformBuffer LightUniform;
+        public static List<UniformBuffer> LightUniforms = new List<UniformBuffer>();
 
         public static bool IsPassValid(int pass)
         {
@@ -44,12 +45,47 @@ namespace Engine.Assets.Rendering
             // return Math.Min(MaxRealtimeLights, Math.Min(Lights.Count, pass * MaxLightsPerPass)) > 0;
         }
 
+        public static int GetPass(Renderer renderer, string pass)
+        {
+            if (pass == ForwardBasePassName)
+                return 0;
+            string[] args = pass.Split('#');
+            if (args[0] == ForwardAddPassName && args.Length > 1 && int.TryParse(args[1], out int i))
+            {
+                return i;
+            }
+            return 0;
+        }
+
         public static void UpdateUniforms(Renderer renderer)
         {
             if (LightUniform == null || !LightUniform.IsValid)
                 LightUniform = new UniformBuffer(LightBufferName, LightInfo.Size);
             ForwardLight[] sortedLights = Lights.OrderBy(x => (x.Position - renderer.ViewPosition).LengthSquared()).Take(MaxRealtimeLights).ToArray();
             LightUniform.UploadData(renderer, GetLightInfo(0, true, sortedLights));
+            if (MaxRealtimeLights <= 0)
+            {
+                LightUniforms.Clear();
+                return;
+            }
+            int loopCount = (int)Math.Ceiling((float)MaxRealtimeLights / MaxLightsPerPass);
+            if (loopCount > LightUniforms.Count)
+            {
+                LightUniforms.Add(null);
+            }
+            else if (loopCount < LightUniforms.Count)
+            {
+                while (loopCount < LightUniforms.Count)
+                {
+                    LightUniforms.RemoveAt(LightUniforms.Count - 1);
+                }
+            }
+            for (int i = 0; i < LightUniforms.Count; i++)
+            {
+                if (LightUniforms[i] == null || !LightUniforms[i].IsValid)
+                    LightUniforms[i] = new UniformBuffer(LightBufferName, LightInfo.Size);
+                LightUniforms[i].UploadData(renderer, GetLightInfo(i, i == 0, sortedLights));
+            }
         }
 
         public static float[] GetLightInfo(int pass, bool basePass, ForwardLight[] sortedLights)

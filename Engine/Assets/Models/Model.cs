@@ -598,11 +598,13 @@ namespace Engine.Assets.Models
 
         private void OnBatchDraw(Renderer renderer, Renderer.RenderBatch batch, int index)
         {
-            batch.material.SetUniforms(UniformConsts.WorldMatrixBufferSet, true, new UniformLayout(UniformConsts.WorldMatrixName, (IMaterialBindable)batch.instances[index], true, false));
+            batch.material.SetUniforms(UniformConsts.WorldMatrixBufferSet, true, new UniformLayout(UniformConsts.WorldMatrixName, (IMaterialBindable)batch.instances[index], true, false));int passId = ForwardConsts.GetPass(renderer, batch.pass);
+            if (passId < ForwardConsts.LightUniforms.Count)
+                batch.material.SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, ForwardConsts.LightUniforms[passId], false, true));
             renderer.BindMaterial(batch.material, batch.pass, false);
         }
 
-        public void SetWorldMatrixDraw(Renderer renderer, UniformBuffer WorldMatrix)
+        public void SetWorldMatrixDraw(Renderer renderer, UniformBuffer WorldMatrix, string pass)
         {
             for (int i = 0; i < _meshes.Length; i++)
             {
@@ -625,7 +627,7 @@ namespace Engine.Assets.Models
                 // renderer.BindMaterial(InternalMaterials[i]);
                 // renderer.DrawMeshNow(_meshes[i]);
                 // _meshes[i].PreDraw(renderer);
-                renderer.DrawMesh(_meshes[i], OnBatchDraw, WorldMatrix, InternalMaterials[i], ForwardConsts.ForwardBasePassName);
+                renderer.DrawMesh(_meshes[i], OnBatchDraw, WorldMatrix, InternalMaterials[i], pass);
             }
         }
 

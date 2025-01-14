@@ -505,16 +505,19 @@ namespace GameSrc
         private void OnBatchDraw(Renderer renderer, Renderer.RenderBatch batch, int index)
         {
             batch.material.SetUniforms(UniformConsts.WorldMatrixBufferSet, true, new UniformLayout(UniformConsts.WorldMatrixName, (IMaterialBindable)batch.instances[index], true, false));
+            int passId = ForwardConsts.GetPass(renderer, batch.pass);
+            if (passId < ForwardConsts.LightUniforms.Count)
+                batch.material.SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, ForwardConsts.LightUniforms[passId], false, true));
             renderer.BindMaterial(batch.material, batch.pass, false);
         }
 
-        public void Draw(Renderer renderer, UniformBuffer WorldMatrix, double dt)
+        public void Draw(Renderer renderer, UniformBuffer WorldMatrix, string pass)
         {
             for (int i = 0; i < meshes.Length; i++)
             {
                 renderer.SetupStandardMatrixUniforms(materials[i]);
                 renderer.SetupStandardWorldInfoUniforms(materials[i], ShaderWorldInfoSetId);
-                renderer.DrawMesh(meshes[i], OnBatchDraw, WorldMatrix, materials[i], ForwardConsts.ForwardBasePassName);
+                renderer.DrawMesh(meshes[i], OnBatchDraw, WorldMatrix, materials[i], pass);
             }
         }
 

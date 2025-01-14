@@ -257,7 +257,9 @@ namespace GameSrc
                 Models[i].Draw(renderer, dt);
             }
             WorldMatrixUniform.UploadData(renderer, WorldMatrix);
-            Room.Draw(renderer, WorldMatrixUniform, dt);
+            Room.Draw(renderer, WorldMatrixUniform, ForwardConsts.ForwardBasePassName);
+            for (int i = 1; i < ForwardConsts.LightUniforms.Count; i++)
+                Room.Draw(renderer, WorldMatrixUniform, ForwardConsts.ForwardAddPassName + '#' + i);
         }
 
         public override void Tick(double dt)
@@ -295,12 +297,12 @@ namespace GameSrc
         {
             for (int i = 0; i < staticHandles.Length; i++)
             {
-                Game.Simulation.Shapes.Remove(shapeIndexes[i]);
                 if (staticHandles[i].HasValue)
                 {
                     FloorLookup.TryRemove(staticHandles[i].Value, out _);
                     Game.Simulation.Statics.Remove(staticHandles[i].Value);
                 }
+                Game.Simulation.Shapes.Remove(shapeIndexes[i]);
             }
             for (int i = 0; i < Sources.Length; i++)
             {
