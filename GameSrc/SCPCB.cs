@@ -94,9 +94,13 @@ namespace GameSrc
             }
             npc = new SCP173("NPC", Path.Combine(Data.GFXDir, "npcs", "173_2.b3d"), new Material("temp", shader));
             npc.Position = player.Position;
-            npc.Scale = Vector3.One * 0.35f / 8f;
-            npc.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Scale);
+            npc.MarkTransformDirty(TransformDirtyFlags.Position);
             Entities.Add(npc);
+            // debug door
+            var door = new Door("Door");
+            door.Position = player.Position;
+            door.MarkTransformDirty(TransformDirtyFlags.Position);
+            Entities.Add(door);
         }
 
         public void QuitToMenu()

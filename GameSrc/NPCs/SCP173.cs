@@ -5,8 +5,6 @@ using System.Numerics;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuUtilities;
-using DotRecast.Recast;
-using DotRecast.Recast.Geom;
 using Engine.Assets.Audio;
 using Engine.Assets.Models;
 using Engine.Assets.Rendering;
@@ -29,7 +27,7 @@ namespace GameSrc.NPCs
         public Capsule shape;
         public AudioSource stoneSource;
         public AudioClip stoneClip;
-        public Matrix4x4 RenderWorldMatrix => Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation(Position - QuaternionEx.Transform(Vector3.UnitY * shape.HalfLength, Rotation));
+        public Matrix4x4 RenderWorldMatrix => Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateTranslation(Position - QuaternionEx.Transform(Vector3.UnitY * shape.HalfLength, Rotation));
 
         public SCP173(string name, string path, Material material) : base(name)
         {
@@ -51,8 +49,10 @@ namespace GameSrc.NPCs
                 SCPCB.Models.TryAdd(_path, Model);
             }
             WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);
+            Scale = Vector3.One * 0.35f / Model.MeshSize.Z;
+            MarkTransformDirty(TransformDirtyFlags.Scale);
             // physics
-            shape = new Capsule(0.1f, 0.2f);
+            shape = new Capsule(0.2f, 0.35f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
             var inertia = shape.ComputeInertia(1f);
             bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.PositiveInfinity, ContinuousDetection.Continuous()), shape.Radius * 0.02f));

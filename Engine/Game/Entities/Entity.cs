@@ -22,7 +22,7 @@ namespace Engine.Game.Entities
         public Vector3 LocalUp { get; set; } = Vector3.UnitY;
         public Quaternion Rotation { get; set; } = Quaternion.Identity;
         public Vector3 Scale { get; set; } = Vector3.One;
-        public Matrix4x4 WorldMatrix => Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation(Position);
+        public Matrix4x4 WorldMatrix => Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateTranslation(Position);
         // public Matrix4x4 WorldMatrix => Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateWorld(Position, QuaternionEx.Transform(-Vector3.UnitZ, Rotation), QuaternionEx.Transform(Vector3.UnitY, Rotation));
 
         public Entity()

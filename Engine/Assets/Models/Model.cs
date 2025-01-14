@@ -59,6 +59,9 @@ namespace Engine.Assets.Models
                 return m;
             }
         }
+        public Vector3 MinPoint;
+        public Vector3 MaxPoint;
+        public Vector3 MeshSize => MaxPoint - MinPoint;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct ModelVertexLayout : IVertex
@@ -557,6 +560,23 @@ namespace Engine.Assets.Models
 
             CollisionPositions = colPos.ToArray();
             CollisionTriangles = colTris.ToArray();
+            CalcSizes();
+        }
+
+        public void CalcSizes()
+        {
+            MinPoint = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+            MaxPoint = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+            for (int i = 0; i < CollisionPositions.Length; i++)
+            {
+                MinPoint.X = MathF.Min(CollisionPositions[i].X, MinPoint.X);
+                MinPoint.Y = MathF.Min(CollisionPositions[i].Y, MinPoint.Y);
+                MinPoint.Z = MathF.Min(CollisionPositions[i].Z, MinPoint.Z);
+
+                MaxPoint.X = MathF.Max(CollisionPositions[i].X, MaxPoint.X);
+                MaxPoint.Y = MathF.Max(CollisionPositions[i].Y, MaxPoint.Y);
+                MaxPoint.Z = MathF.Max(CollisionPositions[i].Z, MaxPoint.Z);
+            }
         }
 
         protected override void ReCreateInternal()

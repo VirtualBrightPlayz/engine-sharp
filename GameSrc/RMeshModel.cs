@@ -46,8 +46,8 @@ namespace GameSrc
         public string[] Textures => textures;
         public Vector3[] CollisionPositions { get; private set; }
         public uint[] CollisionTriangles { get; private set; }
-        public static float RoomRatio => 8f / 2048f;
-        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * RoomRatio;
+        public static float RoomScaleFloat => 8f / 2048f;
+        public static Vector3 RoomScale => new Vector3(1f, 1f, -1f) * RoomScaleFloat;
         private List<RMeshPointModel> pointModels = new List<RMeshPointModel>();
         public IReadOnlyList<RMeshPointModel> Models => pointModels;
         private List<RMeshAudioSource> soundEmitters = new List<RMeshAudioSource>();
@@ -387,7 +387,7 @@ namespace GameSrc
                         float y = stream.ReadFloat();
                         float z = stream.ReadFloat();
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
-                        float range = stream.ReadFloat() * RoomRatio;
+                        float range = stream.ReadFloat() * RoomScaleFloat;
                         string strColor = stream.ReadString();
                         float intensity = MathF.Min(stream.ReadFloat() * 0.8f, 1.0f);
                         string[] splColor = strColor.Split(' ');
@@ -408,7 +408,7 @@ namespace GameSrc
                         float y = stream.ReadFloat();
                         float z = stream.ReadFloat();
                         Vector3 position = new Vector3(x, y, z) * RoomScale;
-                        float range = stream.ReadFloat() * RoomRatio;
+                        float range = stream.ReadFloat() * RoomScaleFloat;
                         string strColor = stream.ReadString();
                         float intensity = MathF.Min(stream.ReadFloat() * 0.8f, 1.0f);
                         string strAngles = stream.ReadString();
@@ -457,7 +457,7 @@ namespace GameSrc
                         float xScale = stream.ReadFloat();
                         float yScale = stream.ReadFloat();
                         float zScale = stream.ReadFloat();
-                        Vector3 scale = new Vector3(xScale, yScale, zScale) * RoomRatio;
+                        Vector3 scale = new Vector3(xScale, yScale, zScale) * RoomScaleFloat;
                         pointModels.Add(new RMeshPointModel()
                         {
                             path = mdlFile,
