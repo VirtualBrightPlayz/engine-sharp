@@ -19,7 +19,7 @@ namespace GameSrc.NPCs
         private Vector3[] path = Array.Empty<Vector3>();
         private int pathIndex = 0;
         public bool isMoving = false;
-        public float speed = 38f;// / 8f;
+        public float speed = 38f;
         public Model Model { get; private set; }
         private readonly string _path;
         private readonly Material _material;
@@ -27,7 +27,7 @@ namespace GameSrc.NPCs
         public Capsule shape;
         public AudioSource stoneSource;
         public AudioClip stoneClip;
-        public Matrix4x4 RenderWorldMatrix => Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateTranslation(Position - QuaternionEx.Transform(Vector3.UnitY * shape.HalfLength, Rotation));
+        public Matrix4x4 RenderWorldMatrix => Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateTranslation(Position) * Matrix4x4.CreateTranslation(QuaternionEx.Transform(-Vector3.UnitY, Rotation) * shape.Length);
 
         public SCP173(string name, string path, Material material) : base(name)
         {
