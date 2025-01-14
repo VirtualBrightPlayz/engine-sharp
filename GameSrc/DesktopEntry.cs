@@ -24,10 +24,10 @@ public static class DesktopEntry
 
     public static int Init()
     {
-        int idx = Array.IndexOf(Environment.GetCommandLineArgs(), "-vulkan");
+        int idx = Array.IndexOf(Environment.GetCommandLineArgs(), "-opengl");
         MiscGlobals.Init();
         Log.Info(nameof(DesktopEntry), "Starting...");
-        RenderingGlobals.InitGameGraphics(idx == -1 ? GraphicsBackend.OpenGL : GraphicsBackend.Vulkan);
+        RenderingGlobals.InitGameGraphics(idx == -1 ? GraphicsBackend.Vulkan : GraphicsBackend.OpenGL);
         RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
