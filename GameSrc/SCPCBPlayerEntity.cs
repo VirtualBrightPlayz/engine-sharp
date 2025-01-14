@@ -245,7 +245,7 @@ namespace GameSrc
             if (prevFootstepTime + footstepInterval < footstepTime)
             {
                 SCPCBPlayerEntity ent = this;
-                Game.Simulation.RayCast(Position + Vector3.UnitY, -Vector3.UnitY, 5f, ref ent, 0);
+                Game.Simulation.RayCast(Position, -Vector3.UnitY, 5f, ref ent, 0);
                 prevFootstepTime = footstepTime;
             }
             walkViewTimer += (velLen > 0f ? 1f : 0f) * viewBobSpeed * (float)dt;
