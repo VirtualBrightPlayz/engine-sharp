@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Numerics;
 using Engine.Assets.Rendering;
+using Engine.Game;
 using Engine.Game.Entities;
 using GameSrc;
 
@@ -13,6 +14,8 @@ namespace GameSrc.Map
         public StaticModelEntity obj1;
         public StaticModelEntity obj2;
         public StaticModelEntity[] buttons = new StaticModelEntity[2];
+        public float openState = 0;
+        public bool IsOpen = false;
 
         public static string DoorFrame => Path.Combine(SCPCB.Instance.Data.MapDir, "DoorFrame.x");
         public static string DoorObj => Path.Combine(SCPCB.Instance.Data.MapDir, "Door01.x");
@@ -48,7 +51,7 @@ namespace GameSrc.Map
             }
             if (obj1 != null)
             {
-                obj1.Position = Position;
+                obj1.Position = Position + new Vector3(MathF.Sin(openState) / 80f, 0f, 0f);
                 obj1.Rotation = Rotation;
                 obj1.Scale = Scale * new Vector3(204f, 312f, 16f) * RMeshModel.RoomScale / obj1.Model.MeshSize;
                 obj1.MarkTransformDirty(flags);
@@ -107,6 +110,22 @@ namespace GameSrc.Map
             obj2?.Tick(dt);
             buttons[0]?.Tick(dt);
             buttons[1]?.Tick(dt);
+            if (IsOpen)
+            {
+                openState = MathUtils.Clamp(openState + (float)dt, 0f, 180f);
+                if (openState < 180f)
+                {
+                    MarkTransformDirty(TransformDirtyFlags.Position);
+                }
+            }
+            else
+            {
+                openState = MathUtils.Clamp(openState - (float)dt, 0f, 180f);
+                if (openState > 0f)
+                {
+                    MarkTransformDirty(TransformDirtyFlags.Position);
+                }
+            }
         }
 
         public override void Dispose()
@@ -131,6 +150,7 @@ namespace GameSrc.Map
         public void Press()
         {
             Log.Info(nameof(Door), "Pressed!");
+            IsOpen = !IsOpen;
         }
     }
 }
