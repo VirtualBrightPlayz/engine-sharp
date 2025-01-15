@@ -73,7 +73,9 @@ namespace Engine.Assets.Models
         public override bool IsValid => _vertexBuffer != null && _indexBuffer != null && !_vertexBuffer.IsDisposed && !_indexBuffer.IsDisposed;
 
         private DeviceBuffer _vertexBuffer;
+        public DeviceBuffer VertexBuffer => _vertexBuffer;
         private DeviceBuffer _indexBuffer;
+        public DeviceBuffer IndexBuffer => _indexBuffer;
         private uint _indexCount;
         private List<Renderer> _hasDrawn = new List<Renderer>();
 

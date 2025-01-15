@@ -29,6 +29,7 @@ public static class DesktopEntry
         Log.Info(nameof(DesktopEntry), "Starting...");
         RenderingGlobals.InitGameGraphics(idx == -1 ? GraphicsBackend.Vulkan : GraphicsBackend.OpenGL);
         RenderingGlobals.Window.Resized += OnWindowResize;
+        RayAccelTest.MainTest();
         renderer = new Renderer("MainRenderer");
         Renderer.Current = renderer;
         RenderTexture2D mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
