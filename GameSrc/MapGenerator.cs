@@ -579,7 +579,7 @@ namespace GameSrc
 
         public IEnumerator SpawnMap(int[,] MapTemp, string[,] MapRoom, int MaxRooms, System.Random rng, IProgress<int> progress, CancellationTokenSource token)
         {
-            progress.Report(-1);
+            progress.Report(0);
             // await Task.Delay(100);
             yield return null;
             int[] MapRoomID = new int[(int)RoomType.ROOM4 + 1];
