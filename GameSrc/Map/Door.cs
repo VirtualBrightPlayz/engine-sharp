@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
+using Engine.Assets.Audio;
 using Engine.Assets.Rendering;
 using Engine.Game;
 using Engine.Game.Entities;
@@ -16,24 +18,46 @@ namespace GameSrc.Map
         public StaticModelEntity[] buttons = new StaticModelEntity[2];
         public float openState = 0;
         public bool IsOpen = false;
+        public bool IsMoving = false;// => openState > 0f && openState < 1f;
 
         public static string DoorFrame => Path.Combine(SCPCB.Instance.Data.MapDir, "DoorFrame.x");
         public static string DoorObj => Path.Combine(SCPCB.Instance.Data.MapDir, "Door01.x");
         public static string ButtonObj => Path.Combine(SCPCB.Instance.Data.MapDir, "Button.x");
+        public static string[] DoorOpenSfx = new string[]
+        {
+            Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorOpen1.ogg"),
+            Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorOpen2.ogg"),
+            Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorOpen3.ogg"),
+        };
+        public static string[] DoorCloseSfx = new string[]
+        {
+            Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorClose1.ogg"),
+            Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorClose2.ogg"),
+            Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorClose3.ogg"),
+        };
+        public AudioClip[] OpenClips;
+        public AudioClip[] CloseClips;
+        public AudioSource OpenSource;
+        public AudioSource CloseSource;
 
         public Door(string name) : base(name)
         {
-            Material dummy = new Material(name, SCPCB.shader);
-            frame = new StaticModelEntity(name, DoorFrame, dummy);
+            OpenSource = new AudioSource(name);
+            OpenSource.MaxDistance = 4f;
+            CloseSource = new AudioSource(name);
+            CloseSource.MaxDistance = 4f;
+            OpenClips = DoorOpenSfx.Select(x => new AudioClip(x)).ToArray();
+            CloseClips = DoorCloseSfx.Select(x => new AudioClip(x)).ToArray();
+            frame = new StaticModelEntity(name, DoorFrame, new Material(name, SCPCB.shader));
             frame.Create(true);
-            obj1 = new StaticModelEntity(name, DoorObj, dummy);
+            obj1 = new StaticModelEntity(name, DoorObj, new Material(name, SCPCB.shader));
             obj1.Create(true);
-            obj2 = new StaticModelEntity(name, DoorObj, dummy);
+            obj2 = new StaticModelEntity(name, DoorObj, new Material(name, SCPCB.shader));
             obj2.Create(true);
-            buttons[0] = new StaticModelEntity(name, ButtonObj, dummy);
+            buttons[0] = new StaticModelEntity(name, ButtonObj, new Material(name, SCPCB.shader));
             buttons[0].Create(true);
             InteractHandler.Interactables.TryAdd(buttons[0].staticHandle.Value, this);
-            buttons[1] = new StaticModelEntity(name, ButtonObj, dummy);
+            buttons[1] = new StaticModelEntity(name, ButtonObj, new Material(name, SCPCB.shader));
             buttons[1].Create(true);
             InteractHandler.Interactables.TryAdd(buttons[1].staticHandle.Value, this);
             MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation | TransformDirtyFlags.Scale);
@@ -42,6 +66,8 @@ namespace GameSrc.Map
         public override void MarkTransformDirty(TransformDirtyFlags flags)
         {
             base.MarkTransformDirty(flags);
+            OpenSource.Position = Position;
+            CloseSource.Position = Position;
             if (frame != null)
             {
                 frame.Position = Position;
@@ -51,14 +77,14 @@ namespace GameSrc.Map
             }
             if (obj1 != null)
             {
-                obj1.Position = Position + new Vector3(MathF.Sin(openState) / 80f, 0f, 0f);
+                obj1.Position = Position + new Vector3(MathF.Sin(openState * 90f * (MathF.PI / 180f)) * 204f * RMeshModel.RoomScaleFloat, 0f, 0f);
                 obj1.Rotation = Rotation;
                 obj1.Scale = Scale * new Vector3(204f, 312f, 16f) * RMeshModel.RoomScale / obj1.Model.MeshSize;
                 obj1.MarkTransformDirty(flags);
             }
             if (obj2 != null)
             {
-                obj2.Position = Position;
+                obj2.Position = Position - new Vector3(MathF.Sin(openState * 90f * (MathF.PI / 180f)) * 204f * RMeshModel.RoomScaleFloat, 0f, 0f);
                 obj2.Rotation = Rotation * Quaternion.CreateFromAxisAngle(Vector3.UnitY, 180f * (MathF.PI / 180f));
                 obj2.Scale = Scale * new Vector3(204f, 312f, 16f) * RMeshModel.RoomScale / obj2.Model.MeshSize;
                 obj2.MarkTransformDirty(flags);
@@ -112,18 +138,26 @@ namespace GameSrc.Map
             buttons[1]?.Tick(dt);
             if (IsOpen)
             {
-                openState = MathUtils.Clamp(openState + (float)dt, 0f, 180f);
-                if (openState < 180f)
+                openState = MathUtils.Clamp(openState + (float)dt * 0.75f, 0f, 1f);
+                if (openState < 1f)
                 {
                     MarkTransformDirty(TransformDirtyFlags.Position);
+                }
+                else
+                {
+                    IsMoving = false;
                 }
             }
             else
             {
-                openState = MathUtils.Clamp(openState - (float)dt, 0f, 180f);
+                openState = MathUtils.Clamp(openState - (float)dt * 0.75f, 0f, 1f);
                 if (openState > 0f)
                 {
                     MarkTransformDirty(TransformDirtyFlags.Position);
+                }
+                else
+                {
+                    IsMoving = false;
                 }
             }
         }
@@ -149,8 +183,21 @@ namespace GameSrc.Map
 
         public void Press()
         {
-            Log.Info(nameof(Door), "Pressed!");
+            if (IsMoving)
+                return;
+            IsMoving = true;
+            Log.Debug(nameof(Door), "Pressed!");
             IsOpen = !IsOpen;
+            if (IsOpen)
+            {
+                OpenSource.SetBuffer(OpenClips[Random.Shared.Next(OpenClips.Length)]);
+                OpenSource.Play();
+            }
+            else
+            {
+                CloseSource.SetBuffer(CloseClips[Random.Shared.Next(CloseClips.Length)]);
+                CloseSource.Play();
+            }
         }
     }
 }

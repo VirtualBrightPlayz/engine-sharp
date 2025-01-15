@@ -411,7 +411,8 @@ namespace Engine.Assets.Models
             List<uint> colTris = new List<uint>();
             using AssimpContext ctx = new AssimpContext();
             Scene scene = ctx.ImportFileFromStream(FileManager.LoadStream(path), PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace
-            | PostProcessSteps.GenerateSmoothNormals | PostProcessSteps.ForceGenerateNormals, extHint);
+            // | PostProcessSteps.GenerateSmoothNormals | PostProcessSteps.ForceGenerateNormals
+            , extHint);
             _meshes = new Mesh[scene.MeshCount];
             for (int i = 0; i < _meshes.Length; i++)
             {
