@@ -301,6 +301,7 @@ namespace GameSrc
                 {
                     FloorLookup.TryRemove(staticHandles[i].Value, out _);
                     Game.Simulation.Statics.Remove(staticHandles[i].Value);
+                    staticHandles[i] = null;
                 }
                 Game.Simulation.Shapes.Remove(shapeIndexes[i]);
             }

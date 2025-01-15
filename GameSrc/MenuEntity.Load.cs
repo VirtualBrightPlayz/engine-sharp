@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -57,8 +58,9 @@ namespace GameSrc
             LoadPercent = 0;
             _menuMusicSource.SetBuffer(PreLoadMusic);
             _menuMusicSource.Play();
-            LoadPercent = 100;
-            Task.Run(async () => await LoadCallback(new Progress<int>((i) => LoadPercent = i)));
+            // LoadPercent = 100;
+            Game.AsyncTools.Run(LoadCallback(new Progress<int>((i) => LoadPercent = i)));
+            // Task.Run(async () => await LoadCallback(new Progress<int>((i) => LoadPercent = i)));
         }
 
         public void DisablePreLoadMenu()
@@ -73,14 +75,15 @@ namespace GameSrc
                 _menuMusicSource.SetBuffer(MenuMusic);
             if (!_menuMusicSource.IsPlaying)
                 _menuMusicSource.Play();
-            Task.Run(async () => await SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default));
+            Game.AsyncTools.Run(SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default));
+            // Task.Run(async () => await SCPCB.Instance.MapGen.CreateMap(new Progress<int>((i) => LoadPercent = i), default));
         }
 
         public void DisableGameLoadMenu()
         {
         }
 
-        public async Task LoadCallback(IProgress<int> progress)
+        public IEnumerator LoadCallback(IProgress<int> progress)
         {
             List<string> names = new List<string>();
             progress.Report(0);
@@ -96,8 +99,9 @@ namespace GameSrc
             {
                 if (!SCPCB.RMeshModels.ContainsKey(names[i]))
                     SCPCB.RMeshModels.TryAdd(names[i], new RMeshModel(names[i]));
-                await Task.Delay(75);
+                // await Task.Delay(75);
                 progress.Report((int)(((float)i / names.Count) * 100f));
+                yield return null;
             }
             progress.Report(100);
         }

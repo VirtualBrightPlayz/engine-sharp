@@ -59,10 +59,13 @@ namespace Engine.Game.Entities
         {
             if (bodyHandle.HasValue)
                 Game.Simulation.Bodies.Remove(bodyHandle.Value);
+            bodyHandle = null;
             if (staticHandle.HasValue)
                 Game.Simulation.Statics.Remove(staticHandle.Value);
+            staticHandle = null;
             if (shapeIndex.HasValue)
                 Game.Simulation.Shapes.Remove(shapeIndex.Value);
+            shapeIndex = null;
             base.Dispose();
         }
     }

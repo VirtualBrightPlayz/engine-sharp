@@ -17,6 +17,7 @@ namespace Engine.Game
         public abstract string Name { get; }
         public List<Entity> Entities { get; protected set; } = new List<Entity>();
         public float TimeScale { get; set; } = 1f;
+        public AsyncTools AsyncTools { get; private set; }
 
         public GameApp()
         {
@@ -25,6 +26,7 @@ namespace Engine.Game
 
         public virtual void Setup()
         {
+            AsyncTools = new AsyncTools();
             BufferPool = new BufferPool();
             var targetThreadCount = Math.Max(1, Environment.ProcessorCount > 4 ? Environment.ProcessorCount - 2 : Environment.ProcessorCount - 1);
             Simulation = Simulation.Create(BufferPool, new Physics.NarrowPhaseCallbacks(), new Physics.PoseIntegratorCallbacks(new System.Numerics.Vector3(0, -10, 0)), new SolveDescription(8, 1));
@@ -45,6 +47,7 @@ namespace Engine.Game
 
         public virtual void Tick(double dt)
         {
+            AsyncTools.Tick(dt);
             foreach (var ent in Entities.ToArray())
                 ent.Tick(dt);
             if (TimeScale > 0f)

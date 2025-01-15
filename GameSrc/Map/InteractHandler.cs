@@ -15,12 +15,12 @@ namespace GameSrc.Map
 
         public bool AllowTest(CollidableReference collidable)
         {
-            return true;
+            return collidable.Mobility == CollidableMobility.Static;
         }
 
         public bool AllowTest(CollidableReference collidable, int childIndex)
         {
-            return true;
+            return collidable.Mobility == CollidableMobility.Static;
         }
 
         public void OnRayHit(in RayData ray, ref float maximumT, float t, Vector3 normal, CollidableReference collidable, int childIndex)

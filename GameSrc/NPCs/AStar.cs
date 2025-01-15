@@ -6,6 +6,7 @@ using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.Trees;
 using Engine.Game.Physics;
+using GameSrc;
 
 namespace VirtualBright.Util
 {
@@ -153,12 +154,12 @@ namespace VirtualBright.Util
 
         public bool AllowTest(CollidableReference collidable)
         {
-            return collidable.Mobility == CollidableMobility.Static;
+            return collidable.Mobility == CollidableMobility.Static && RMeshEntity.FloorLookup.ContainsKey(collidable.StaticHandle);
         }
 
         public bool AllowTest(CollidableReference collidable, int childIndex)
         {
-            return collidable.Mobility == CollidableMobility.Static;
+            return collidable.Mobility == CollidableMobility.Static && RMeshEntity.FloorLookup.ContainsKey(collidable.StaticHandle);
         }
 
         public void OnRayHit(in RayData ray, ref float maximumT, float t, Vector3 normal, CollidableReference collidable, int childIndex)

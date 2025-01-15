@@ -158,6 +158,7 @@ namespace GameSrc
             base.Tick(dt);
             // UpdateLook(dt);
             UpdateMovement(dt);
+            UpdateInteract(dt);
             AudioGlobals.Position = Position;
             float[] orientation = new float[6];
             orientation[0] = viewDirection.X;
@@ -205,7 +206,7 @@ namespace GameSrc
 
         public void UpdateInteract(double dt)
         {
-            float dist = 1f;
+            float dist = 3f;
             if (InputHandler.IsMouseDown(Veldrid.MouseButton.Left))
             {
                 Game.Simulation.RayCast(viewPos, viewDirection, dist, ref interact, 0);
