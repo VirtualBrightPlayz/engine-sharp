@@ -62,9 +62,9 @@ namespace GameSrc
         public override void Setup()
         {
             base.Setup();
-            UIExt.LoadFonts();
             RenderingGlobals.Window.Title = Name;
             RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
+            UIExt.LoadFonts();
             Menu = new MenuEntity();
             Entities.Add(Menu);
             Music = new MusicHandler();

@@ -56,7 +56,7 @@ namespace GameSrc
             return d1 >= 0 && d1 < arr.GetLength(0);
         }
 
-        public async Task CreateMap(IProgress<int> progress, CancellationTokenSource token)
+        public IEnumerator CreateMap(IProgress<int> progress, CancellationTokenSource token)
         {
             UnspawnedEntities.Clear();
             System.Random rng = new System.Random(RandomSeed);
@@ -574,13 +574,14 @@ namespace GameSrc
             // MapRoom[(int)RoomType.ROOM3, Room3Amount[0]+Room3Amount[1]] = "room3gw";
             MapRoom[(int)RoomType.ROOM3, Room3Amount[0]+Room3Amount[1]+(int)Math.Floor(0.5f*Room3Amount[2])] = "room3offices";
 
-            await SpawnMap(MapTemp, MapRoom, MaxRooms, rng, progress, token);
+            yield return SpawnMap(MapTemp, MapRoom, MaxRooms, rng, progress, token);
         }
 
-        public async Task SpawnMap(int[,] MapTemp, string[,] MapRoom, int MaxRooms, System.Random rng, IProgress<int> progress, CancellationTokenSource token)
+        public IEnumerator SpawnMap(int[,] MapTemp, string[,] MapRoom, int MaxRooms, System.Random rng, IProgress<int> progress, CancellationTokenSource token)
         {
             progress.Report(-1);
-            await Task.Delay(100);
+            // await Task.Delay(100);
+            yield return null;
             int[] MapRoomID = new int[(int)RoomType.ROOM4 + 1];
             string[,] MapName = new string[MapTemp.GetLength(0), MapTemp.GetLength(1)];
             int i = 0;
@@ -597,7 +598,7 @@ namespace GameSrc
                         {
                             chkpt = "checkpoint2";
                         }
-                        Entity r = await CreateRoom(GetZone(y), RoomType.ROOM2, x, 0, y, chkpt, rng, token);
+                        Entity r = CreateRoom(GetZone(y), RoomType.ROOM2, x, 0, y, chkpt, rng, token);
                         r.Rotation = CreateFromYawPitchRoll(0f, 180f, 0f);
                         r.MarkTransformDirty(TransformDirtyFlags.Rotation);
                     }
@@ -617,7 +618,7 @@ namespace GameSrc
                                     }
                                 }
 
-                                Entity r = await CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
+                                Entity r = CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
                                 if (MapTemp[x, y+1] > 0)
                                 {
                                     r.Rotation = CreateFromYawPitchRoll(0f, 180f, 0f);
@@ -650,7 +651,7 @@ namespace GameSrc
                                             MapName[x, y] = MapRoom[(int)type, MapRoomID[(int)type]];
                                         }
                                     }
-                                    Entity r = await CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
+                                    Entity r = CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
                                     if (rng.Next(1, 3) == 1)
                                     {
                                         r.Rotation = CreateFromYawPitchRoll(0f, 270f, 0f);
@@ -672,7 +673,7 @@ namespace GameSrc
                                             MapName[x, y] = MapRoom[(int)type, MapRoomID[(int)type]];
                                         }
                                     }
-                                    Entity r = await CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
+                                    Entity r = CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
                                     if (rng.Next(1, 3) == 1)
                                     {
                                         r.Rotation = CreateFromYawPitchRoll(0f, 180f, 0f);
@@ -694,7 +695,7 @@ namespace GameSrc
                                             MapName[x, y] = MapRoom[(int)type, MapRoomID[(int)type]];
                                         }
                                     }
-                                    Entity r = await CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
+                                    Entity r = CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
                                     if (MapTemp[x - 1, y] > 0 && MapTemp[x, y + 1] > 0)
                                     {
                                         r.Rotation = CreateFromYawPitchRoll(0f, 90f, 0f);
@@ -726,7 +727,7 @@ namespace GameSrc
                                         MapName[x, y] = MapRoom[(int)type, MapRoomID[(int)type]];
                                     }
                                 }
-                                Entity r = await CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
+                                Entity r = CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
                                 if (MapTemp[x, y - 1] <= 0)
                                 {
                                     r.Rotation = CreateFromYawPitchRoll(0f, 180f, 0f);
@@ -757,7 +758,7 @@ namespace GameSrc
                                         MapName[x, y] = MapRoom[(int)type, MapRoomID[(int)type]];
                                     }
                                 }
-                                Entity r = await CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
+                                Entity r = CreateRoom(GetZone(y), type, x, 0, y, MapName[x, y], rng, token);
                                 r.MarkTransformDirty(TransformDirtyFlags.Rotation);
                                 MapRoomID[(int)type]++;
                             }
@@ -766,17 +767,18 @@ namespace GameSrc
                     }
                 }
             }
-            await Task.Delay(100);
+            // await Task.Delay(100);
+            yield return null;
             progress.Report(100);
         }
 
-        public Task<Entity> CreateRoom(int zone, RoomType type, int x, int y, int z, string room_name, System.Random rng, CancellationTokenSource token)
+        public Entity CreateRoom(int zone, RoomType type, int x, int y, int z, string room_name, System.Random rng, CancellationTokenSource token)
         {
             RMeshEntity room = new RMeshEntity(room_name, data.GetRoomPath(room_name, type, zone, rng));
             UnspawnedEntities.Add(room);
             room.Position = new Vector3(x * 8f, y * 8f, z * 8f);
             room.MarkTransformDirty(TransformDirtyFlags.Position);
-            return Task.FromResult<Entity>(room);
+            return room;
         }
 
         public bool SetRoom(ref string[,] MapRoom, string room_name, RoomType type, int pos, int min_pos, int max_pos)
