@@ -9,17 +9,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.ShaderCompiler", "En
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.Desktop", "Engine\Desktop\Engine.Desktop.csproj", "{27367A41-91AF-42D6-9BC5-E4BAA13387DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.WebGL", "Engine\WebGL\Engine.WebGL.csproj", "{3FA9CD68-2F02-4E96-9B4A-2E7BC162CA32}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameSrc", "GameSrc\GameSrc.csproj", "{5871B828-DCCF-4B82-918B-E31CCCADB4D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1BA60AD7-0F7B-470F-8B21-EC1CEE4C0779}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -30,18 +25,16 @@ Global
 		{27367A41-91AF-42D6-9BC5-E4BAA13387DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27367A41-91AF-42D6-9BC5-E4BAA13387DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27367A41-91AF-42D6-9BC5-E4BAA13387DB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3FA9CD68-2F02-4E96-9B4A-2E7BC162CA32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3FA9CD68-2F02-4E96-9B4A-2E7BC162CA32}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3FA9CD68-2F02-4E96-9B4A-2E7BC162CA32}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3FA9CD68-2F02-4E96-9B4A-2E7BC162CA32}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5871B828-DCCF-4B82-918B-E31CCCADB4D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5871B828-DCCF-4B82-918B-E31CCCADB4D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5871B828-DCCF-4B82-918B-E31CCCADB4D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5871B828-DCCF-4B82-918B-E31CCCADB4D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1BA60AD7-0F7B-470F-8B21-EC1CEE4C0779} = {D1D74442-B2A8-4638-8455-9A956715F2A4}
 		{27367A41-91AF-42D6-9BC5-E4BAA13387DB} = {D1D74442-B2A8-4638-8455-9A956715F2A4}
-		{3FA9CD68-2F02-4E96-9B4A-2E7BC162CA32} = {D1D74442-B2A8-4638-8455-9A956715F2A4}
 	EndGlobalSection
 EndGlobal
