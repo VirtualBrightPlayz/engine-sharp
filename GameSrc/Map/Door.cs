@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using BepuUtilities;
 using Engine.Assets.Audio;
 using Engine.Assets.Rendering;
 using Engine.Game;
@@ -18,7 +19,7 @@ namespace GameSrc.Map
         public StaticModelEntity[] buttons = new StaticModelEntity[2];
         public float openState = 0;
         public bool IsOpen = false;
-        public bool IsMoving = false;// => openState > 0f && openState < 1f;
+        public bool IsMoving = false;
 
         public static string DoorFrame => Path.Combine(SCPCB.Instance.Data.MapDir, "DoorFrame.x");
         public static string DoorObj => Path.Combine(SCPCB.Instance.Data.MapDir, "Door01.x");
@@ -77,14 +78,14 @@ namespace GameSrc.Map
             }
             if (obj1 != null)
             {
-                obj1.Position = Position + new Vector3(MathF.Sin(openState * 90f * (MathF.PI / 180f)) * 204f * RMeshModel.RoomScaleFloat, 0f, 0f);
+                obj1.Position = Position + QuaternionEx.Transform(new Vector3(MathF.Sin(openState * 90f * (MathF.PI / 180f)) * 204f * RMeshModel.RoomScaleFloat, 0f, 0f), Rotation);
                 obj1.Rotation = Rotation;
                 obj1.Scale = Scale * new Vector3(204f, 312f, 16f) * RMeshModel.RoomScale / obj1.Model.MeshSize;
                 obj1.MarkTransformDirty(flags);
             }
             if (obj2 != null)
             {
-                obj2.Position = Position - new Vector3(MathF.Sin(openState * 90f * (MathF.PI / 180f)) * 204f * RMeshModel.RoomScaleFloat, 0f, 0f);
+                obj2.Position = Position - QuaternionEx.Transform(new Vector3(MathF.Sin(openState * 90f * (MathF.PI / 180f)) * 204f * RMeshModel.RoomScaleFloat, 0f, 0f), Rotation);
                 obj2.Rotation = Rotation * Quaternion.CreateFromAxisAngle(Vector3.UnitY, 180f * (MathF.PI / 180f));
                 obj2.Scale = Scale * new Vector3(204f, 312f, 16f) * RMeshModel.RoomScale / obj2.Model.MeshSize;
                 obj2.MarkTransformDirty(flags);
@@ -93,14 +94,14 @@ namespace GameSrc.Map
                 if (buttons[0] != null)
                 {
                     // buttons[0].Position = Position + Scale * new Vector3(432f * RMeshModel.RoomScaleFloat, 0.7f, -192f * RMeshModel.RoomScaleFloat);
-                    buttons[0].Position = Position + Scale * new Vector3(0.6f, 0.7f, 0.1f);
+                    buttons[0].Position = Position + Scale * QuaternionEx.Transform(new Vector3(0.6f, 0.7f, 0.1f), Rotation);
                     buttons[0].Rotation = Rotation;
                     buttons[0].Scale = Scale * Vector3.One * 0.03f;
                     buttons[0].MarkTransformDirty(flags);
                 }
                 if (buttons[1] != null)
                 {
-                    buttons[1].Position = Position + Scale * new Vector3(-0.6f, 0.7f, -0.1f);
+                    buttons[1].Position = Position + Scale * QuaternionEx.Transform(new Vector3(-0.6f, 0.7f, -0.1f), Rotation);
                     buttons[1].Rotation = Rotation * Quaternion.CreateFromAxisAngle(Vector3.UnitY, 180f * (MathF.PI / 180f));
                     buttons[1].Scale = Scale * Vector3.One * 0.03f;
                     buttons[1].MarkTransformDirty(flags);
@@ -111,6 +112,10 @@ namespace GameSrc.Map
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
+            if ((Position - renderer.ViewPosition).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
+            {
+                return;
+            }
             frame?.PreDraw(renderer, dt);
             obj1?.PreDraw(renderer, dt);
             obj2?.PreDraw(renderer, dt);
@@ -121,6 +126,10 @@ namespace GameSrc.Map
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);
+            if ((Position - renderer.ViewPosition).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
+            {
+                return;
+            }
             frame?.Draw(renderer, dt);
             obj1?.Draw(renderer, dt);
             obj2?.Draw(renderer, dt);

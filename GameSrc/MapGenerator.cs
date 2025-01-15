@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Engine.Game.Entities;
+using GameSrc.Map;
 
 namespace GameSrc
 {
@@ -584,13 +585,37 @@ namespace GameSrc
             yield return null;
             int[] MapRoomID = new int[(int)RoomType.ROOM4 + 1];
             string[,] MapName = new string[MapTemp.GetLength(0), MapTemp.GetLength(1)];
+            // doors
             int i = 0;
             for (int y = 1; y < MapTemp.GetLength(1) - 1; y++)
             {
                 for (int x = 1; x < MapTemp.GetLength(0) - 1; x++)
                 {
                     i++;
-                    progress.Report((int)((float)i / MapTemp.Length * 100f));
+                    progress.Report((int)((float)i / MapTemp.Length * 50f));
+                    yield return null;
+                    if (MapTemp[x, y] > 0)
+                    {
+                        if (MapTemp[x+1, y] > 0)
+                        {
+                            CreateDoor(0, x, y, true);
+                        }
+                        if (MapTemp[x, y+1] > 0)
+                        {
+                            CreateDoor(0, x, y, false);
+                        }
+                    }
+                }
+            }
+            // rooms
+            i = 0;
+            for (int y = 1; y < MapTemp.GetLength(1) - 1; y++)
+            {
+                for (int x = 1; x < MapTemp.GetLength(0) - 1; x++)
+                {
+                    i++;
+                    progress.Report((int)((float)i / MapTemp.Length * 50f) + 50);
+                    yield return null;
                     if (MapTemp[x, y] == 255)
                     {
                         string chkpt = "checkpoint1";
@@ -770,6 +795,20 @@ namespace GameSrc
             // await Task.Delay(100);
             yield return null;
             progress.Report(100);
+        }
+
+        public Entity CreateDoor(int zone, int x, int z, bool rotated)
+        {
+            Door door = new Door($"{x}_{z}");
+            UnspawnedEntities.Add(door);
+            door.Position = new Vector3(x * 8f, 0f, z * 8f);
+            if (rotated)
+                door.Position += new Vector3(4f, 0f, 0f);
+            else
+                door.Position += new Vector3(0f, 0f, 4f);
+            door.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (rotated ? 90f : 0f) * (MathF.PI / 180f));
+            door.MarkTransformDirty(TransformDirtyFlags.Position | TransformDirtyFlags.Rotation);
+            return door;
         }
 
         public Entity CreateRoom(int zone, RoomType type, int x, int y, int z, string room_name, System.Random rng, CancellationTokenSource token)

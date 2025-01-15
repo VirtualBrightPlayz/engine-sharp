@@ -97,11 +97,6 @@ namespace GameSrc
             npc.Position = player.Position;
             npc.MarkTransformDirty(TransformDirtyFlags.Position);
             Entities.Add(npc);
-            // debug door
-            var door = new Door("Door");
-            door.Position = ((RMeshEntity)Entities.First(x => x is RMeshEntity)).PlayerStart + Vector3.UnitZ * 4f;
-            door.MarkTransformDirty(TransformDirtyFlags.Position);
-            Entities.Add(door);
         }
 
         public void QuitToMenu()
@@ -111,7 +106,7 @@ namespace GameSrc
             npc.Dispose();
             npc = null;
             MapGen.UnspawnedEntities.Clear();
-            foreach (var ent in Entities.Where(x => x is RMeshEntity).ToArray())
+            foreach (var ent in Entities.Where(x => x is RMeshEntity || x is Door).ToArray())
             {
                 Entities.Remove(ent);
                 ent.Dispose();
