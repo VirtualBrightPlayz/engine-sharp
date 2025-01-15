@@ -54,7 +54,7 @@ namespace GameSrc.NPCs
             // physics
             shape = new Capsule(0.2f, 0.35f);
             shapeIndex = Game.Simulation.Shapes.Add(shape);
-            var inertia = shape.ComputeInertia(1f);
+            var inertia = shape.ComputeInertia(5f);
             bodyHandle = Game.Simulation.Bodies.Add(BodyDescription.CreateDynamic(Position, inertia, new CollidableDescription(shapeIndex.Value, 0.1f, float.PositiveInfinity, ContinuousDetection.Continuous()), shape.Radius * 0.02f));
             // audio
             stoneClip = new AudioClip(Path.Combine(SCPCB.Instance.Data.SFXDir, "SCP", "173", "StoneDrag.ogg"));

@@ -65,6 +65,12 @@ namespace Engine.Assets.Rendering
             LightUniform.UploadData(renderer, GetLightInfo(0, true, sortedLights));
             if (MaxRealtimeLights <= 0)
             {
+                for (int i = 0; i < LightUniforms.Count; i++)
+                {
+                    if (LightUniforms[i] == null || !LightUniforms[i].IsValid)
+                        LightUniforms[i] = new UniformBuffer(LightBufferName, LightInfo.Size);
+                    LightUniforms[i].UploadData(renderer, GetLightInfo(0, true, sortedLights));
+                }
                 LightUniforms.Clear();
                 return;
             }
