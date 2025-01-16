@@ -2,6 +2,10 @@
 
 This is a simple game framework/engine. Don't expect much out of it.
 
+In order for audio to work, you will need [soft_oal.dll from OpenAL Soft (version 1.23.1) in the bin folder](https://github.com/kcat/openal-soft/releases/tag/1.23.1).
+
+In order for GUI to work, you will need [cimgui.dll from the ImGui.NET (version 1.91.6.1) NuGet package](https://www.nuget.org/packages/ImGui.NET/1.91.6.1). You can extract the dll using 7zip or [The NuGet package explorer in the runtimes folder](https://nuget.info/packages/ImGui.NET/1.91.6.1).
+
 ## SCP-087-B
 
 `/GameBSrc` is a source translation of [SCP-087-B](https://www.scpcbgame.com/scp-087-b.html).
