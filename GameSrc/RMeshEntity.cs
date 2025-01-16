@@ -133,16 +133,7 @@ namespace GameSrc
             staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
         #endif
 
-            Sources = new AudioSource[Room.Sounds.Count];
-            for (int i = 0; i < Sources.Length; i++)
-            {
-                Sources[i] = new AudioSource($"{name}_{i}");
-                Sources[i].SetBuffer(Room.Sounds[i].clip);
-                Sources[i].Position = Vector3.Transform(Room.Sounds[i].position, WorldMatrix);
-                Sources[i].MaxDistance = Room.Sounds[i].range * 1f;
-                Sources[i].ReferenceDistance = Room.Sounds[i].range * 0.75f;
-                Sources[i].Looping = true;
-            }
+            CreateAudio();
             NavPoints = new Vector3[Room.Waypoints.Count];
             for (int i = 0; i < NavPoints.Length; i++)
             {
@@ -231,13 +222,41 @@ namespace GameSrc
             }
         }
 
+        public void CreateAudio()
+        {
+            if (Sources == null || Sources.Length == 0)
+            {
+                Sources = new AudioSource[Room.Sounds.Count];
+                for (int i = 0; i < Sources.Length; i++)
+                {
+                    Sources[i] = new AudioSource($"{Name}_{i}");
+                    Sources[i].SetBuffer(Room.Sounds[i].clip);
+                    Sources[i].Position = Vector3.Transform(Room.Sounds[i].position, WorldMatrix);
+                    Sources[i].MaxDistance = Room.Sounds[i].range * 1f;
+                    Sources[i].ReferenceDistance = Room.Sounds[i].range * 0.75f;
+                    Sources[i].Looping = true;
+                }
+            }
+        }
+
+        public void DestroyAudio()
+        {
+            for (int i = 0; i < Sources.Length; i++)
+            {
+                Sources[i].Dispose();
+            }
+            Sources = Array.Empty<AudioSource>();
+        }
+
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
             if ((Position - renderer.ViewPosition).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
             {
+                DestroyAudio();
                 return;
             }
+            CreateAudio();
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i].PreDraw(renderer, dt);
@@ -305,10 +324,7 @@ namespace GameSrc
                 }
                 Game.Simulation.Shapes.Remove(shapeIndexes[i]);
             }
-            for (int i = 0; i < Sources.Length; i++)
-            {
-                Sources[i].Dispose();
-            }
+            DestroyAudio();
             for (int i = 0; i < Models.Length; i++)
             {
                 Models[i].Dispose();
