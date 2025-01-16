@@ -109,6 +109,7 @@ namespace GameSrc.NPCs
             Game.Simulation.Bodies[bodyHandle.Value].Velocity.Angular = Vector3.Zero;
             if (Vector3.Dot(SCPCB.Instance.player.viewDirection, Vector3.Normalize(Position - SCPCB.Instance.player.Position)) > 0.5f || !isMoving)
             {
+                UpdatePath();
                 stoneSource.Gain = 0f;
                 Game.Simulation.Bodies[bodyHandle.Value].Velocity.Linear = -Vector3.UnitY;
                 return;

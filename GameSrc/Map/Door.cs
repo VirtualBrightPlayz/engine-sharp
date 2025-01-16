@@ -36,19 +36,17 @@ namespace GameSrc.Map
             Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorClose2.ogg"),
             Path.Combine(SCPCB.Instance.Data.SFXDir, "Door", "DoorClose3.ogg"),
         };
-        public AudioClip[] OpenClips;
-        public AudioClip[] CloseClips;
+        public static AudioClip[] OpenClips;
+        public static AudioClip[] CloseClips;
         public AudioSource OpenSource;
         public AudioSource CloseSource;
 
         public Door(string name) : base(name)
         {
-            OpenSource = new AudioSource(name);
-            OpenSource.MaxDistance = 4f;
-            CloseSource = new AudioSource(name);
-            CloseSource.MaxDistance = 4f;
-            OpenClips = DoorOpenSfx.Select(x => new AudioClip(x)).ToArray();
-            CloseClips = DoorCloseSfx.Select(x => new AudioClip(x)).ToArray();
+            if (OpenClips == null)
+                OpenClips = DoorOpenSfx.Select(x => new AudioClip(x)).ToArray();
+            if (CloseClips == null)
+                CloseClips = DoorCloseSfx.Select(x => new AudioClip(x)).ToArray();
             frame = new StaticModelEntity(name, DoorFrame, new Material(name, SCPCB.shader));
             frame.Create(true);
             obj1 = new StaticModelEntity(name, DoorObj, new Material(name, SCPCB.shader));
@@ -67,8 +65,10 @@ namespace GameSrc.Map
         public override void MarkTransformDirty(TransformDirtyFlags flags)
         {
             base.MarkTransformDirty(flags);
-            OpenSource.Position = Position;
-            CloseSource.Position = Position;
+            if (OpenSource != null)
+                OpenSource.Position = Position;
+            if (CloseSource != null)
+                CloseSource.Position = Position;
             if (frame != null)
             {
                 frame.Position = Position;
@@ -109,13 +109,41 @@ namespace GameSrc.Map
             }
         }
 
+        public void CreateAudio()
+        {
+            if (OpenSource == null)
+            {
+                OpenSource = new AudioSource(Name);
+                OpenSource.ReferenceDistance = 1f;
+                OpenSource.MaxDistance = 4f;
+                OpenSource.Position = Position;
+            }
+            if (CloseSource == null)
+            {
+                CloseSource = new AudioSource(Name);
+                CloseSource.ReferenceDistance = 1f;
+                CloseSource.MaxDistance = 4f;
+                CloseSource.Position = Position;
+            }
+        }
+
+        public void DestroyAudio()
+        {
+            OpenSource?.Dispose();
+            OpenSource = null;
+            CloseSource?.Dispose();
+            CloseSource = null;
+        }
+
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
             if ((Position - renderer.ViewPosition).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
             {
+                DestroyAudio();
                 return;
             }
+            CreateAudio();
             frame?.PreDraw(renderer, dt);
             obj1?.PreDraw(renderer, dt);
             obj2?.PreDraw(renderer, dt);
@@ -147,7 +175,7 @@ namespace GameSrc.Map
             buttons[1]?.Tick(dt);
             if (IsOpen)
             {
-                openState = MathUtils.Clamp(openState + (float)dt * 0.75f, 0f, 1f);
+                openState = MathUtils.Clamp(openState + (float)dt * 0.75f * Game.TimeScale, 0f, 1f);
                 if (openState < 1f)
                 {
                     MarkTransformDirty(TransformDirtyFlags.Position);
@@ -159,7 +187,7 @@ namespace GameSrc.Map
             }
             else
             {
-                openState = MathUtils.Clamp(openState - (float)dt * 0.75f, 0f, 1f);
+                openState = MathUtils.Clamp(openState - (float)dt * 0.75f * Game.TimeScale, 0f, 1f);
                 if (openState > 0f)
                 {
                     MarkTransformDirty(TransformDirtyFlags.Position);
@@ -173,6 +201,7 @@ namespace GameSrc.Map
 
         public override void Dispose()
         {
+            DestroyAudio();
             frame?.Dispose();
             frame = null;
             obj1?.Dispose();
@@ -184,7 +213,7 @@ namespace GameSrc.Map
             buttons[0]?.Dispose();
             buttons[0] = null;
             if (buttons[1] != null && buttons[1].staticHandle.HasValue)
-            InteractHandler.Interactables.TryRemove(buttons[1].staticHandle.Value, out _);
+                InteractHandler.Interactables.TryRemove(buttons[1].staticHandle.Value, out _);
             buttons[1]?.Dispose();
             buttons[1] = null;
             base.Dispose();
@@ -195,17 +224,16 @@ namespace GameSrc.Map
             if (IsMoving)
                 return;
             IsMoving = true;
-            Log.Debug(nameof(Door), "Pressed!");
             IsOpen = !IsOpen;
             if (IsOpen)
             {
-                OpenSource.SetBuffer(OpenClips[Random.Shared.Next(OpenClips.Length)]);
-                OpenSource.Play();
+                OpenSource?.SetBuffer(OpenClips[Random.Shared.Next(OpenClips.Length)]);
+                OpenSource?.Play();
             }
             else
             {
-                CloseSource.SetBuffer(CloseClips[Random.Shared.Next(CloseClips.Length)]);
-                CloseSource.Play();
+                CloseSource?.SetBuffer(CloseClips[Random.Shared.Next(CloseClips.Length)]);
+                CloseSource?.Play();
             }
         }
     }

@@ -11,6 +11,7 @@ namespace Engine.Assets
         public Resource(string name)
         {
             Name = name;
+            Log.Debug(nameof(Resource), $"ctor {Name} ({GetType().Name})");
         }
         protected abstract Resource CloneInternal(string cloneName);
         protected abstract void ReCreateInternal();

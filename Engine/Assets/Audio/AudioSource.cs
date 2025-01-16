@@ -113,7 +113,6 @@ namespace Engine.Assets.Audio
             AudioGlobals.CheckALError("gen sources");
             _handle = v;
             SetDefaultParameters();
-            // ReCreate();
         }
 
         protected override void ReCreateInternal()
@@ -205,6 +204,7 @@ namespace Engine.Assets.Audio
 
         protected override void DisposeInternal()
         {
+            Stop();
             uint v = _handle.Value;
             AL10.alDeleteSources(1, ref v);
             AudioGlobals.CheckALError();
