@@ -63,6 +63,7 @@ namespace Engine.Assets.Rendering
                 {
                     InstanceExtensions = new string[]
                     {
+                        "VK_KHR_get_physical_device_properties2",
                     },
                     DeviceExtensions = new string[]
                     {
@@ -73,6 +74,7 @@ namespace Engine.Assets.Rendering
                         "VK_KHR_ray_tracing_pipeline",
                         "VK_KHR_spirv_1_4",
                         "VK_KHR_shader_float_controls",
+                        "VK_KHR_driver_properties",
                     },
                 });
             }

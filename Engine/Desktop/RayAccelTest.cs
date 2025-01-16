@@ -35,7 +35,7 @@ public class RayAccelTest
         Device dev = new Device(VkInfo.Device);
         uint version = 0;
         Api.EnumerateInstanceVersion(ref version);
-        VulkanMemoryAllocatorCreateInfo vmaCI = new VulkanMemoryAllocatorCreateInfo((Version32)version, Api, inst, physDev, dev);
+        VulkanMemoryAllocatorCreateInfo vmaCI = new VulkanMemoryAllocatorCreateInfo((Version32)version, Api, inst, physDev, dev, flags: AllocatorCreateFlags.BufferDeviceAddress);
         Memory = new VulkanMemoryAllocator(vmaCI);
     }
 
