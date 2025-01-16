@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.ShaderCompiler", "En
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.Desktop", "Engine\Desktop\Engine.Desktop.csproj", "{27367A41-91AF-42D6-9BC5-E4BAA13387DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameSrc", "GameSrc\GameSrc.csproj", "{5871B828-DCCF-4B82-918B-E31CCCADB4D7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCPCB", "GameSrc\SCPCB.csproj", "{5871B828-DCCF-4B82-918B-E31CCCADB4D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
