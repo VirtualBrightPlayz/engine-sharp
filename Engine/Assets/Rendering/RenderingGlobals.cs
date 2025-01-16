@@ -1,12 +1,13 @@
 using System.Numerics;
 using Engine.Assets.Textures;
 using ImGuiNET;
+using Silk.NET.Vulkan;
 using Veldrid;
 using Veldrid.StartupUtilities;
 
 namespace Engine.Assets.Rendering
 {
-    public static class RenderingGlobals
+    public static partial class RenderingGlobals
     {
         public static GraphicsDevice GameGraphics { get; private set; }
         public static GraphicsBackend APIBackend { get; private set; }
@@ -29,6 +30,7 @@ namespace Engine.Assets.Rendering
             MainSwapchain = swapchain;
             Window = null;
             GameImGui = new ImGuiRenderer(GameGraphics, SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
+            ImGui.EndFrame();
         }
 
         public static void InitGameGraphics(GraphicsBackend api)
@@ -122,7 +124,7 @@ namespace Engine.Assets.Rendering
 
         public static void Pause()
         {
-            GameImGui.Dispose();
+            GameImGui?.Dispose();
             GameImGui = null;
         }
 
@@ -135,13 +137,13 @@ namespace Engine.Assets.Rendering
 
         public static void DisposeGameGraphics()
         {
-            GameImGui.Dispose();
+            GameImGui?.Dispose();
             GameImGui = null;
 #if !WEBGL
-            Window.Close();
+            Window?.Close();
             Window = null;
 #endif
-            GameGraphics.Dispose();
+            GameGraphics?.Dispose();
             GameGraphics = null;
         }
     }
