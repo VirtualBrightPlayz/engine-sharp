@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.Desktop", "Engine\De
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameSrc", "GameSrc\GameSrc.csproj", "{5871B828-DCCF-4B82-918B-E31CCCADB4D7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VMASharp", "VMASharp", "{696C5B9F-97A4-42B0-8374-B92241CE78A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VMASharp", "VMASharp\VMASharp\VMASharp.csproj", "{1DA87654-4114-4775-9319-70AF093A1C10}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +33,10 @@ Global
 		{5871B828-DCCF-4B82-918B-E31CCCADB4D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5871B828-DCCF-4B82-918B-E31CCCADB4D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5871B828-DCCF-4B82-918B-E31CCCADB4D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DA87654-4114-4775-9319-70AF093A1C10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DA87654-4114-4775-9319-70AF093A1C10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DA87654-4114-4775-9319-70AF093A1C10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DA87654-4114-4775-9319-70AF093A1C10}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,5 +44,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{1BA60AD7-0F7B-470F-8B21-EC1CEE4C0779} = {D1D74442-B2A8-4638-8455-9A956715F2A4}
 		{27367A41-91AF-42D6-9BC5-E4BAA13387DB} = {D1D74442-B2A8-4638-8455-9A956715F2A4}
+		{1DA87654-4114-4775-9319-70AF093A1C10} = {696C5B9F-97A4-42B0-8374-B92241CE78A5}
 	EndGlobalSection
 EndGlobal

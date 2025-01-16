@@ -37,14 +37,16 @@ namespace Engine.Assets.Rendering
             Veldrid.Sdl2.Sdl2Window win = null;
             GraphicsDevice gfx = null;
             ViewSize = new Vector2(1280, 720);
-            VeldridStartup.CreateWindowAndGraphicsDevice(new WindowCreateInfo()
+            WindowCreateInfo winCI = new WindowCreateInfo()
             {
                 X = 100,
                 Y = 100,
                 WindowWidth = (int)ViewSize.X,
                 WindowHeight = (int)ViewSize.Y,
-            }, new GraphicsDeviceOptions()
+            };
+            GraphicsDeviceOptions gdOpt = new GraphicsDeviceOptions()
             {
+                Debug = true,
                 // SingleThreaded = false,
                 PreferDepthRangeZeroToOne = true,
                 // PreferDepthRangeZeroToOne = false,
@@ -52,7 +54,32 @@ namespace Engine.Assets.Rendering
                 SyncToVerticalBlank = true,
                 SwapchainDepthFormat = PixelFormat.D32_Float_S8_UInt,
                 ResourceBindingModel = ResourceBindingModel.Improved,
-            }, api, out win, out gfx);
+            };
+            if (api == GraphicsBackend.Vulkan)
+            {
+                win = VeldridStartup.CreateWindow(winCI);
+                SwapchainSource src = VeldridStartup.GetSwapchainSource(win);
+                gfx = GraphicsDevice.CreateVulkan(gdOpt, new SwapchainDescription(src, (uint)win.Width, (uint)win.Height, gdOpt.SwapchainDepthFormat, gdOpt.SyncToVerticalBlank, false), new VulkanDeviceOptions()
+                {
+                    InstanceExtensions = new string[]
+                    {
+                    },
+                    DeviceExtensions = new string[]
+                    {
+                        "VK_KHR_buffer_device_address",
+                        "VK_EXT_descriptor_indexing",
+                        "VK_KHR_deferred_host_operations",
+                        "VK_KHR_acceleration_structure",
+                        "VK_KHR_ray_tracing_pipeline",
+                        "VK_KHR_spirv_1_4",
+                        "VK_KHR_shader_float_controls",
+                    },
+                });
+            }
+            else
+            {
+                VeldridStartup.CreateWindowAndGraphicsDevice(winCI, gdOpt, api, out win, out gfx);
+            }
             Window = win;
             GameGraphics = gfx;
             APIBackend = gfx.BackendType;

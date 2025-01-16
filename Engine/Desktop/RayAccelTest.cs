@@ -88,7 +88,27 @@ public class RayAccelTest
         buffer = Memory.CreateBuffer(bufferCI, allocCI, out allocation);
     }
 
-    // public static unsafe void UpdateDeviceBuffer
+    public static unsafe void CreateAndSubmitCmd(Action<CommandBuffer> callback)
+    {
+        Device dev = new Device(VkInfo.Device);
+        Queue queue = new Queue(VkInfo.GraphicsQueue);
+        // begin cmd
+        CommandBuffer cmd = CreateCmdBuffer();
+        CommandBufferBeginInfo beginInfo = new CommandBufferBeginInfo(flags: CommandBufferUsageFlags.OneTimeSubmitBit);
+        AssertSuccess(Api.BeginCommandBuffer(cmd, ref beginInfo));
+        callback.Invoke(cmd);
+        // end cmd
+        AssertSuccess(Api.EndCommandBuffer(cmd));
+        // submit
+        var fenceCI = new FenceCreateInfo(flags: FenceCreateFlags.None);
+        AssertSuccess(Api.CreateFence(dev, ref fenceCI, null, out Silk.NET.Vulkan.Fence fence));
+        var subInfo = new SubmitInfo(commandBufferCount: 1, pCommandBuffers: &cmd);
+        AssertSuccess(Api.QueueSubmit(queue, 1, ref subInfo, fence));
+        Api.WaitForFences(dev, new [] { fence }, true, ulong.MaxValue);
+        Api.DestroyFence(dev, fence, null);
+        // free cmd
+        FreeCmdBuffer(cmd);
+    }
 
     public static unsafe void CreateDeviceBufferWith<T>(T[] arr, BufferUsageFlags usage, out Buffer buffer, out Allocation allocation) where T : unmanaged
     {
@@ -96,17 +116,29 @@ public class RayAccelTest
         Queue queue = new Queue(VkInfo.GraphicsQueue);
         CreateHostBufferWith<T>(arr, out Buffer hostBuffer, out Allocation hostAlloc);
         CreateDeviceBuffer(usage, GetByteLength(arr), out Buffer gpuBuffer, out Allocation gpuAlloc);
+        CreateAndSubmitCmd(cmd =>
+        {
+            BufferCopy* bufCopy = stackalloc BufferCopy[1];
+            bufCopy->SrcOffset = 0;
+            bufCopy->DstOffset = 0;
+            bufCopy->Size = GetByteLength(arr);
+            Api.CmdCopyBuffer(cmd, hostBuffer, gpuBuffer, 1, bufCopy);
+        });
+        /*
         // begin cmd
         CommandBuffer cmd = CreateCmdBuffer();
         CommandBufferBeginInfo beginInfo = new CommandBufferBeginInfo(flags: CommandBufferUsageFlags.OneTimeSubmitBit);
         AssertSuccess(Api.BeginCommandBuffer(cmd, ref beginInfo));
         // copy data
         BufferCopy* bufCopy = stackalloc BufferCopy[1];
+        bufCopy->SrcOffset = 0;
+        bufCopy->DstOffset = 0;
+        bufCopy->Size = GetByteLength(arr);
         Api.CmdCopyBuffer(cmd, hostBuffer, gpuBuffer, 1, bufCopy);
         // end cmd
         AssertSuccess(Api.EndCommandBuffer(cmd));
         // submit
-        var fenceCI = new FenceCreateInfo();
+        var fenceCI = new FenceCreateInfo(flags: FenceCreateFlags.None);
         AssertSuccess(Api.CreateFence(dev, ref fenceCI, null, out Silk.NET.Vulkan.Fence fence));
         var subInfo = new SubmitInfo(commandBufferCount: 1, pCommandBuffers: &cmd);
         AssertSuccess(Api.QueueSubmit(queue, 1, ref subInfo, fence));
@@ -114,6 +146,7 @@ public class RayAccelTest
         Api.DestroyFence(dev, fence, null);
         // free cmd
         FreeCmdBuffer(cmd);
+        */
         // destroy buffers
         Api.DestroyBuffer(dev, hostBuffer, null);
         hostAlloc.Dispose();
@@ -121,12 +154,35 @@ public class RayAccelTest
         allocation = gpuAlloc;
     }
 
-    public static unsafe void CreateBLAS(Model mdl, KhrAccelerationStructure accel, KhrRayTracingPipeline rtp)
+    public static unsafe void CreateBLAS(Model mdl, KhrAccelerationStructure accel, KhrRayTracingPipeline rtp, KhrBufferDeviceAddress bufDevAddr)
     {
+        Device dev = new Device(VkInfo.Device);
         // create buffers for RT
-        BufferCreateInfo bufCI = new BufferCreateInfo(usage: BufferUsageFlags.ShaderDeviceAddressBit | BufferUsageFlags.StorageBufferBit | BufferUsageFlags.AccelerationStructureBuildInputReadOnlyBitKhr);
-        CreateDeviceBufferWith(mdl.CollisionPositions, BufferUsageFlags.ShaderDeviceAddressBit | BufferUsageFlags.StorageBufferBit | BufferUsageFlags.AccelerationStructureBuildInputReadOnlyBitKhr, out Buffer buffer, out Allocation allocation);
-        AccelerationStructureGeometryTrianglesDataKHR tris = new AccelerationStructureGeometryTrianglesDataKHR(vertexFormat: Format.R32G32B32Sfloat);
+        CreateDeviceBufferWith(mdl.CollisionPositions, BufferUsageFlags.ShaderDeviceAddressBit | BufferUsageFlags.StorageBufferBit | BufferUsageFlags.AccelerationStructureBuildInputReadOnlyBitKhr, out Buffer vertBuffer, out Allocation vertAlloc);
+        CreateDeviceBufferWith(mdl.CollisionTriangles, BufferUsageFlags.ShaderDeviceAddressBit | BufferUsageFlags.StorageBufferBit | BufferUsageFlags.AccelerationStructureBuildInputReadOnlyBitKhr, out Buffer indBuffer, out Allocation indAlloc);
+        BufferDeviceAddressInfo addressInfo = new BufferDeviceAddressInfo(buffer: vertBuffer);
+        ulong devAddr = bufDevAddr.GetBufferDeviceAddress(dev, ref addressInfo);
+        DeviceOrHostAddressConstKHR vertDevAddr = new DeviceOrHostAddressConstKHR(devAddr);
+        addressInfo = new BufferDeviceAddressInfo(buffer: indBuffer);
+        DeviceOrHostAddressConstKHR indDevAddr = new DeviceOrHostAddressConstKHR(bufDevAddr.GetBufferDeviceAddress(dev, ref addressInfo));
+        AccelerationStructureGeometryTrianglesDataKHR tris = new AccelerationStructureGeometryTrianglesDataKHR(
+            vertexFormat: Format.R32G32B32Sfloat, vertexData: vertDevAddr, vertexStride: 3 * sizeof(float), maxVertex: (uint)(mdl.CollisionPositions.Length / 3 - 1),
+            indexType: IndexType.Uint16, indexData: indDevAddr,
+            transformData: new DeviceOrHostAddressConstKHR()
+        );
+        AccelerationStructureGeometryKHR geometry = new AccelerationStructureGeometryKHR(
+            geometryType: GeometryTypeKHR.TrianglesKhr, geometry: new AccelerationStructureGeometryDataKHR(triangles: tris), flags: GeometryFlagsKHR.OpaqueBitKhr
+        );
+        CreateAndSubmitCmd(cmd =>
+        {
+            AccelerationStructureBuildRangeInfoKHR offsetInfo = new AccelerationStructureBuildRangeInfoKHR(
+                (uint)(mdl.CollisionTriangles.Length / 3),
+                0, 0, 0
+            );
+            AccelerationStructureBuildGeometryInfoKHR info = new AccelerationStructureBuildGeometryInfoKHR();
+            var offsets = &offsetInfo;
+            accel.CmdBuildAccelerationStructures(cmd, 1, &info, &offsets);
+        });
     }
 
     public static void MainTest()
@@ -150,10 +206,16 @@ public class RayAccelTest
             Log.Error(nameof(RayAccelTest), "KhrRayTracingPipeline ext not found.");
             return;
         }
+        if (!Api.TryGetDeviceExtension<KhrBufferDeviceAddress>(inst, dev, out var bufDevAddr))
+        {
+            Log.Error(nameof(RayAccelTest), "KhrBufferDeviceAddress ext not found.");
+            return;
+        }
         Log.Info(nameof(RayAccelTest), "Rays can be traced!");
         CreateVMA();
+        CreatePool();
         Model mdl = new Model("Test", "Shaders/cube.gltf", new Material("Test", new GraphicsShader("Shaders/MainMesh")), true, false);
-        CreateBLAS(mdl, accel, rtp);
+        CreateBLAS(mdl, accel, rtp, bufDevAddr);
 
         // vk.CmdBindPipeline(null, PipelineBindPoint.RayTracingKhr, null);
         // rtp.CmdTraceRays();
