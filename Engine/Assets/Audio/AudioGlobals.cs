@@ -44,7 +44,7 @@ namespace Engine.Assets.Audio
         public static void InitGameAudio(bool soft = true)
         {
             GameAudioDevice = ALC10.alcOpenDevice(null);
-            GameAudioCtx = ALC10.alcCreateContext(GameAudioDevice, null);
+            GameAudioCtx = ALC10.alcCreateContext(GameAudioDevice, new int[] { ALC11.ALC_MONO_SOURCES, 512, ALC11.ALC_STEREO_SOURCES, 512, });
             if (!ALC10.alcMakeContextCurrent(GameAudioCtx))
             {
                 Log.Fatal(nameof(AudioGlobals), "ALC AudioError");
