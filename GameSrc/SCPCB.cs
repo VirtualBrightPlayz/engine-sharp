@@ -135,6 +135,7 @@ namespace GameSrc
         {
             ForwardConsts.UpdateUniforms(renderer);
             UIExt.BeginDraw();
+            DebugGlobals.DrawDebugWindow();
             base.Draw(renderer, dt);
         }
 

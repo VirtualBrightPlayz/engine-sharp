@@ -12,6 +12,7 @@ namespace Engine.Assets
         {
             Name = name;
             Log.Debug(nameof(Resource), $"ctor {Name} ({GetType().Name})");
+            ResourceManager.AddInternal(this);
         }
         protected abstract Resource CloneInternal(string cloneName);
         protected abstract void ReCreateInternal();
@@ -23,7 +24,6 @@ namespace Engine.Assets
             Log.Debug(nameof(Resource), $"Dispose {Name} ({GetType().Name})");
             HasBeenInitialized = false;
             DisposeInternal();
-            ResourceManager.UnloadInternal(this);
         }
         public Resource Clone(string cloneName)
         {
@@ -42,12 +42,12 @@ namespace Engine.Assets
             Log.Debug(nameof(Resource), $"ReCreate {Name} ({GetType().Name})");
             HasBeenInitialized = true;
             ReCreateInternal();
-            ResourceManager.AddInternal(this);
         }
         ~Resource()
         {
             Log.Debug(nameof(Resource), $"~ctor {Name} ({GetType().Name})");
             Dispose();
+            ResourceManager.UnloadInternal(this);
         }
     }
 }

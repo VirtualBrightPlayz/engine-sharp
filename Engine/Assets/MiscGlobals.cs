@@ -19,12 +19,13 @@ namespace Engine.Assets
         public static InputHandler GameInputHandler { get; private set; }
         public static bool IsClosing { get; set; } = false;
         public static bool IsFocused { get; internal set; } = false;
-        public static double FPS { get; set; }
-        public static double TPS { get; set; }
+        public static double FPS { get; internal set; }
         public static bool ReCreateAllNextFrame { get; set; } = false;
     #if WEBGL
         public static WebAssemblyJSRuntime WebRuntime { get; set; }
     #endif
+        private static double fpsTimer = 0d;
+        private static int fpsCounter = 0;
 
         public static void InitGameMisc()
         {
@@ -45,6 +46,18 @@ namespace Engine.Assets
             NativeLibrary.SetDllImportResolver(typeof(Vulkan.VulkanNative).Assembly, DLResolver);
             NativeLibrary.SetDllImportResolver(typeof(Assimp.AssimpContext).Assembly, DLResolver);
             NativeLibrary.SetDllImportResolver(typeof(OpenAL.ALC10).Assembly, OALResolver);
+        }
+
+        public static void Frame(double delta)
+        {
+            fpsCounter++;
+            fpsTimer -= delta;
+            if (fpsTimer <= 0d)
+            {
+                fpsTimer = 1d;
+                FPS = fpsCounter;
+                fpsCounter = 0;
+            }
         }
 
         private static nint DLResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)

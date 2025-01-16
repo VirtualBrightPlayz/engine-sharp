@@ -19,21 +19,22 @@ namespace Engine.Assets
     {
         public static ResourceFactory GraphicsFactory => RenderingGlobals.GameGraphics.ResourceFactory;
         public static List<WeakReference<Resource>> AllResources { get; private set; } = new List<WeakReference<Resource>>();
-        private static List<Resource> StagedResources = new List<Resource>();
-        private static List<Resource> UnStagedResources = new List<Resource>();
+        // private static List<Resource> StagedResources = new List<Resource>();
+        // private static List<Resource> UnStagedResources = new List<Resource>();
         public static Dictionary<ImGuiRenderer, Dictionary<string, ImFontPtr>> Fonts { get; private set; } = new Dictionary<ImGuiRenderer, Dictionary<string, ImFontPtr>>();
 
         public static void Update()
         {
             // AllResources.AddRange(StagedResources.Select(x => new WeakReference<Resource>(x)));
-            AllResources.RemoveAll(x => x == null || !x.TryGetTarget(out _));
+            // AllResources.RemoveAll(x => x == null || !x.TryGetTarget(out _));
+            AllResources.RemoveAll(x => x == null);
             // StagedResources.Clear();
-            UnStagedResources.Clear();
+            // UnStagedResources.Clear();
         }
 
         public static void ReCreateAll()
         {
-            var res = AllResources;//.ToArray();
+            var res = AllResources.ToArray();
             foreach (var item in res)
             {
                 if (item.TryGetTarget(out var t))
@@ -155,7 +156,8 @@ namespace Engine.Assets
 
         internal static void UnloadInternal(Resource resource)
         {
-            UnStagedResources.Add(resource);
+            // UnStagedResources.Add(resource);
+            AllResources.RemoveAll(x => x.TryGetTarget(out var res) && res == resource);
         }
 
         public static void UnloadAll()

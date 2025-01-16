@@ -128,7 +128,7 @@ namespace Engine.Assets.Audio
             AudioGlobals.CheckALError();
             _handle = v;
 
-            AudioBuffer.ReCreate();
+            AudioBuffer?.ReCreate();
             SetBuffer(AudioBuffer);
             SetDefaultParameters();
             RolloffFactor = RolloffFactor;
@@ -166,6 +166,8 @@ namespace Engine.Assets.Audio
         {
             AudioBuffer = buffer;
             Stop();
+            if (buffer == null)
+                return;
             AL10.alSourcei(_handle.Value, AL10.AL_BUFFER, (int)buffer.Handle);
             AudioGlobals.CheckALError();
         }

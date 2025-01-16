@@ -133,7 +133,7 @@ namespace GameSrc
             staticHandle = Game.Simulation.Statics.Add(new StaticDescription(Position, Rotation, shapeIndex.Value));
         #endif
 
-            CreateAudio();
+            DestroyAudio();
             NavPoints = new Vector3[Room.Waypoints.Count];
             for (int i = 0; i < NavPoints.Length; i++)
             {
@@ -241,9 +241,12 @@ namespace GameSrc
 
         public void DestroyAudio()
         {
-            for (int i = 0; i < Sources.Length; i++)
+            if (Sources != null)
             {
-                Sources[i].Dispose();
+                for (int i = 0; i < Sources.Length; i++)
+                {
+                    Sources[i]?.Dispose();
+                }
             }
             Sources = Array.Empty<AudioSource>();
         }

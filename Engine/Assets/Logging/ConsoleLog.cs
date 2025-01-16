@@ -1,4 +1,7 @@
 using System;
+using Engine.Assets.Rendering;
+using Silk.NET.Core.Native;
+using Silk.NET.SDL;
 
 namespace Engine.Assets.Logging
 {
@@ -20,13 +23,17 @@ namespace Engine.Assets.Logging
             Console.ResetColor();
         }
 
-        public void Fatal(string msg)
+        public unsafe void Fatal(string msg)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"[FATAL] {msg}");
             Console.ResetColor();
             if (ExitOnFatal)
+            {
+                Sdl sdl = Sdl.GetApi();
+                sdl.ShowSimpleMessageBox((uint)MessageBoxFlags.Error, "Fatal Error", msg, (Window*)RenderingGlobals.Window.SdlWindowHandle);
                 Environment.Exit(1);
+            }
         }
 
         public void Info(string msg)

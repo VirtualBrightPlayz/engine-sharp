@@ -117,7 +117,7 @@ public static class DesktopEntry
         }
         size = null;
         double delta = time - lastTime;
-        MiscGlobals.FPS = 1d / Math.Max(delta, 0.001d);
+        MiscGlobals.Frame(delta);
         delta = Math.Min(delta, 0.5d);
         ResourceManager.Update();
         RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Width, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Height);
