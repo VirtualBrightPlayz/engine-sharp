@@ -31,12 +31,12 @@ namespace Engine.Assets.Rendering
             GameImGui = new ImGuiRenderer(GameGraphics, SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
         }
 
-        public static void InitGameGraphics(GraphicsBackend api)
+        public static void InitGameGraphics(GraphicsBackend api, uint width = 1280, uint height = 720)
         {
             APIBackend = api;
             Veldrid.Sdl2.Sdl2Window win = null;
             GraphicsDevice gfx = null;
-            ViewSize = new Vector2(1280, 720);
+            ViewSize = new Vector2(width, height);
             VeldridStartup.CreateWindowAndGraphicsDevice(new WindowCreateInfo()
             {
                 X = 100,
