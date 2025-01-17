@@ -31,6 +31,8 @@ namespace Engine.Assets.Logging
             if (ExitOnFatal)
             {
                 Sdl sdl = Sdl.GetApi();
+                RenderingGlobals.Window.WindowState = Veldrid.WindowState.Normal;
+                RenderingGlobals.SwapMainBuffer();
                 sdl.ShowSimpleMessageBox((uint)MessageBoxFlags.Error, "Fatal Error", msg, (Window*)RenderingGlobals.Window.SdlWindowHandle);
                 Environment.Exit(1);
             }

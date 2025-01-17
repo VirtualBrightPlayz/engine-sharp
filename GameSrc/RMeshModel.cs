@@ -508,6 +508,8 @@ namespace GameSrc
             int passId = ForwardConsts.GetPass(renderer, batch.pass);
             if (passId < ForwardConsts.LightUniforms.Count)
                 batch.material.SetUniforms(ShaderForwardSetId, new UniformLayout(ForwardConsts.LightBufferName, ForwardConsts.LightUniforms[passId], false, true));
+            if (passId < ForwardConsts.ShadowAtlasTextures.Count)
+                batch.material.SetUniforms(10, new UniformLayout(ForwardConsts.ShadowAtlasName, ForwardConsts.ShadowAtlasTextures[passId], false, true));
             renderer.BindMaterial(batch.material, batch.pass, false);
         }
 

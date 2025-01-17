@@ -30,7 +30,7 @@ public static class DesktopEntry
         RenderingGlobals.InitGameGraphics(idx == -1 ? GraphicsBackend.Vulkan : GraphicsBackend.OpenGL);
         RenderingGlobals.Window.Resized += OnWindowResize;
         renderer = new Renderer("MainRenderer");
-        Renderer.Current = renderer;
+        Renderer.Main = renderer;
         RenderTexture2D mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
         renderer.SetRenderTarget(mainRT);
         renderer.InternalRenderTexture.ReCreate();
@@ -65,7 +65,7 @@ public static class DesktopEntry
                 RenderingGlobals.DisposeGameGraphics();
                 RenderingGlobals.InitGameGraphics(RenderingGlobals.NextFrameBackend.Value);
                 // AudioGlobals.InitGameAudio();
-                Renderer.Current = renderer;
+                Renderer.Main = renderer;
                 mainRT = new RenderTexture2D("MainRenderTexture2D", RenderingGlobals.GameGraphics.MainSwapchain);
                 renderer.SetRenderTarget(mainRT);
                 game.ReCreate();
@@ -124,12 +124,13 @@ public static class DesktopEntry
         RenderingGlobals.ImGuiSetTarget(RenderingGlobals.GameGraphics.SwapchainFramebuffer.OutputDescription, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Width, (int)RenderingGlobals.GameGraphics.SwapchainFramebuffer.Height);
         RenderingGlobals.GameImGui.Update((float)delta, MiscGlobals.GameInputHandler);
         renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(70f * (MathF.PI / 180f), (float)renderer.InternalRenderTexture.Width / renderer.InternalRenderTexture.Height, 0.01f, 1000f);
-        Renderer.Current = renderer;
+        Renderer.Main = renderer;
         game.PreDraw(renderer, delta);
         renderer.Begin();
         renderer.Clear();
-        Renderer.Current = renderer;
+        Renderer.Main = renderer;
         game.Draw(renderer, delta);
+        game.DrawGui(renderer, delta);
         renderer.End();
         renderer.Submit();
         // DebugGlobals.DrawDebugWindow();
@@ -138,7 +139,7 @@ public static class DesktopEntry
         RenderingGlobals.GameImGui.Render(RenderingGlobals.GameGraphics, renderer.CommandList);
         renderer.End();
         renderer.Submit();
-        RenderingGlobals.GameGraphics.SwapBuffers();
+        RenderingGlobals.SwapMainBuffer();
         MiscGlobals.GameInputHandler.Update();
         game.Tick(delta);
         lastTime = time;

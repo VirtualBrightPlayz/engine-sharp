@@ -34,6 +34,7 @@ namespace GameSrc
         public SCP173 npc;
         public bool ShouldReturnToMenu = false;
         public static GraphicsShader shader { get; set; }
+        public Renderer shadowRenderer;
 
         public static ConcurrentDictionary<string, RMeshModel> RMeshModels { get; private set; } = new ConcurrentDictionary<string, RMeshModel>();
         public static ConcurrentDictionary<string, Texture2D> Textures { get; private set; } = new ConcurrentDictionary<string, Texture2D>();
@@ -135,12 +136,30 @@ namespace GameSrc
             NavMap.RebuildMap();
         }
 
+        public override void PreDraw(Renderer renderer, double dt)
+        {
+            if (renderer != shadowRenderer)
+            {
+                shadowRenderer ??= new Renderer("Shadows");
+                ForwardConsts.RenderShadows(this, shadowRenderer);
+            }
+            base.PreDraw(renderer, dt);
+        }
+
         public override void Draw(Renderer renderer, double dt)
         {
             ForwardConsts.UpdateUniforms(renderer);
-            UIExt.BeginDraw();
-            DebugGlobals.DrawDebugWindow();
             base.Draw(renderer, dt);
+        }
+
+        public override void DrawGui(Renderer renderer, double dt)
+        {
+            if (renderer != shadowRenderer)
+            {
+                UIExt.BeginDraw();
+                DebugGlobals.DrawDebugWindow();
+            }
+            base.DrawGui(renderer, dt);
         }
 
         public override void Tick(double dt)

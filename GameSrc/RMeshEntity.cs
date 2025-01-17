@@ -284,6 +284,21 @@ namespace GameSrc
                 Room.Draw(renderer, WorldMatrixUniform, ForwardConsts.ForwardAddPassName + '#' + i);
         }
 
+        public override void DrawDepth(Renderer renderer)
+        {
+            base.DrawDepth(renderer);
+            if ((Position - renderer.ViewPosition).LengthSquared() > SCPCBPlayerEntity.MaxRoomRenderDistance * SCPCBPlayerEntity.MaxRoomRenderDistance)
+            {
+                return;
+            }
+            for (int i = 0; i < Models.Length; i++)
+            {
+                Models[i].DrawDepth(renderer);
+            }
+            WorldMatrixUniform.UploadData(renderer, WorldMatrix);
+            Room.Draw(renderer, WorldMatrixUniform, ForwardConsts.ForwardDepthPassName);
+        }
+
         public override void Tick(double dt)
         {
             base.Tick(dt);

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Engine.Assets.Textures;
+using Engine.Game;
 
 namespace Engine.Assets.Rendering
 {
@@ -18,6 +20,14 @@ namespace Engine.Assets.Rendering
             public const uint Size = (4 + 4 * MaxLightsPerPass + 4 * MaxLightsPerPass) * sizeof(float);
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ShadowInfo
+        {
+            public Vector4[] LightPosition;
+            public Matrix4x4[] LightProjection;
+            public const uint Size = (4 + 16) * MaxLightsPerPass * 6 * sizeof(float);
+        }
+
         public class ForwardLight
         {
             public Vector3 Position;
@@ -27,13 +37,18 @@ namespace Engine.Assets.Rendering
 
         public const int MaxLightsPerPass = 4;
         public const string LightBufferName = "LightInfo0";
+        public const string ShadowAtlasName = "ShadowAtlasTexture";
         public const string ForwardBasePassName = "FwdBase";
         public const string ForwardAddPassName = "FwdAdd";
-        public static ConcurrentBag<ForwardLight> Lights = new ConcurrentBag<ForwardLight>();
+        public const string ForwardDepthPassName = "FwdDepth";
+        public static List<ForwardLight> Lights = new List<ForwardLight>();
         public static Vector4 AmbientColor = Vector4.One * 0.1f;
         public static int MaxRealtimeLights = 4;
+        public static uint ShadowResolution = 2048;
         public static UniformBuffer LightUniform;
         public static List<UniformBuffer> LightUniforms = new List<UniformBuffer>();
+        public static List<UniformBuffer> ShadowUniforms = new List<UniformBuffer>();
+        public static List<RenderTexture2D> ShadowAtlasTextures = new List<RenderTexture2D>();
 
         public static bool IsPassValid(int pass)
         {
@@ -57,7 +72,109 @@ namespace Engine.Assets.Rendering
             return 0;
         }
 
-        public static void UpdateUniforms(Renderer renderer)
+        public static void RenderShadows(GameApp app, Renderer renderer)
+        {
+            if (MaxRealtimeLights <= 0)
+            {
+                ShadowAtlasTextures.Clear();
+                return;
+            }
+            int loopCount = (int)Math.Ceiling((float)MaxRealtimeLights / MaxLightsPerPass);
+            if (loopCount > ShadowAtlasTextures.Count)
+            {
+                ShadowAtlasTextures.Add(null);
+            }
+            else if (loopCount < ShadowAtlasTextures.Count)
+            {
+                while (loopCount < ShadowAtlasTextures.Count)
+                {
+                    ShadowAtlasTextures.RemoveAt(ShadowAtlasTextures.Count - 1);
+                }
+            }
+            ForwardLight[] sortedLights = Lights.OrderBy(x => (x.Position - Renderer.Main.ViewPosition).LengthSquared()).Take(MaxRealtimeLights).ToArray();
+            for (int i = 0; i < ShadowAtlasTextures.Count; i++)
+            {
+                if (ShadowAtlasTextures[i] == null || !ShadowAtlasTextures[i].IsValid)
+                    ShadowAtlasTextures[i] = new RenderTexture2D(ShadowAtlasName, ShadowResolution, ShadowResolution);
+                RenderShadowsPass(i, app, renderer, sortedLights);
+            }
+        }
+
+        public static void RenderShadowsPass(int pass, GameApp app, Renderer renderer, ForwardLight[] sortedLights)
+        {
+            Vector3[] fwds = new Vector3[]
+            {
+                Vector3.UnitX,
+                -Vector3.UnitX,
+                Vector3.UnitY,
+                -Vector3.UnitY,
+                Vector3.UnitZ,
+                -Vector3.UnitZ,
+            };
+            Vector3[] ups = new Vector3[]
+            {
+                -Vector3.UnitY,
+                -Vector3.UnitY,
+                Vector3.UnitZ,
+                -Vector3.UnitZ,
+                -Vector3.UnitY,
+                -Vector3.UnitY,
+            };
+            renderer.SetRenderTarget(ShadowAtlasTextures[pass]);
+            renderer.Begin();
+            renderer.Clear();
+            renderer.End();
+            renderer.Submit();
+            uint texWidth = ShadowResolution;
+            uint div = 5;
+            uint texDiv = texWidth / div;
+            ShadowInfo data = new ShadowInfo()
+            {
+                LightPosition = new Vector4[MaxLightsPerPass * 6],
+                LightProjection = new Matrix4x4[MaxLightsPerPass * 6],
+            };
+            for (int i = 0; i < MaxLightsPerPass*6; i++)
+            {
+                int lightIdx = (pass * MaxLightsPerPass) + (i/6);
+                if (lightIdx >= sortedLights.Length)
+                    break;
+                ForwardLight light = sortedLights[lightIdx];
+                renderer.ViewPosition = Renderer.Main.ViewPosition;
+                renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(90f * (MathF.PI / 180f), 1f, 0.01f, 25f);
+                renderer.ViewMatrix = Matrix4x4.CreateLookAt(light.Position, light.Position + fwds[i%6], ups[i%6]);
+                app.PreDraw(renderer, 0d);
+                renderer.Begin();
+                uint x = (uint)(i % div) * texDiv;
+                uint y = (uint)(i / div) * texDiv;
+                renderer.SetRect(x, y, texDiv, texDiv);
+                app.DrawDepth(renderer);
+                renderer.End();
+                renderer.Submit();
+            }
+            ShadowUniforms[pass].UploadData(renderer, GetShadowInfo(data));
+        }
+
+        public unsafe static float[] GetShadowInfo(ShadowInfo info)
+        {
+            float[] blit = new float[ShadowInfo.Size / sizeof(float)];
+            int offset = 0;
+            for (int i = 0; i < MaxLightsPerPass*6; i++)
+            {
+                info.LightPosition[i].CopyTo(blit, offset);
+                offset += 4;
+            }
+            for (int i = 0; i < MaxLightsPerPass*6; i++)
+            {
+                fixed (void* data = &info.LightProjection[i])
+                {
+                    Marshal.Copy((nint)data, blit, offset, sizeof(Matrix4x4));
+                }
+                offset += 16;
+            }
+            return blit;
+        }
+
+        public static void UpdateLightUniforms(Renderer renderer)
         {
             if (LightUniform == null || !LightUniform.IsValid)
                 LightUniform = new UniformBuffer(LightBufferName, LightInfo.Size);

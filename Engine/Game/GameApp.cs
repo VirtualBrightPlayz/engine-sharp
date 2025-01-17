@@ -39,10 +39,22 @@ namespace Engine.Game
                 ent.PreDraw(renderer, dt);
         }
 
+        public virtual void DrawDepth(Renderer renderer)
+        {
+            foreach (var ent in Entities.ToArray())
+                ent.DrawDepth(renderer);
+        }
+
         public virtual void Draw(Renderer renderer, double dt)
         {
             foreach (var ent in Entities.ToArray())
                 ent.Draw(renderer, dt);
+        }
+
+        public virtual void DrawGui(Renderer renderer, double dt)
+        {
+            foreach (var ent in Entities.ToArray())
+                ent.DrawGui(renderer, dt);
         }
 
         public virtual void Tick(double dt)

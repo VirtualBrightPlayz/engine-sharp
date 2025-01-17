@@ -38,9 +38,9 @@ namespace GameSrc
             source.Relative = true;
         }
 
-        public override void Draw(Renderer renderer, double dt)
+        public override void DrawGui(Renderer renderer, double dt)
         {
-            base.Draw(renderer, dt);
+            base.DrawGui(renderer, dt);
             if (ImGui.Begin(Name))
             {
                 int cur = (int)Music;

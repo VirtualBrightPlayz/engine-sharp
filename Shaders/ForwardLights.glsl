@@ -1,9 +1,12 @@
 #pass FwdBase
 #pass FwdAdd
+#pass FwdDepth
 #blend FwdBase true One Zero Add One Zero Add
 #blend FwdAdd true One One Add One One Add
+#blend FwdDepth true One Zero Add One Zero Add
 #depth FwdBase true true LessEqual
 #depth FwdAdd true false LessEqual
+#depth FwdDepth true true LessEqual
 
 #define LIGHTS_MAX 4
 
@@ -14,9 +17,22 @@ struct LightInfoStruct
     vec4 LightColor[$LIGHTS_MAX$];
 };
 
+struct ShadowInfoStruct
+{
+    vec4 LightPosition[$LIGHTS_MAX$*6];
+    mat4 LightProjection[$LIGHTS_MAX$*6];
+};
+
 layout(set = $LIGHT_SET$, binding = 0) uniform LightInfo0
 {
     LightInfoStruct LightInfo;
+};
+
+layout(set = 10, binding = 1) uniform texture2D ShadowAtlasTexture;
+layout(set = 10, binding = 2) uniform sampler ShadowAtlasTextureSampler;
+layout(set = 11, binding = 0) uniform LightInfo1
+{
+    ShadowInfoStruct ShadowInfo;
 };
 
 #pragma in fragment vec3 fsinLight_TanLightPos[$LIGHTS_MAX$]

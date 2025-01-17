@@ -11,8 +11,9 @@ namespace Engine.Assets.Textures
 {
     public class RenderTexture2D : Resource, IMaterialBindable
     {
-        public override bool IsValid => ColorTex != null;
+        public override bool IsValid => ColorTex != null && DepthTex != null;
         public Texture ColorTex { get; private set; }
+        public Texture DepthTex { get; private set; }
         public IntPtr ImGuiTex { get; private set; }
         public bool IsRaw { get; private set; }
         public Framebuffer InternalFramebuffer { get; private set; }
@@ -26,6 +27,7 @@ namespace Engine.Assets.Textures
         public BindableResource[] Bindables => new BindableResource[]
         {
             ColorTex,
+            DepthTex,
             InternalSampler,
         };
 
@@ -83,7 +85,10 @@ namespace Engine.Assets.Textures
             TextureDescription colorDesc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.R8_G8_B8_A8_UNorm, TextureUsage.Sampled | TextureUsage.RenderTarget);
             ColorTex = ResourceManager.GraphicsFactory.CreateTexture(colorDesc);
             ColorTex.Name = Name;
-            FramebufferDescription fbDesc = new FramebufferDescription(null, ColorTex);
+            TextureDescription depthDesc = TextureDescription.Texture2D(Width, Height, 1, 1, PixelFormat.D32_Float_S8_UInt, TextureUsage.Sampled | TextureUsage.DepthStencil);
+            DepthTex = ResourceManager.GraphicsFactory.CreateTexture(depthDesc);
+            DepthTex.Name = Name;
+            FramebufferDescription fbDesc = new FramebufferDescription(DepthTex, ColorTex);
             InternalFramebuffer = ResourceManager.GraphicsFactory.CreateFramebuffer(fbDesc);
             UpdateSamplerInfo(Info);
         }
@@ -95,7 +100,7 @@ namespace Engine.Assets.Textures
 
         public bool HasDepth()
         {
-            return IsRaw && (InternalFramebuffer != null ? InternalFramebuffer.DepthTarget.HasValue : InternalSwapchain.Framebuffer.DepthTarget.HasValue);
+            return (DepthTex != null && !DepthTex.IsDisposed) || (IsRaw && (InternalFramebuffer != null ? InternalFramebuffer.DepthTarget.HasValue : InternalSwapchain.Framebuffer.DepthTarget.HasValue));
         }
 
         public void UpdateSamplerInfo(SamplerInfo info)
@@ -121,6 +126,9 @@ namespace Engine.Assets.Textures
             if (InternalFramebuffer != null && !InternalFramebuffer.IsDisposed)
                 InternalFramebuffer.Dispose();
             InternalFramebuffer = null;
+            if (DepthTex != null && !DepthTex.IsDisposed)
+                DepthTex.Dispose();
+            DepthTex = null;
             if (ColorTex != null && !ColorTex.IsDisposed)
                 ColorTex.Dispose();
             ColorTex = null;

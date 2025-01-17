@@ -82,6 +82,17 @@ namespace GameSrc.NPCs
             Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform, ForwardConsts.ForwardBasePassName);
             for (int i = 1; i < ForwardConsts.LightUniforms.Count; i++)
                 Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform, ForwardConsts.ForwardAddPassName + '#' + i);
+        }
+
+        public override void DrawDepth(Renderer renderer)
+        {
+            base.DrawDepth(renderer);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform, ForwardConsts.ForwardDepthPassName);
+        }
+
+        public override void DrawGui(Renderer renderer, double dt)
+        {
+            base.DrawGui(renderer, dt);
             if (ImGui.Begin(Name))
             {
                 ImGui.Text($"pathIndex = {pathIndex}");

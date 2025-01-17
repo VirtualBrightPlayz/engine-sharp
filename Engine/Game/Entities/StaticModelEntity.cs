@@ -88,6 +88,12 @@ namespace Engine.Game.Entities
             WorldMatrixUniform.UploadData(WorldMatrix);
         }
 
+        public override void DrawDepth(Renderer renderer)
+        {
+            base.DrawDepth(renderer);
+            Model.SetWorldMatrixDraw(renderer, WorldMatrixUniform, ForwardConsts.ForwardDepthPassName);
+        }
+
         public override void Draw(Renderer renderer, double dt)
         {
             base.Draw(renderer, dt);

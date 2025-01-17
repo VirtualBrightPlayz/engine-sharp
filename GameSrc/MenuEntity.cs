@@ -63,10 +63,10 @@ namespace GameSrc
             State = state;
         }
 
-        public override void Draw(Renderer renderer, double dt)
+        public override void DrawGui(Renderer renderer, double dt)
         {
             // ImGui.SliderFloat2("Size", ref MenuScale, 0.1f, 2f);
-            base.Draw(renderer, dt);
+            base.DrawGui(renderer, dt);
             switch (State)
             {
                 case MenuState.PreLoad:

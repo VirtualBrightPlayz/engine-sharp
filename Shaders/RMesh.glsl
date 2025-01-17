@@ -43,6 +43,7 @@ vec3 bumpNormal;
 // includes
 
 #include "ForwardLights.glsl"
+#draw FwdDepth None
 
 layout(set = 0, binding = 0) uniform ViewMatrix
 {

@@ -42,7 +42,15 @@ namespace Engine.Game.Entities
         {
         }
 
+        public virtual void DrawDepth(Renderer renderer)
+        {
+        }
+
         public virtual void Draw(Renderer renderer, double dt)
+        {
+        }
+
+        public virtual void DrawGui(Renderer renderer, double dt)
         {
         }
 

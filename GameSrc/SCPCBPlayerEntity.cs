@@ -121,17 +121,17 @@ namespace GameSrc
         public override void PreDraw(Renderer renderer, double dt)
         {
             base.PreDraw(renderer, dt);
-            UpdateLook(dt);
+            // UpdateLook(dt);
             viewPos = Position + Vector3.UnitY * (shape.HalfLength + shape.Radius) + Vector3.UnitY * upDownBob;
             QuaternionEx.Transform(LocalUp, Quaternion.CreateFromAxisAngle(viewDirection, leftRightBob * (MathF.PI / 180f)), out Vector3 up);
-            renderer.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
+            Renderer.Main.ViewMatrix = Matrix4x4.CreateLookAt(viewPos, viewPos + viewDirection, up);
             footstepSource.Position = viewPos;
-            renderer.ViewPosition = viewPos;
+            Renderer.Main.ViewPosition = viewPos;
         }
 
-        public override void Draw(Renderer renderer, double dt)
+        public override void DrawGui(Renderer renderer, double dt)
         {
-            base.Draw(renderer, dt);
+            base.DrawGui(renderer, dt);
             BodyReference body = Game.Simulation.Bodies[bodyHandle.Value];
             if (ImGui.Begin("Debug Window"))
             {
@@ -156,7 +156,7 @@ namespace GameSrc
         public override unsafe void Tick(double dt)
         {
             base.Tick(dt);
-            // UpdateLook(dt);
+            UpdateLook(dt);
             UpdateMovement(dt);
             UpdateInteract(dt);
             AudioGlobals.Position = Position;

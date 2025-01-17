@@ -22,7 +22,7 @@ namespace Engine.Assets.Rendering
             public string pass;
         }
 
-        public static Renderer Current { get; set; }
+        public static Renderer Main { get; set; }
         public override bool IsValid => _commandList != null && !_commandList.IsDisposed;
         private CommandList _commandList;
         public CommandList CommandList => _commandList;
@@ -112,6 +112,8 @@ namespace Engine.Assets.Rendering
             IsDrawing = true;
             _commandList.Begin();
             _commandList.SetFramebuffer(InternalRenderTexture.InternalFramebuffer ?? InternalRenderTexture.InternalSwapchain.Framebuffer);
+            _commandList.SetFullScissorRect(0);
+            _commandList.SetFullViewport(0);
             ViewMatrixResource.UploadData(this, ViewMatrix);
             ProjMatrixResource.UploadData(this, ProjectionMatrix);
             WorldInfoResource.UploadData(this, ViewPosition);
@@ -145,6 +147,12 @@ namespace Engine.Assets.Rendering
         public void SetFramebuffer(Framebuffer fb)
         {
             _commandList.SetFramebuffer(fb);
+        }
+
+        public void SetRect(uint x, uint y, uint width, uint height)
+        {
+            _commandList.SetScissorRect(0, x, y, width, height);
+            _commandList.SetViewport(0, new Viewport(x, y, width, height, 0f, 1f));
         }
 
         public void Clear()
