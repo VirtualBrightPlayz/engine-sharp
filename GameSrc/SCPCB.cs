@@ -51,7 +51,11 @@ namespace GameSrc
         public SCPCB() : base()
         {
             Instance = this;
+        #if DEBUG
             Data = new GameData("scpcb");
+        #else
+            Data = new GameData("");
+        #endif
             MapGen = new MapGenerator()
             {
                 data = Data,
