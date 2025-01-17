@@ -38,6 +38,8 @@ namespace Engine.Game.Entities
             else
             {
                 Model = new Model(Name, _path, _material, true, false);
+                if (Models.ContainsKey(_path))
+                    Models.TryRemove(_path, out _);
                 Models.TryAdd(_path, new WeakReference<Model>(Model));
             }
             WorldMatrixUniform = new UniformBuffer(UniformConsts.WorldMatrixName, (uint)16 * 4);

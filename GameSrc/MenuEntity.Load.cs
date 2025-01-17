@@ -182,6 +182,7 @@ namespace GameSrc
                                 rm.PlayAudio();
                             }
                         }
+                        SCPCB.Instance.MapGen.UnspawnedEntities.Clear();
                         SCPCB.Instance.SpawnPlayer();
                     }
                 }
