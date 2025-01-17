@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -10,8 +11,16 @@ namespace Engine.Assets
 {
     public static class FileManager
     {
+        private static ConcurrentDictionary<string, byte[]> streams = new ConcurrentDictionary<string, byte[]>();
+
         public static Stream LoadStream(string path)
         {
+            if (streams.TryGetValue(path, out byte[] data))
+            {
+                if (data == null)
+                    return null;
+                return new MemoryStream(data, false);
+            }
             var stream = typeof(FileManager).Assembly.GetManifestResourceStream(typeof(FileManager).Assembly.FullName + "." + path.Replace("/", "."));
             if (stream == null)
                 stream = typeof(FileManager).Assembly.GetManifestResourceStream(path.Replace("/", "."));
@@ -21,8 +30,17 @@ namespace Engine.Assets
             filepath = Path.Combine(Directory.GetCurrentDirectory(), path);
             if (stream == null && File.Exists(filepath))
                 stream = File.OpenRead(filepath);
-            Debug.Assert(stream != null, path);
-            return stream;
+            if (stream == null)
+            {
+                streams.TryAdd(path, null);
+                return null;
+            }
+            byte[] arr = new byte[stream.Length];
+            stream.Read(arr);
+            stream.Dispose();
+            streams.TryAdd(path, arr);
+            MemoryStream ms = new MemoryStream(arr, false);
+            return ms;
         }
 
         public static byte[] LoadBytes(string path)
@@ -43,6 +61,16 @@ namespace Engine.Assets
         public static string LoadStringASCII(string path)
         {
             return Encoding.ASCII.GetString(LoadBytes(path));
+        }
+
+        public static void UnCache(string path)
+        {
+            streams.TryRemove(path, out _);
+        }
+
+        public static bool IsCached(string path)
+        {
+            return streams.ContainsKey(path);
         }
 
         public static bool Exists(string path)

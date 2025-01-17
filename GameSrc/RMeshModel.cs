@@ -238,7 +238,7 @@ namespace GameSrc
                 Texture2D diffuse = SCPCB.GetTexture(tex[1]);
                 string bumppath = Path.Combine(SCPCB.Instance.Data.GameDir, SCPCB.Instance.Data.GetBumpPath(Path.GetFileName(tex[1]).ToLower()) ?? string.Empty);
                 // string bumppath = Path.Combine(Path.GetDirectoryName(tex[1]), Path.GetFileNameWithoutExtension(tex[1]) + "bump.jpg");
-                Texture2D bump = (!string.IsNullOrWhiteSpace(bumppath) && File.Exists(bumppath)) ? SCPCB.GetTexture(bumppath) : Texture2D.DefaultNormal;
+                Texture2D bump = (!string.IsNullOrWhiteSpace(bumppath) && FileManager.Exists(bumppath)) ? SCPCB.GetTexture(bumppath) : Texture2D.DefaultNormal;
                 // if (string.IsNullOrWhiteSpace(tex[0]))
                     uniforms[i] = GetCompoundBuffer(tex[1], diffuse, bump);
                     // uniforms[i] = new CompoundBuffer($"RMeshBuf_{tex[1]}", shader, UniformConsts.DiffuseTextureSet, diffuse, Texture2D.DefaultWhite, bump);
