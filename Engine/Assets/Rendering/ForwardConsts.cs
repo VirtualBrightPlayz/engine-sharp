@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Engine.Assets.Textures;
 using Engine.Game;
@@ -77,6 +78,7 @@ namespace Engine.Assets.Rendering
             if (MaxRealtimeLights <= 0)
             {
                 ShadowAtlasTextures.Clear();
+                ShadowUniforms.Clear();
                 return;
             }
             int loopCount = (int)Math.Ceiling((float)MaxRealtimeLights / MaxLightsPerPass);
@@ -91,11 +93,24 @@ namespace Engine.Assets.Rendering
                     ShadowAtlasTextures.RemoveAt(ShadowAtlasTextures.Count - 1);
                 }
             }
+            if (loopCount > ShadowUniforms.Count)
+            {
+                ShadowUniforms.Add(null);
+            }
+            else if (loopCount < ShadowUniforms.Count)
+            {
+                while (loopCount < ShadowUniforms.Count)
+                {
+                    ShadowUniforms.RemoveAt(ShadowUniforms.Count - 1);
+                }
+            }
             ForwardLight[] sortedLights = Lights.OrderBy(x => (x.Position - Renderer.Main.ViewPosition).LengthSquared()).Take(MaxRealtimeLights).ToArray();
             for (int i = 0; i < ShadowAtlasTextures.Count; i++)
             {
                 if (ShadowAtlasTextures[i] == null || !ShadowAtlasTextures[i].IsValid)
                     ShadowAtlasTextures[i] = new RenderTexture2D(ShadowAtlasName, ShadowResolution, ShadowResolution);
+                if (ShadowUniforms[i] == null || !ShadowUniforms[i].IsValid)
+                    ShadowUniforms[i] = new UniformBuffer(ShadowAtlasName, ShadowInfo.Size);
                 RenderShadowsPass(i, app, renderer, sortedLights);
             }
         }
@@ -142,16 +157,18 @@ namespace Engine.Assets.Rendering
                 renderer.ViewPosition = Renderer.Main.ViewPosition;
                 renderer.ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(90f * (MathF.PI / 180f), 1f, 0.01f, 25f);
                 renderer.ViewMatrix = Matrix4x4.CreateLookAt(light.Position, light.Position + fwds[i%6], ups[i%6]);
+                data.LightProjection[lightIdx] = renderer.ProjectionMatrix * renderer.ViewMatrix;
                 app.PreDraw(renderer, 0d);
                 renderer.Begin();
                 uint x = (uint)(i % div) * texDiv;
                 uint y = (uint)(i / div) * texDiv;
+                data.LightPosition[lightIdx] = new Vector4(x, y, texDiv, texDiv) / texWidth;
                 renderer.SetRect(x, y, texDiv, texDiv);
                 app.DrawDepth(renderer);
                 renderer.End();
                 renderer.Submit();
             }
-            ShadowUniforms[pass].UploadData(renderer, GetShadowInfo(data));
+            ShadowUniforms[pass].UploadData(GetShadowInfo(data));
         }
 
         public unsafe static float[] GetShadowInfo(ShadowInfo info)
@@ -165,9 +182,10 @@ namespace Engine.Assets.Rendering
             }
             for (int i = 0; i < MaxLightsPerPass*6; i++)
             {
+                // info.LightProjection[i]
                 fixed (void* data = &info.LightProjection[i])
                 {
-                    Marshal.Copy((nint)data, blit, offset, sizeof(Matrix4x4));
+                    Marshal.Copy((nint)data, blit, offset, 16);
                 }
                 offset += 16;
             }

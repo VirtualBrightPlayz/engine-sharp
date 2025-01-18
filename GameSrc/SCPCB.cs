@@ -67,8 +67,8 @@ namespace GameSrc
         public override void Setup()
         {
             base.Setup();
-            RenderingGlobals.Window.Title = Name;
-            RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
+            // RenderingGlobals.Window.Title = Name;
+            // RenderingGlobals.Window.WindowState = Veldrid.WindowState.BorderlessFullScreen;
             UIExt.LoadFonts();
             Menu = new MenuEntity();
             Entities.Add(Menu);
@@ -148,7 +148,7 @@ namespace GameSrc
 
         public override void Draw(Renderer renderer, double dt)
         {
-            ForwardConsts.UpdateUniforms(renderer);
+            ForwardConsts.UpdateLightUniforms(renderer);
             base.Draw(renderer, dt);
         }
 

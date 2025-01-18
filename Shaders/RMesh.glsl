@@ -134,6 +134,11 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir, float multi)
 
 void main()
 {
+    if ($FwdDepth$ == 1)
+    {
+        FragColor = vec4(gl_FragCoord.z, 0, 0, 1);
+        return;
+    }
     bumpNormal = texture(sampler2D(BumpTexture, BumpTextureSampler), fsin_UV0).xyz;
     bumpNormal = normalize(bumpNormal * 2.0 - 1.0);
 
@@ -150,5 +155,6 @@ void main()
     // FragColor = vec4(finalLighting.rgb, 1) * mix(lightmapColor * fsin_Color * $FwdBase$, lighting, atten.x);
     FragColor = vec4(finalLighting.rgb, 1) * (lightmapColor * fsin_Color * $FwdBase$ + lighting);
     FragColor.a = lighting.a;
+    FragColor = lighting;
 }
 #endif

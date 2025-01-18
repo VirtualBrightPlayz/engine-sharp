@@ -28,9 +28,10 @@ layout(set = $LIGHT_SET$, binding = 0) uniform LightInfo0
     LightInfoStruct LightInfo;
 };
 
+layout(set = 10, binding = 0) uniform texture2D ShadowAtlasColorTexture;
 layout(set = 10, binding = 1) uniform texture2D ShadowAtlasTexture;
 layout(set = 10, binding = 2) uniform sampler ShadowAtlasTextureSampler;
-layout(set = 11, binding = 0) uniform LightInfo1
+layout(set = 11, binding = 0) uniform ShadowInfo0
 {
     ShadowInfoStruct ShadowInfo;
 };
@@ -62,6 +63,24 @@ float GetLightAttenuation(int i)
         // float a = 1 / max(d, 0.0001) / LightInfo.LightPosition[i].w;
         attenuation += clamp(a, 0, 1);
     }
+    return attenuation;
+}
+
+float GetShadowAttenuation(int i, vec3 pos)
+{
+    float attenuation = 0;
+    ivec2 size = textureSize(sampler2D(ShadowAtlasColorTexture, ShadowAtlasTextureSampler), 0);
+    vec4 lightSpacePos = ShadowInfo.LightProjection[i] * vec4(pos, 1);
+    vec3 projCoords = (lightSpacePos.xyz / lightSpacePos.w) * 0.5 + 0.5;
+    projCoords.xy += ShadowInfo.LightPosition[i].xy;
+    projCoords.xy *= ShadowInfo.LightPosition[i].zw;
+    float closestDepth = texture(sampler2D(ShadowAtlasColorTexture, ShadowAtlasTextureSampler), projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    if (currentDepth > closestDepth)
+    {
+        attenuation = 1;
+    }
+    attenuation = closestDepth;
     return attenuation;
 }
 
@@ -123,10 +142,17 @@ float ApplyAlphaLighting(int i, vec3 lighting, float a)
 
 vec4 ApplyLighting()
 {
+    float b = 0;
+    for (int i = 0; i < LightInfo.AmbientColor.w; i++)
+        for (int j = 0; j < 6; j++)
+            b += GetShadowAttenuation(i * 6 + j, $POSITION$.xyz);
+    return vec4(b);
     vec4 col = vec4(ApplyAmbientLighting(), 0);
     for (int i = 0; i < LightInfo.AmbientColor.w; i++)
     {
         float a = GetLightAttenuation(i);
+        for (int j = 0; j < 6; j++)
+            a += GetShadowAttenuation(i * 6 + j, $POSITION$.xyz);
         vec3 lighting = ApplyDiffuseLighting(i) * a + ApplySpecularLighting(i) * a;
         vec4 fLight = vec4(lighting, a);// vec4(lighting, ApplyAlphaLighting(i, lighting, a));
         col.rgb += fLight.rgb;
@@ -142,6 +168,8 @@ vec4 ApplyLightingNoSpecular()
     for (int i = 0; i < LightInfo.AmbientColor.w; i++)
     {
         float a = GetLightAttenuation(i);
+        for (int j = 0; j < 6; j++)
+            a += GetShadowAttenuation(i * 6 + j, $POSITION$.xyz);
         vec3 lighting = ApplyDiffuseLighting(i) * a;
         vec4 fLight = vec4(lighting, a);// vec4(lighting, ApplyAlphaLighting(i, lighting, a));
         col.rgb += fLight.rgb;

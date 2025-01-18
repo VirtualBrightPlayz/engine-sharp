@@ -45,6 +45,7 @@ namespace Engine.Assets.Rendering
                 WindowHeight = (int)ViewSize.Y,
             }, new GraphicsDeviceOptions()
             {
+                HasMainSwapchain = true,
                 // SingleThreaded = false,
                 PreferDepthRangeZeroToOne = true,
                 // PreferDepthRangeZeroToOne = false,
@@ -52,11 +53,14 @@ namespace Engine.Assets.Rendering
                 SyncToVerticalBlank = true,
                 SwapchainDepthFormat = PixelFormat.D32_Float_S8_UInt,
                 ResourceBindingModel = ResourceBindingModel.Improved,
+                Debug = true,
             }, api, out win, out gfx);
             Window = win;
             GameGraphics = gfx;
             APIBackend = gfx.BackendType;
             MainSwapchain = gfx.MainSwapchain;
+            if (MainSwapchain == null || MainSwapchain.IsDisposed)
+                Log.Fatal(nameof(RenderingGlobals), "Main Swapchain not created!");
             GameImGui = new ImGuiRenderer(GameGraphics, SwapchainFramebuffer.OutputDescription, (int)ViewSize.X, (int)ViewSize.Y);
             ImGui.EndFrame();
         }
@@ -87,6 +91,7 @@ namespace Engine.Assets.Rendering
         public static void Resize(uint w, uint h)
         {
             ViewSize = new Vector2(w, h);
+            // GameGraphics.ResizeMainWindow(w, h);
             MainSwapchain.Resize((uint)w, (uint)h);
             GameImGui.WindowResized((int)w, (int)h);
         }
